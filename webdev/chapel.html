@@ -5,18 +5,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- SweetAlert2 Bootstrap 5 theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-5/bootstrap-5.min.css" />
+    <link rel="stylesheet" href="CSS/chapel.css">
+
     <title>Chapel Resevation</title>
     <script>
-
         document.addEventListener('DOMContentLoaded', function () {
             var calendarEl = document.getElementById('calendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth'
-            });
-            calendar.render();
-        });
 
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                initialDate: '2025-12-07',
+                selectable: true,
+
+                select: async function (info) {
+                    const { value: formValues } = await Swal.fire({
+                        title: "Book a Facility",
+                        html: `
+                <p>Name</p>
+                <input id="swal-name" class="swal2-input" placeholder="Enter Name">
+                <p>Time Slot</p>
+                <input id="swal-time" type="time" class="swal2-input">
+                <p>Purpose of Reservation</p>
+                <textarea id="swal-message" class="swal2-textarea" placeholder="Type your message here..."></textarea>
+            `,
+                        showCancelButton: true,
+                        focusConfirm: false,
+
+                        didOpen: () => {
+                            const nameInput = document.getElementById('swal-name');
+                            const timeInput = document.getElementById('swal-time');
+
+                            const validateField = (input) => {
+                                if (input.value.trim()) {
+                                    input.classList.remove('error');
+                                    input.classList.add('success');
+                                } else {
+                                    input.classList.remove('success');
+                                    input.classList.add('error');
+                                }
+                            };
+
+                            // Real-time validation
+                            nameInput.addEventListener('input', () => validateField(nameInput));
+                            timeInput.addEventListener('input', () => validateField(timeInput));
+                        },
+
+                        preConfirm: () => {
+                            const nameInput = document.getElementById('swal-name');
+                            const timeInput = document.getElementById('swal-time');
+
+                            const name = nameInput.value.trim();
+                            const time = timeInput.value;
+
+                            // Force validation on submit
+                            if (!name || !time) {
+                                if (!name) nameInput.classList.add('error');
+                                if (!time) timeInput.classList.add('error');
+                                Swal.showValidationMessage('Please enter name and time');
+                                return false;
+                            }
+
+                            return { name, time };
+                        }
+                    });
+
+
+                    if (formValues) {
+                        calendar.addEvent({
+                            title: formValues.name,
+                            start: info.startStr + 'T' + formValues.time,
+                            allDay: false
+                        });
+                        Swal.fire('Booked!', 'Your booking has been added to the calendar.', 'success');
+                    }
+
+                    calendar.unselect();
+                },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                }
+            });
+
+            calendar.render();
+
+        });
     </script>
+
+
 </head>
 
 <body>

@@ -1,0 +1,47 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.login-form{
+   background: rgb(9, 109, 148);
+   height: 100vh;
+   display: grid;
+   place-items: center;
+   padding: 20px;
+}
+
+.form{
+    padding:27px,125px;
+    border-radius: 20px;
+    background-color: white;
+    height: 650px;
+    text-align: center;
+    width: 90%; /* Responsive width */
+    max-width: 500px; /* Maximum width */
+}
+
+.logo{
+    padding-top: 15px;
+    max-width: 160px;
+    width:100%;
+    margin: auto;
+}
+
+.text p{
+    font-family: 'Poppins', sans-serif;
+    font-size: 29px;
+    text-align: center; 
+}
+
+.username-lbl,.password-lbl{
+    text-align: left;
+    width:27rem;
+    max-width: 90%;
+    margin: auto;
+    padding-top: 30px;
+}
+
+
+
