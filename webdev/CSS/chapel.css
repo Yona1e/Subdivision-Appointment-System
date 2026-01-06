@@ -40,6 +40,8 @@ p{
     border: 2px solid red !important;
 }
 
-#calendar{
-    font-size: 1rem;
-}
+#calendar {
+        max-width: 900px;
+        margin: 40px auto;
+        height: 700px;
+    }

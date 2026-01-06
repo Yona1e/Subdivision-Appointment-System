@@ -3,107 +3,128 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapel Reservation</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- FullCalendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.css">
+
+    <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
 
-    <!-- SweetAlert2 Bootstrap 5 theme -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-5/bootstrap-5.min.css" />
-    <link rel="stylesheet" href="CSS/chapel.css">
+<body>
 
-    <title>Chapel Resevation</title>
+    <div class="container my-4">
+        <div id="calendar"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"> <!-- Centered Modal -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabel">Book a Facility</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control mb-2" id="username" placeholder="Enter name">
+
+                    <label for="phone">Enter a phone number:</label>
+                    <input type="text" class="form-control mb-2" id="phone" placeholder="123456789" maxlength="11">
+                    <div class="invalid-feedback" id="phoneFeedback">
+                        Please enter numbers only.
+                    </div>
+
+                    <label for="time">Select a time:</label>
+                    <input type="time" class="form-control" id="time">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="saveEvent" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS (with Popper included) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
+
         document.addEventListener('DOMContentLoaded', function () {
             var calendarEl = document.getElementById('calendar');
+            var selectedDate = null;
 
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 initialDate: '2025-12-07',
                 selectable: true,
 
-                select: async function (info) {
-                    const { value: formValues } = await Swal.fire({
-                        title: "Book a Facility",
-                        html: `
-                <p>Name</p>
-                <input id="swal-name" class="swal2-input" placeholder="Enter Name">
-                <p>Time Slot</p>
-                <input id="swal-time" type="time" class="swal2-input">
-                <p>Purpose of Reservation</p>
-                <textarea id="swal-message" class="swal2-textarea" placeholder="Type your message here..."></textarea>
-            `,
-                        showCancelButton: true,
-                        focusConfirm: false,
+                dateClick: function (info) {
+                    selectedDate = info.dateStr;
 
-                        didOpen: () => {
-                            const nameInput = document.getElementById('swal-name');
-                            const timeInput = document.getElementById('swal-time');
-
-                            const validateField = (input) => {
-                                if (input.value.trim()) {
-                                    input.classList.remove('error');
-                                    input.classList.add('success');
-                                } else {
-                                    input.classList.remove('success');
-                                    input.classList.add('error');
-                                }
-                            };
-
-                            // Real-time validation
-                            nameInput.addEventListener('input', () => validateField(nameInput));
-                            timeInput.addEventListener('input', () => validateField(timeInput));
-                        },
-
-                        preConfirm: () => {
-                            const nameInput = document.getElementById('swal-name');
-                            const timeInput = document.getElementById('swal-time');
-
-                            const name = nameInput.value.trim();
-                            const time = timeInput.value;
-
-                            // Force validation on submit
-                            if (!name || !time) {
-                                if (!name) nameInput.classList.add('error');
-                                if (!time) timeInput.classList.add('error');
-                                Swal.showValidationMessage('Please enter name and time');
-                                return false;
-                            }
-
-                            return { name, time };
-                        }
-                    });
-
-
-                    if (formValues) {
-                        calendar.addEvent({
-                            title: formValues.name,
-                            start: info.startStr + 'T' + formValues.time,
-                            allDay: false
-                        });
-                        Swal.fire('Booked!', 'Your booking has been added to the calendar.', 'success');
-                    }
-
-                    calendar.unselect();
-                },
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    // Show Bootstrap 5 modal
+                    var myModal = new bootstrap.Modal(document.getElementById('myModal'));
+                    myModal.show();
                 }
             });
 
             calendar.render();
 
+            // Phone input validation
+            const phoneInput = document.getElementById('phone');
+            const phoneFeedback = document.getElementById('phoneFeedback');
+
+            phoneInput.addEventListener('input', function () {
+                if (/[^0-9]/.test(this.value)) {
+                    this.classList.add('is-invalid');  // show Bootstrap invalid style
+                } else {
+                    this.classList.remove('is-invalid'); // remove invalid style
+                }
+            });
+
+            // Save button
+            document.getElementById('saveEvent').addEventListener('click', function () {
+                const username = document.getElementById('username').value.trim();
+                const phone = phoneInput.value.trim();
+                const time = document.getElementById('time').value;
+                const phoneIsValid = /^[0-9]*$/.test(phone); // allow empty phone
+
+                if (!username || !time) {
+                    alert("Username and Time are required");
+                    return;
+                }
+
+                if (!phoneIsValid) {
+                    phoneInput.classList.add('is-invalid');
+                    return; // stop saving
+                } else {
+                    phoneInput.classList.remove('is-invalid');
+                }
+
+                // Add event to calendar
+                calendar.addEvent({
+                    title: username,
+                    start: selectedDate + 'T' + time,
+                    allDay: false
+                });
+
+                // Clear inputs
+                document.getElementById('username').value = '';
+                phoneInput.value = '';
+                document.getElementById('time').value = '';
+
+                // Hide modal
+                var myModalEl = document.getElementById('myModal');
+                var modalInstance = bootstrap.Modal.getInstance(myModalEl);
+                modalInstance.hide();
+            });
         });
     </script>
-
-
-</head>
-a
-<body>
-    <div id='calendar'></div>
 
 </body>
 
