@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chapel Reservation</title>
+
+    <link rel="stylesheet" href="chapel.css">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- FullCalendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.css">
+
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
+    <script src="chapel.js"></script>
+</head>
+
+<body>
+
+    <div class="container my-4">
+        <div id="calendar"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"> <!-- Centered Modal -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabel">Book a Facility</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Username -->
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control mb-2" id="username" placeholder="Enter name">
+
+                    <!-- Phone Number -->
+                    <label for="phone">Enter a phone number:</label>
+                    <input type="text" class="form-control mb-2" id="phone" placeholder="123456789" maxlength="11">
+                    <div class="invalid-feedback" id="phoneFeedback">
+                        Please enter numbers only.
+                    </div>
+
+                    <!-- Time -->
+                    <div class="card time-slot-card">
+                        <div class="card-header fw-bold">
+                            Available Time Slots
+                        </div>
+
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">
+                                ⓘ Each slot: 30 mins | Break: 10 mins
+                            </p>
+
+                            <div class="slots-container">
+                                <button class="btn slot-btn" data-start="07:00" data-end="7:30">
+                                    7:00 AM - 7:30 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="07:40" data-end="08:10">
+                                    7:40 AM - 8:10 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="08:20" data-end="08:50">
+                                    8:20 AM - 8:50 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="09:00" data-end="09:30">
+                                    9:00 AM - 9:30 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="09:40" data-end="10:10">
+                                    9:40 AM - 10:10 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="10:20" data-end="10:50">
+                                    10:20 AM - 10:50 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="11:00" data-end="11:30">
+                                    11:00 AM - 11:30 AM
+                                </button>
+
+                                <button class="btn slot-btn" data-start="11:40" data-end="12:10">
+                                    11:40 AM - 12:10 PM
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" id="saveEvent" class="btn btn-primary">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bootstrap 5 JS (with Popper included) -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
