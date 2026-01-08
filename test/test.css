@@ -111,9 +111,9 @@ body {
 
 .sidebar-content .menu-list {
     list-style: none;
-    gap: 4px;
+    gap: 5px;
     flex-direction: column;
-    list-style: none;
+    padding-left: 0;
 }
 
 .menu-list .menu-link {
@@ -139,4 +139,120 @@ body {
 
 .menu-link .menu-label {
     transition: 0.3s ease
+}
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;              /* FIX 1 */
+}
+
+
+
+
+.main-content {
+    flex: 1;
+    padding: 30px;
+    background: #f3f5ff;
+    
+}
+
+/* Card container */
+.reservation-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 900px;
+    align-items: center;
+    margin: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Header */
+.card-header {
+    background: #cfd7ff;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Body */
+.card-body {
+    padding: 40px;
+    min-height: 250px;
+}
+
+.card-body {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.slots-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btn.slot-btn {
+  background-color: #c8f5d4;
+  color: #155724;
+  padding: 4px 7px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn.slot-btn:hover {
+  background-color: #c3e6cb;
+}
+
+.btn.slot-btn.active {
+    background-color: #0d6efd;     /* Bootstrap blue */
+    color: #fff;
+}
+
+.btn.slot-btn.selected {
+  background-color: #0d6efd; 
+  color: white;
+}
+
+.btn.slot-btn {
+  position: relative;
+  /* REQUIRED */
+}
+
+.btn.slot-btn.selected::after {
+  content: '✓';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: white;
+  color: #007bff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid #007bff;
+}
+
+@media (max-width: 576px) {
+  .slots-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
