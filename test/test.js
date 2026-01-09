@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let selectedDate = null;
 
     // Store selected slots
-    let selectedSlots = [];
+    let selectedSlots = [{}];
 
     // ===============================
     // Initialize FullCalendar
@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         selectable: true,
+
+        
 
         dateClick: function (info) {
             selectedDate = info.dateStr;
@@ -125,12 +127,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     document.getElementById('saveEvent').addEventListener('click', function () {
 
-        const username = document.getElementById('username').value.trim();
+        
         const phone = phoneInput.value.trim();
         const phoneIsValid = /^[0-9]*$/.test(phone);
 
-        if (!username || selectedSlots.length === 0) {
-            alert("Username and at least one time slot are required");
+        if (selectedSlots.length === 0) {
+            alert("at least one time slot are required");
             return;
         }
 
@@ -142,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add each selected slot as an event
         selectedSlots.forEach(slot => {
             calendar.addEvent({
-                title: username,
+                title: phone,
                 start: `${selectedDate}T${slot.start}`,
                 end: `${selectedDate}T${slot.end}`,
                 allDay: false
@@ -150,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Clear inputs
-        document.getElementById('username').value = '';
+       
         phoneInput.value = '';
         phoneInput.classList.remove('is-invalid');
 
