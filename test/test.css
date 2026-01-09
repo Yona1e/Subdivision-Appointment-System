@@ -199,17 +199,58 @@ body {
 /* <---------   ---------> */
 
 /* Body */
-.card-body {
-    padding: 40px;
-    min-height: 250px;
+.card-body{
+        min-height: 250px;
     background: white;
-    padding: 20px;
     border-radius: 8px;
-    max-width: 600px;
-    margin: 0 auto;
+    margin: 0px auto;
+    padding: 30px !important;
 }
 
-/* ------ Calendar Design ------*/
+    /* Facility images */
+.col.chapel img{
+    height: 150px;
+}
+
+.col.basketball img{
+    height: 150px;
+}
+
+.col.hall img{
+    height: 150px;
+}
+
+.col.tennis img{
+    height: 150px;
+}
+    /* <---------   ---------> */
+
+    .card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+.card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hover effect */
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Click effect */
+.card:active {
+    transform: scale(0.98);
+}
+
+
+
+    /* ------ Calendar Design ------*/
 .calendar-wrapper {
     padding: 20px;
     margin: 0 auto;
@@ -243,9 +284,6 @@ body {
     background-color: #D0D7FF;
 
 }
-
-
-
 /* <---------   ---------> */
 
 .slots-container {
