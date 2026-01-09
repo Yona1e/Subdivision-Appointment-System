@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Calendar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f8f9fa; padding-top: 50px; }
+        #calendar { background: white; }
+        
+        /* Smooth transition for hiding the button */
+        .fade-out {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            
+            <div class="text-center">
+                <button 
+                    id="showCalendarBtn"
+                    class="btn btn-primary btn-lg shadow-sm" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#calendarCollapse" 
+                    aria-expanded="false">
+                    <i class="bi bi-calendar-event"></i> Open Calendar
+                </button>
+            </div>
+
+            <div class="collapse mt-3" id="calendarCollapse">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Event Schedule</h5>
+                        <button type="button" class="btn-close btn-close-white" id="closeCalendarBtn"></button>
+                    </div>
+                    <div class="card-body">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const showBtn = document.getElementById('showCalendarBtn');
+        const closeBtn = document.getElementById('closeCalendarBtn');
+        const collapseEl = document.getElementById('calendarCollapse');
+        
+        // Initialize Bootstrap Collapse instance
+        const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+
+        // Initialize Calendar
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth'
+        });
+        calendar.render();
+
+        // LOGIC: Hide button when calendar shows
+        collapseEl.addEventListener('show.bs.collapse', function () {
+            showBtn.classList.add('fade-out'); // Hides the button
+            // Recalculate calendar size so it fits the new visible container
+            setTimeout(() => calendar.updateSize(), 10);
+        });
+
+        // LOGIC: Show button again when "X" is clicked (Optional)
+        closeBtn.addEventListener('click', function() {
+            bsCollapse.hide();
+        });
+
+        collapseEl.addEventListener('hidden.bs.collapse', function () {
+            showBtn.classList.remove('fade-out'); // Shows the button again
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -77,17 +77,24 @@
                 </div>
                 <div class="container text-center">
                     <div class="row align-items-start">
+
                         <div class="col facility">
-                            <img src="/asset/facility.png">
-                            <p>Facility</p>
+                            <button class="tab_btn">
+                                <img src="/asset/facility.png">
+                                <p>Facility</p>
+                            </button>
                         </div>
                         <div class="col date-time">
-                            <img src="/asset/date-time.png">
-                            <p>Date and Time</p>
+                            <button class="tab_btn">
+                                <img src="/asset/date-time.png">
+                                <p>Date and Time</p>
+                            </button>
                         </div>
                         <div class="col payment">
-                            <img src="/asset/payment.png">
-                            <p>Payment</p>
+                            <button class="tab_btn">
+                                <img src="/asset/payment.png">
+                                <p>Payment</p>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -95,8 +102,10 @@
                 <!-- DATE AND TIME -->
                 <div class="card-body facility">
                     <div class="row row-cols-1 row-cols-md-4 g-4">
-                        <div class="col chapel">
-                            <a href="chapel.html" class="card-link">
+                        <div class="col chapel" >
+                            <a href="chapel.html" class="card-link" data-bs-toggle="collapse" 
+                    data-bs-target="#calendarCollapse" 
+                    aria-expanded="false">
                                 <div class="card h-100">
                                     <img src="../asset/chapel.png" class="card-img-top" alt="chapel">
                                     <div class="card-body content">
@@ -108,6 +117,7 @@
                                 </div>
                             </a>
                         </div>
+
 
                         <div class="col basketball">
                             <a href="chapel.html" class="card-link">
@@ -156,9 +166,21 @@
                     </div>
                 </div>
                 <!-- DATE AND TIME -->
-                <div class="calendar-wrapper">
-                    <div id="calendar"></div>
+
+
+
+                <div class="collapse mt-3" id="calendarCollapse">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Event Schedule</h5>
+                        <button type="button" class="btn-close btn-close-white" id="closeCalendarBtn"></button>
+                    </div>
+                    <div class="card-body">
+                        <div id="calendar"></div>
+                    </div>
                 </div>
+            </div>
+
                 <!-- Modal -->
                 <form method="post">
                     <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
