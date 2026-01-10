@@ -183,12 +183,11 @@ body {
 /* ------ PROGRESS BAR ------*/
 
 .container {
-    max-width: 400px;
+    max-width: 1200px;
     width: 100%;
-    display:flex;
+    display: flex;
     flex-direction: column;
     align-items: center;
-
 }
 
 .container .steps {
@@ -197,24 +196,46 @@ body {
     align-items: center;
     justify-content: space-between;
     position: relative;
+    padding: 20px 0;
 }
 
 .steps .circle {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 50px;
-    width: 50px;
+    height: 60px;
+    width: 60px;
     font-size: 22px;
     color: #999;
-    font-weight: 500px;
+    font-weight: 500;
     border-radius: 50%;
     background: #fff;
     border: 4px solid #e0e0e0;
     z-index: 2;
-    transition: all 1s ease;
+    transition: all 0.3s ease;
 }
 
+/* Icons inside circles - grey by default */
+.steps .circle img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    filter: grayscale(100%); /* Make icon grey */
+    opacity: 0.5; /* Make it lighter */
+    transition: all 0.3s ease;
+}
+
+/* Active circle - green border */
+.steps .circle.active {
+    border-color: #22c55e;
+    border-width: 5px;
+}
+
+/* Active circle icon - normal color */
+.steps .circle.active img {
+    filter: grayscale(0%); /* Remove grey, show normal colors */
+    opacity: 1; /* Full opacity */
+}
 
 .steps .progress-bar {
     position: absolute;
@@ -222,16 +243,20 @@ body {
     width: 100%;
     background: #e0e0e0;
     z-index: 1;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .progress-bar .indicator {
     position: absolute;
     height: 100%;
     width: 0%;
-    background: green;
+    background: #22c55e;
     transition: all 300ms ease;
     z-index: 1;
 }
+
+/* ------------------------------- */
 
 .steps .circle.active{
     border-color: green;
