@@ -165,6 +165,9 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
+
+
+
 /* Header */
 .page-header {
     background: #dbe2ff;
@@ -177,10 +180,92 @@ body {
 }
 
 /* ------facility | date time | payment icon ------*/
+/* ------ PROGRESS BAR ------*/
 
-.row.align-items-start img{
+.container {
+    max-width: 400px;
+    width: 100%;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+.container .steps {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.steps .circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    width: 50px;
+    font-size: 22px;
+    color: #999;
+    font-weight: 500px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid #e0e0e0;
+    z-index: 2;
+    transition: all 1s ease;
+}
+
+
+.steps .progress-bar {
+    position: absolute;
+    height: 4px;
+    width: 100%;
+    background: #e0e0e0;
+    z-index: 1;
+}
+
+.progress-bar .indicator {
+    position: absolute;
+    height: 100%;
+    width: 0%;
+    background: green;
+    transition: all 300ms ease;
+    z-index: 1;
+}
+
+.steps .circle.active{
+    border-color: green;
+    color: green;
+    transition-delay: 0s;
+}
+
+.container .buttons{
+    display: flex;
+    gap:40rem;
+    padding:15px;
+}
+
+.buttons .btn{
+    padding:8px 25px;
+    background: #4070f4;
+    border:none;
+    border-radius: 8px;
+    color:#D0D7FF;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.buttons .btn:disabled{
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
+
+
+.row.align-items-start img {
     height: 60px;
-}   
+}
+
 .col.facility {
     color: #9CEDB3;
     font-weight: bold;
@@ -199,33 +284,34 @@ body {
 /* <---------   ---------> */
 
 /* Body */
-.card-body{
-        min-height: 250px;
+.card-body {
+    min-height: 250px;
     background: white;
     border-radius: 8px;
     margin: 0px auto;
     padding: 30px !important;
 }
 
-    /* Facility images */
-.col.chapel img{
+/* Facility images */
+.col.chapel img {
     height: 150px;
 }
 
-.col.basketball img{
+.col.basketball img {
     height: 150px;
 }
 
-.col.hall img{
+.col.hall img {
     height: 150px;
 }
 
-.col.tennis img{
+.col.tennis img {
     height: 150px;
 }
-    /* <---------   ---------> */
+/* <---------   ---------> */
 
-    .card-link {
+/* <---------  FACILITY DESIGN  ---------> */
+.card-link {
     text-decoration: none;
     color: inherit;
     display: block;
@@ -240,7 +326,7 @@ body {
 /* Hover effect */
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 /* Click effect */
@@ -248,9 +334,35 @@ body {
     transform: scale(0.98);
 }
 
+.col.selected .card {
+    background-color: #0d6efd;
+    border: 2px solid #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    position: relative;
+}
+
+.col.selected .card::before {
+    content: "✓";
+    position: absolute;
+    top: -17px;
+    right: -17px;
+    background-color: #0d6efd;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    z-index: 10;
+}
+/* <---------   ---------> */
 
 
-    /* ------ Calendar Design ------*/
+/* ------ Calendar Design ------*/
+
 .calendar-wrapper {
     padding: 20px;
     margin: 0 auto;
@@ -258,8 +370,10 @@ body {
 
 #calendar {
     border-radius: 13px;
-    border: 1px solid #ddd; 
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border: 1px solid #ddd;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    height: 600px;
+    width: 600px;
 
 }
 
@@ -284,8 +398,9 @@ body {
     background-color: #D0D7FF;
 
 }
-/* <---------   ---------> */
 
+/* <---------   ---------> */
+/* <--------- Modal Design  ---------> */
 .slots-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -345,7 +460,7 @@ body {
     font-weight: bold;
     border: 2px solid #007bff;
 }
-
+    /* <---------   ---------> */
 @media (max-width: 576px) {
     .slots-container {
         grid-template-columns: repeat(2, 1fr);
