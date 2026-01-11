@@ -19,8 +19,6 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 
-
-
 <body>
 
     <div class="app-layout">
@@ -149,10 +147,10 @@
                         </div>
                     </div>
                     <!-- DATE AND TIME -->
-                <div class="calendar-wrapper">
-                    <div id="calendar"></div>
-                </div>
-                <!-- Modal -->
+                    <div class="calendar-wrapper">
+                        <div id="calendar"></div>
+                    </div>
+                    <!-- Modal -->
                     <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
@@ -274,9 +272,9 @@
                             </div>
                         </div>
                     </div>
-                </form>
+                    </form>
                     <div class="buttons">
-                        <button class="btn btn-primary" type="button" id="prev" >Prev</button>
+                        <button class="btn btn-primary" type="button" id="prev">Prev</button>
                         <button class="btn btn-primary" type="button" id="next">Next</button>
                     </div>
                 </div>
@@ -289,7 +287,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- JS -->
     <script src="/test/javascript/calendar.js"></script>
-    <script src="/test/javascript/test.js"></script>
+    <script src="/test/javascript/sidebar.js"></script>
     <script src="/test/javascript/progress-btn.js"></script>
 
 </body>
