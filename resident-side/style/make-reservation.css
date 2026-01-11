@@ -343,19 +343,19 @@ body {
     height: 100%;
 }
 
-.card {
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.card.h-100{
+    cursor: pointer ;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 /* Hover effect */
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+.card.h-100:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15)!important;
 }
 
 /* Click effect */
-.card:active {
+.card.h-100:active {
     transform: scale(0.98);
 }
 
