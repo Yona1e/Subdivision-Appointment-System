@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 header("Location: ../home/home.php");
                 exit();
             } elseif ($user['Role'] == 'Admin') {
-                header("Location: activeusers.php");
+                header("Location: overview.php");
                 exit();
             } else {
                 // Default redirect for other roles

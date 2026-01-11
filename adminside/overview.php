@@ -47,15 +47,15 @@ $result = $conn->query($sql);
             <!-- Menu List -->
             <ul class="menu-list">
                 <li class="menu-item">
-                    <a href="#" class="menu-link active">
+                    <a href="overview.php" class="menu-link active">
                         <img src="../asset/home.png" alt="Home Icon" class="menu-icon">
-                        <span class="menu-label">Home</span>
+                        <span class="menu-label">Overview</span>
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="#" class="menu-link">
+                    <a href="reserverequests.php" class="menu-link">
                         <img src="../asset/makeareservation.png" alt="Make a Reservation Icon" class="menu-icon">
-                        <span class="menu-label">Make a Reservation</span>
+                        <span class="menu-label">View Requests</span>
                     </a>
                 </li>
                 <li class="menu-item">
