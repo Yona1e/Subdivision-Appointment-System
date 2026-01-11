@@ -1,33 +1,10 @@
-function initializeCalendar(){
+document.addEventListener('DOMContentLoaded', function () {
 
     const calendarEl = document.getElementById('calendar');
-    if(!calendarEl) return; // nothing to do on pages without a calendar
-
-    // destroy previous instance if present
-    if(window.fullCalendar && typeof window.fullCalendar.destroy === 'function'){
-        try{ window.fullCalendar.destroy(); }catch(e){/*ignore*/}
-        window.fullCalendar = null;
-    }
-
-    // Remove old listeners by replacing nodes where appropriate
-    document.querySelectorAll('.btn.slot-btn').forEach(btn=>{
-        const clone = btn.cloneNode(true);
-        btn.parentNode.replaceChild(clone, btn);
-    });
-    const phoneNode = document.getElementById('phone');
-    if(phoneNode && phoneNode.parentNode){
-        const clonePhone = phoneNode.cloneNode(true);
-        phoneNode.parentNode.replaceChild(clonePhone, phoneNode);
-    }
-    const saveBtnNode = document.getElementById('saveEvent');
-    if(saveBtnNode && saveBtnNode.parentNode){
-        const cloneSave = saveBtnNode.cloneNode(true);
-        saveBtnNode.parentNode.replaceChild(cloneSave, saveBtnNode);
-    }
-
-    // state for this instance
     let selectedDate = null;
-    let selectedSlots = [];
+
+    // Store selected slots
+    let selectedSlots = [{}];
 
     // ===============================
     // Initialize FullCalendar
@@ -89,17 +66,17 @@ function initializeCalendar(){
     calendar.render();
      window.fullCalendar = calendar;
 
+    // ===============================
     // Phone input validation
+    // ===============================
     const phoneInput = document.getElementById('phone');
-    if(phoneInput){
-        phoneInput.addEventListener('input', function () {
-            if (/[^0-9]/.test(this.value)) {
-                this.classList.add('is-invalid');
-            } else {
-                this.classList.remove('is-invalid');
-            }
-        });
-    }
+    phoneInput.addEventListener('input', function () {
+        if (/[^0-9]/.test(this.value)) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
 
     // ===============================
     // Time Slot Selection (MULTI)
@@ -142,13 +119,10 @@ function initializeCalendar(){
     // ===============================
     // Save Event Button
     // ===============================
-    const saveBtn = document.getElementById('saveEvent');
-    if(saveBtn){
-        saveBtn.addEventListener('click', function () {
+    document.getElementById('saveEvent').addEventListener('click', function () {
 
         
-        const phoneEl = document.getElementById('phone');
-        const phone = phoneEl ? phoneEl.value.trim() : '';
+        const phone = phoneInput.value.trim();
         const phoneIsValid = /^[0-9]*$/.test(phone);
 
         if (selectedSlots.length === 0) {
@@ -157,7 +131,7 @@ function initializeCalendar(){
         }
 
         if (!phoneIsValid) {
-            if(phoneEl) phoneEl.classList.add('is-invalid');
+            phoneInput.classList.add('is-invalid');
             return;
         }
 
@@ -173,7 +147,8 @@ function initializeCalendar(){
 
         // Clear inputs
        
-if(phoneEl){ phoneEl.value = ''; phoneEl.classList.remove('is-invalid'); }
+        phoneInput.value = '';
+        phoneInput.classList.remove('is-invalid');
 
         selectedSlots = [];
 
@@ -183,11 +158,7 @@ if(phoneEl){ phoneEl.value = ''; phoneEl.classList.remove('is-invalid'); }
         // Hide modal
         const modalEl = document.getElementById('myModal');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if(modalInstance) modalInstance.hide();
-        });
-    } 
-}
+        modalInstance.hide();
+    });
 
-// call on initial load and expose for dynamic page loads
-document.addEventListener('DOMContentLoaded', initializeCalendar);
-window.initializeCalendar = initializeCalendar;
+});
