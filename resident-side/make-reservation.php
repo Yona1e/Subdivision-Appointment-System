@@ -3,7 +3,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
-    header("Location: login.php");
+    header("Location: ../login/login.php");
     exit();
 }
 ?>
@@ -13,7 +13,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../test/make-reservation.css">
+    <link rel="stylesheet" href="make-reservation.css">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FullCalendar CSS -->
@@ -302,9 +302,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
     <!-- Bootstrap 5 JS (with Popper included) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- JS -->
-    <script src="../test/javascript/calendar.js"></script>
-    <script src="../test/javascript/sidebar.js"></script>
-    <script src="../test/javascript/progress-btn.js"></script>
+    <script src="javascript/calendar.js"></script>
+    <script src="javascript/sidebar.js"></script>
+    <script src="javascript/progress-btn.js"></script>
 
 </body>
 
