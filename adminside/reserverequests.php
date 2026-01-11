@@ -75,21 +75,21 @@ $result = $conn->query($sql);
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="activeresidents.php" class="menu-link">
-                        <img src="../asset/reservations.png" alt="Active Residents Icon" class="menu-icon">
-                        <span class="menu-label">Active Residents</span>
-                    </a>
-                </li>
-                <li class="menu-item">
                     <a href="#" class="menu-link">
-                        <img src="../asset/bell.png" alt="My Balance Icon" class="menu-icon">
-                        <span class="menu-label">My Balance</span>
+                        <img src="../asset/reservations.png" alt="Active Residents Icon" class="menu-icon">
+                        <span class="menu-label">Reservations</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="#" class="menu-link">
                         <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
                         <span class="menu-label">My Account</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
+                        <span class="menu-label">Create Account</span>
                     </a>
                 </li>
             </ul>

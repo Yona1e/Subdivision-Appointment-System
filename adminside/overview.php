@@ -47,7 +47,7 @@ $result = $conn->query($sql);
             <!-- Menu List -->
             <ul class="menu-list">
                 <li class="menu-item">
-                    <a href="overview.php" class="menu-link active">
+                    <a href="overview.php" class="menu-link">
                         <img src="../asset/home.png" alt="Home Icon" class="menu-icon">
                         <span class="menu-label">Overview</span>
                     </a>
@@ -66,14 +66,14 @@ $result = $conn->query($sql);
                 </li>
                 <li class="menu-item">
                     <a href="#" class="menu-link">
-                        <img src="../asset/bell.png" alt="My Balance Icon" class="menu-icon">
-                        <span class="menu-label">My Balance</span>
+                        <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
+                        <span class="menu-label">My Account</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="#" class="menu-link">
                         <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
-                        <span class="menu-label">My Account</span>
+                        <span class="menu-label">Create Account</span>
                     </a>
                 </li>
             </ul>
@@ -88,7 +88,9 @@ $result = $conn->query($sql);
                     <h1>Admin Dashboard - Active Residents</h1>
                     <p class="text-muted">Logged in as: <?php echo $_SESSION['firstName'] . ' ' . $_SESSION['lastName']; ?> (Admin)</p>
                 </div>
-                <a href="logout.php" class="btn btn-danger">Logout</a>
+                <form action ="log-out.php" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
             </div>
 
             <?php if ($result->num_rows > 0): ?>
