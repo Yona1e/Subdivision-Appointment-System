@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.querySelectorAll('.slot-btn')
             .forEach(b => b.classList.remove('selected'));
-
+            
         // Hide modal
         const modalEl = document.getElementById('myModal');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
