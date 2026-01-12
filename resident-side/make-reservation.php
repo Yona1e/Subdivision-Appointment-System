@@ -550,10 +550,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                     // Reload calendar to show new event
                     load_events();
                     
-                    // Clear form and selection
+                    // Clear form BUT KEEP facility selected
                     clearModalForm();
-                    selectedFacility = null;
-                    $('.col').removeClass('selected');
+                    // Keep selectedFacility and card selection active
                 } else {
                     alert(response.msg || "Error saving reservation. Please try again.");
                 }
@@ -582,11 +581,10 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
     }
 
     /**
-     * Clear modal form fields
+     * Clear modal form fields (but keep facility selection)
      */
     function clearModalForm() {
-        $('#facility_name').val('');
-        $('#selected_facility').val('');
+        // Don't clear facility_name or selected_facility - keep them!
         $('#phone').val('');
         $('#event_note').val('');
         $('#selected_time_start').val('');
