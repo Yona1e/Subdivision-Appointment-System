@@ -483,6 +483,20 @@ body {
     border: 2px solid #007bff;
 }
 
+/* my-reservation table */
+.table.table-hover tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table.table-hover tbody tr:hover {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* ------------------- */
+
     /* <---------   ---------> */
 @media (max-width: 576px) {
     .slots-container {
