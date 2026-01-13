@@ -97,14 +97,31 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                 <!-- PROGRESS STEP BAR -->
                 <div class="container">
                     <div class="steps">
-                        <span class="circle active"><img src="../asset/facility.png" alt="Facility"></span>
-                        
-                        <span class="circle"><img src="../asset/date-time.png" alt="Date Time"></span>
-                        <span class="circle"><img src="../asset/payment.png" alt="Payment"></span>
-                        <div class="progress-bar">
-                            <span class="indicator"></span>
-                        </div>
-                    </div>
+    <div class="step-wrapper">
+        <span class="circle active">
+            <img src="../asset/facility.png" alt="Facility">
+        </span>
+        <span class="step-label">Select Facility</span>
+    </div>
+    
+    <div class="step-wrapper">
+        <span class="circle">
+            <img src="../asset/date-time.png" alt="Date Time">
+        </span>
+        <span class="step-label">Date & Time</span>
+    </div>
+    
+    <div class="step-wrapper">
+        <span class="circle">
+            <img src="../asset/payment.png" alt="Payment">
+        </span>
+        <span class="step-label">Payment</span>
+    </div>
+    
+    <div class="progress-bar">
+        <span class="indicator"></span>
+    </div>
+</div>
                     
                     <!-- FACILITY -->
                     <div class="card-body facility">

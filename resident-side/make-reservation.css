@@ -196,6 +196,14 @@ body {
     padding: 20px 0;
 }
 
+/* ADD THIS - Wrapper for circle + label */
+.step-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
 .steps .circle {
     display: flex;
     align-items: center;
@@ -232,6 +240,29 @@ body {
 .steps .circle.active img {
     filter: grayscale(0%); /* Remove grey, show normal colors */
     opacity: 1; /* Full opacity */
+}
+
+/* ADD THIS - Label text below circles */
+.step-label {
+    position: absolute;
+    top: 70px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #cccccc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+/* ADD THIS - Active label green */
+.step-wrapper .circle.active ~ .step-label {
+    color: #22c55e;
+}
+
+/* ADD THIS - Completed label green */
+.step-wrapper .circle.completed ~ .step-label {
+    color: #22c55e;
 }
 
 .steps .progress-bar {
