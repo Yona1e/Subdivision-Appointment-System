@@ -104,8 +104,9 @@ $reservations = $conn->query($res_sql);
         <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="reservation-card">
+            <h1 class="mb-4">📋 Approved Reservations</h1>
             <div class="container mt-5">
-                <h1 class="mb-4">📋 Approved Reservations</h1>
+                
 
                 <?php if ($message): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
