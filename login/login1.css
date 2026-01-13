@@ -19,31 +19,6 @@ body {
 }
 
 
-body::before {
-  content: '';
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
-  top: -200px;
-  right: -100px;
-  animation: float 20s infinite ease-in-out;
-}
-
-body::after {
-  content: '';
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
-  border-radius: 50%;
-  bottom: -150px;
-  left: -100px;
-  animation: float 15s infinite ease-in-out reverse;
-}
-
-
 /* Wrapper - Login Card Container */
 .wrapper {
   position: relative;
@@ -53,7 +28,6 @@ body::after {
   padding: 20px;
   animation: slideInUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
-
 
 /* Form Card */
 .wrapper form {
@@ -87,13 +61,6 @@ body::after {
   pointer-events: none;
 }
 
-
-
-/* Top Gradient Border Effect */
-
-
-
-
 /* Heading */
 .wrapper form h1 {
   font-size: 30px;
@@ -107,13 +74,6 @@ body::after {
   
   animation: fadeInDown 0.8s ease-out 0.2s backwards;
 }
-
-
-
-/* Input Box Container */
-
-
-
 
 /* Bootstrap Form Control Override */
 .wrapper .form-control {
@@ -156,7 +116,6 @@ body::after {
   cursor: pointer;
   transition: all 0.3s;
 }
-
 
 
 .wrapper .form-check-input:focus {
@@ -203,7 +162,6 @@ body::after {
 }
 
 
-
 .wrapper .btn-primary:hover {
   transform: translateY(-3px);
   box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
@@ -211,7 +169,6 @@ body::after {
   color: black !important;
   border: 2px solid black !important;
 }
-
 
 .wrapper .btn-primary:active {
   transform: translateY(-1px);
@@ -226,17 +183,6 @@ body::after {
   animation: shake 0.5s;
 }
 
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-10px);
-  }
-  75% {
-    transform: translateX(10px);
-  }
-}
 
 /* Loading State for Button */
 .wrapper .btn-primary.loading {
@@ -259,11 +205,7 @@ body::after {
   animation: spin 0.6s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+
 
 /* Responsive Design */
 @media (max-width: 576px) {
