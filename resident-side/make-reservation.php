@@ -66,9 +66,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="#" class="menu-link">
+                        <a href="../my-reservations/myreservations.php" class="menu-link">
                             <img src="../asset/reservations.png" alt="Reservations Icon" class="menu-icon">
-                            <span class="menu-label">Reservations</span>
+                            <span class="menu-label">My Reservations</span>
                         </a>
                     </li>
                     <li class="menu-item">
