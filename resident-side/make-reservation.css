@@ -553,6 +553,71 @@ body {
     width:1500px;
 }
 
+
+/*  styling for Save Reservation */
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+.buttons .btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.buttons .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.buttons #prev {
+    background-color: #6c757d;
+    color: white;
+}
+
+.buttons #prev:hover:not(:disabled) {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.buttons #next {
+    background-color: #007bff;
+    color: white;
+}
+
+.buttons #next:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Success button style for Save Reservation */
+.buttons #next.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.buttons #next.btn-success:hover:not(:disabled) {
+    background-color: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* Loading state */
+.buttons .btn .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+}
 /* ------------------- */
 
     /* <---------   ---------> */

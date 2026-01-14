@@ -11,6 +11,17 @@ let calendar = null; // Store calendar instance
 
 // Function that updates the current step and updates the DOM
 const updateSteps = (e) => {
+    // If on last step and clicking next, save to database instead
+    if (e.target.id === 'next' && currentSteps === circles.length) {
+        // Call the save function from the reservation script
+        if (typeof saveFinalReservation === 'function') {
+            saveFinalReservation();
+        } else {
+            alert("Please complete all reservation details first.");
+        }
+        return; // Don't proceed with normal navigation
+    }
+
     // Update current step based on the button clicked
     currentSteps = e.target.id === 'next' ? ++currentSteps : --currentSteps;
 
@@ -33,7 +44,8 @@ const updateSteps = (e) => {
 const updateContentVisibility = () => {
     const facilitySection = document.querySelector('.facility');
     const calendarWrapper = document.querySelector('.container.py-5');
-const Payment = document.querySelector('.container.py-5.payment');
+    const Payment = document.querySelector('.container.py-5.payment');
+    
     if (currentSteps === 1) {
         // Show facility cards, hide calendar
         facilitySection.style.display = 'block';
@@ -67,13 +79,12 @@ const Payment = document.querySelector('.container.py-5.payment');
             }, 200);
         }
     } else if (currentSteps === 3) {
-        // Step 3: Show whatever content needed
+        // Step 3: Show payment section
         facilitySection.style.display = 'none';
         calendarWrapper.style.display = 'none';
         if (Payment) {
             Payment.style.display = 'block';
         }
-        // Add your step 3 content here
     }
 };
 
@@ -88,11 +99,19 @@ const updateButtonStates = () => {
 
     // Handle next button
     if (currentSteps === circles.length) {
-        nextBtn.disabled = true;
+        // On last step, change button to "Save Reservation"
+        nextBtn.textContent = "Save Reservation";
+        nextBtn.classList.add('btn-success');
+        nextBtn.disabled = false;
     } else if (currentSteps === 1 && !selectedVenue) {
         // Disable next button on step 1 if no venue selected
+        nextBtn.textContent = "Next";
+        nextBtn.classList.remove('btn-success');
         nextBtn.disabled = true;
     } else {
+        // Normal "Next" button
+        nextBtn.textContent = "Next";
+        nextBtn.classList.remove('btn-success');
         nextBtn.disabled = false;
     }
 };
