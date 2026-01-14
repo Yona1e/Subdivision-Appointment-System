@@ -1,0 +1,85 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+:root {
+    --color-text-primary: #1F2936;
+    --color-text-placeholder: #798EAE;
+    --color-bg-primary: #f9fafb;
+    --color-bg-secondary: #ECECFD;
+    --color-bg-sidebar: #FFFFFF;
+    --color-border-hr: #E2E8F0;
+    --color-hover-primary: #695CFE;
+    --color-hover-secondary: #e2e2fb;
+    --color-shadow: rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background: var(--color-bg-primary);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    padding: 40px 20px;
+}
+
+/* Card container */
+.reservation-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 1800px;
+    width: 95%;
+    align-items: center;
+    margin: 40px auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Header */
+.page-header {
+    background: #dbe2ff;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* my-reservation table */
+.table.table-hover tbody tr {
+    transition: all 0.3s ease;
+    height: 60px;  /* Add row height */
+}
+
+.table.table-hover tbody tr:hover {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.table-responsive {
+    width: 100%;
+    margin: 0 auto;
+    overflow-x: auto;
+    max-height: 600px;  /* Add max height */
+    overflow-y: auto;  /* Enable vertical scroll */
+}
+
+/* Make the table stretch wider */
+.table {
+    width: 100%;
+}
+
+/* Add cell padding for better height */
+.table th,
+.table td {
+    padding: 15px 20px;
+    vertical-align: middle;
+}
