@@ -32,17 +32,19 @@ const updateSteps = (e) => {
 // Function to show/hide content based on current step
 const updateContentVisibility = () => {
     const facilitySection = document.querySelector('.facility');
-    const calendarWrapper = document.querySelector('.calendar-wrapper');
-
+    const calendarWrapper = document.querySelector('.container.py-5');
+const Payment = document.querySelector('.container.py-5.payment');
     if (currentSteps === 1) {
         // Show facility cards, hide calendar
         facilitySection.style.display = 'block';
+        Payment.style.display = 'none';
         if (calendarWrapper) {
             calendarWrapper.style.display = 'none';
         }
     } else if (currentSteps === 2) {
         // Hide facility cards, show calendar
         facilitySection.style.display = 'none';
+        Payment.style.display = 'none';
         if (calendarWrapper) {
             calendarWrapper.style.display = 'block';
             
@@ -67,17 +69,11 @@ const updateContentVisibility = () => {
     } else if (currentSteps === 3) {
         // Step 3: Show whatever content needed
         facilitySection.style.display = 'none';
-        if (calendarWrapper) {
-            calendarWrapper.style.display = 'none';
+        calendarWrapper.style.display = 'none';
+        if (Payment) {
+            Payment.style.display = 'block';
         }
         // Add your step 3 content here
-    } else if (currentSteps === 4) {
-        // Step 4: Show whatever content needed
-        facilitySection.style.display = 'none';
-        if (calendarWrapper) {
-            calendarWrapper.style.display = 'none';
-        }
-        // Add your step 4 content here
     }
 };
 

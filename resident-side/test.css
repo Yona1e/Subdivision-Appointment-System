@@ -1,0 +1,35 @@
+.calendar-wrapper {
+    padding: 20px;
+    margin: 0 auto;
+}
+
+#calendar {
+    border-radius: 13px;
+    border: 1px solid #ddd;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    height: 600px;
+    width: 600px;
+
+}
+
+#calendar .fc-header-toolbar {
+    background-color: #D0D7FF;
+    color: white;
+    padding: 10px;
+    border-radius: 8px 8px 0 0;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 0;
+    /* remove the margin */
+}
+
+.fc .fc-button-primary {
+    border: none;
+    background-color: #D0D7FF;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: #D0D7FF;
+
+}

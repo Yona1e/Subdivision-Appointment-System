@@ -418,19 +418,83 @@ body {
 
 
 /* ------ Calendar Design ------*/
-
+/* Calendar Wrapper */
 .calendar-wrapper {
-    padding: 20px;
-    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    padding: 13px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 #calendar {
-    border-radius: 13px;
-    border: 1px solid #ddd;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    height: 600px;
-    width: 600px;
+    border-radius: 12px;
+    overflow: hidden;
+}
 
+/* FullCalendar Customization */
+.fc {
+    border-radius: 12px;
+    padding: 15px;
+}
+
+
+.fc-toolbar-title {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+}
+
+.fc .fc-button-primary {
+    background-color: transparent !important;
+    border: none !important;
+    color: #666 !important;
+    font-size: 18px !important;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.fc .fc-button-primary:focus {
+    box-shadow: none !important;
+}
+
+/* Calendar day cells */
+.fc-daygrid-day {
+    background: transparent !important;
+}
+
+.fc-daygrid-day-number {
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    padding: 8px !important;
+}
+
+/* Highlight selected date */
+.fc-daygrid-day.fc-day-today {
+    background: #a5b4fc !important;
+    border-radius: 8px;
+}
+
+.fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    color: white !important;
+}
+
+/* Past dates - lighter color */
+.fc-day-past .fc-daygrid-day-number {
+    color: #b8b8ff !important;
+}
+
+/* Weekend styling if needed */
+.fc-day-sat, .fc-day-sun {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Remove grid lines */
+.fc-theme-standard td, 
+.fc-theme-standard th {
+    border: none !important;
 }
 
 #calendar .fc-header-toolbar {
@@ -438,21 +502,103 @@ body {
     color: white;
     padding: 10px;
     border-radius: 8px 8px 0 0;
-}
-
-.fc .fc-toolbar.fc-header-toolbar {
     margin-bottom: 0;
-    /* remove the margin */
 }
 
-.fc .fc-button-primary {
-    border: none;
-    background-color: #D0D7FF;
+/* Summary Card */
+.summary-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    height: 100%;
 }
 
-.fc .fc-button-primary:hover {
-    background-color: #D0D7FF;
+.summary-header {
+    background: #c8d5ff;
+    padding: 20px 25px;
+}
 
+.summary-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.summary-body {
+    padding: 25px;
+}
+
+.facility-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+
+.reservation-datetime {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 0;
+}
+
+.breakdown-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #999;
+    margin-bottom: 12px;
+}
+
+.breakdown-item {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.breakdown-price {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.total-label {
+    font-size: 16px;
+    color: #333;
+}
+
+.total-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .calendar-wrapper,
+    .summary-card {
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .calendar-wrapper,
+    .summary-body {
+        padding: 15px;
+    }
+    
+    .summary-title {
+        font-size: 20px;
+    }
+    
+    .facility-name {
+        font-size: 18px;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 18px !important;
+    }
 }
 
 /* <---------   ---------> */
