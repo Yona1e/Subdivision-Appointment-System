@@ -9,7 +9,6 @@
 <link href='https://cdn.boxicons.com/3.0.7/fonts/basic/boxicons.min.css' rel='stylesheet'>
 <link rel="stylesheet" href="login1.css">
 
-
   <title>Facility Reservation System - Login</title>
 </head>
 
@@ -18,20 +17,20 @@
     <form id="loginForm" method="POST" action="../adminside/login_process.php">
       <h1>Facility Reservation System</h1>
       <h3></h3>
+
+      <!-- Email Input -->
       <div class="input-box">
         <div class="mb-3">
-          
-          <input type="text" class="form-control" id="generatedID" name="generatedID"
-            placeholder="Enter your Username" required>
+          <input type="text" class="form-control" id="email" name="email"
+            placeholder="Enter your Email" required>
         </div>
       </div>
 
       <!-- Password -->
       <div class="input-box">
         <div class="mb-3">
-          
-          <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password"
-            required>
+          <input type="password" class="form-control" id="password" name="password"
+            placeholder="Enter your password" required>
         </div>
       </div>
 
@@ -40,13 +39,13 @@
         <input type="checkbox" class="form-check-input" id="remember" name="remember">
         <label class="form-check-label" for="remember">Remember Me</label>
       </div>
+
       <!-- Submit Button -->
       <div class="d-grid">
         <button type="submit" class="btn btn-primary">Sign In</button>
       </div>
     </form>
   </div>
-
 
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
