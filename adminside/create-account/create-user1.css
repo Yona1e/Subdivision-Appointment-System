@@ -153,7 +153,8 @@ body {
     flex: 1;
     display: flex;
     align-items: flex-start;
-    padding: 40px 20px;
+    padding: 0 30px;
+    
 }
 
 /* Card container */
@@ -344,7 +345,7 @@ body {
     background: white;
     border-radius: 8px;
     margin: 0px auto;
-    padding: 30px !important;
+    padding: 15px !important;
 }
 
 /* Facility images */

@@ -189,7 +189,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../resident-side/javascript/sidebar.js"></script>
 
-<!-- Inline JS for Delete Button -->
+<!--  SWAL Inline JS for Delete Button -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const deleteButtons = document.querySelectorAll('.delete-btn');
@@ -197,13 +197,32 @@ document.addEventListener('DOMContentLoaded', function() {
     deleteButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             const row = btn.closest('tr');
-            if (confirm("Are you sure you want to remove this reservation from view?")) {
-                row.style.display = 'none'; // hides the row only
-            }
+
+            Swal.fire({
+                title: "Remove this reservation?",
+                text: "This will only remove it from view.",
+                icon: "warning",
+                showDenyButton: true,
+                showCancelButton: false,
+                confirmButtonText: "Remove",
+                denyButtonText: "Keep",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    row.style.display = 'none';
+
+                    Swal.fire("Removed!", "Reservation hidden successfully.", "success");
+                } 
+                else if (result.isDenied) {
+                    Swal.fire("Not removed", "Reservation is still visible.", "info");
+                }
+            });
+
         });
     });
 });
 </script>
 
+<!-- SWAL IMPORT LINK -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

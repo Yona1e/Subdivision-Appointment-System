@@ -103,109 +103,115 @@ $reservations = $conn->query($res_sql);
         </aside>
 
         <!-- MAIN CONTENT -->
-    <div class="main-content">
-        <div class="reservation-card">
-            <h1 class="mb-4">Approved & Rejected Reservations</h1>
-            <div class="container mt-5">
-                
+        <div class="main-content">
+            <div class="reservation-card">
+                <h1 class="mb-4">Approved & Rejected Reservations</h1>
+                <div class="container mt-5">
 
-                <?php if ($message): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <h5>
-                        <?php echo $message; ?>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                <?php endif; ?>
 
-                <div class="alert alert-info">
-                    These are all reservations that have been <strong>approved</strong> or <strong>rejected</strong>.
-                    You may delete them to remove from this list.
-                </div>
+                    <?php if ($message): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <h5>
+                            <?php echo $message; ?>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <?php endif; ?>
 
-                <div class="table-responsive mt-3">
-                    <table class="table table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>ID</th>
-                                <th>Facility</th>
-                                <th>Phone</th>
-                                <th>Event Date</th>
-                                <th>Time</th>
-                                <th>User</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $reservations->fetch_assoc()): ?>
-                            <tr>
-                                <td>
-                                    <?php echo $row['id']; ?>
-                                </td>
-                                <td>
-                                    <?php echo htmlspecialchars($row['facility_name']); ?>
-                                </td>
-                                <td>
-                                    <?php echo htmlspecialchars($row['phone']); ?>
-                                </td>
+                    <div class="alert alert-info">
+                        These are all reservations that have been <strong>approved</strong> or
+                        <strong>rejected</strong>.
+                        You may delete them to remove from this list.
+                    </div>
 
-                                <td>
-                                    <?php
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Facility</th>
+                                    <th>Phone</th>
+                                    <th>Event Date</th>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while ($row = $reservations->fetch_assoc()): ?>
+                                <tr>
+                                    <td>
+                                        <?php echo $row['id']; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo htmlspecialchars($row['facility_name']); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo htmlspecialchars($row['phone']); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php
                                 echo date('M d, Y', strtotime($row['event_start_date']));
                                 if ($row['event_start_date'] != $row['event_end_date']) {
                                     echo " - " . date('M d, Y', strtotime($row['event_end_date']));
                                 }
                                 ?>
-                                </td>
+                                    </td>
 
-                                <td>
-                                    <?php
+                                    <td>
+                                        <?php
                                 echo date('g:i A', strtotime($row['time_start'])) . " - " .
                                      date('g:i A', strtotime($row['time_end']));
                                 ?>
-                                </td>
+                                    </td>
 
-                                <td>
-                                    <?php echo $row['FirstName'] . " " . $row['LastName']; ?>
-                                </td>
+                                    <td>
+                                        <?php echo $row['FirstName'] . " " . $row['LastName']; ?>
+                                    </td>
 
-                                <td>
-                                    <?php if (strtolower($row['status']) === 'approved'): ?>
+                                    <td>
+                                        <?php if (strtolower($row['status']) === 'approved'): ?>
                                         <span class="badge bg-success">
                                             <?php echo ucfirst($row['status']); ?>
                                         </span>
-                                    <?php else: ?>
+                                        <?php else: ?>
                                         <span class="badge bg-danger">
                                             <?php echo ucfirst($row['status']); ?>
                                         </span>
-                                    <?php endif; ?>
-                                </td>
+                                        <?php endif; ?>
+                                    </td>
 
-                                <td>
-                                    <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this reservation?');">
-                                        <input type="hidden" name="reservation_id" value="<?php echo $row['id']; ?>">
-                                        <button type="submit" name="delete_reservation" class="btn btn-danger btn-sm" title="Delete Reservation">
-                                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span>
-                                            Delete
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
+                                    <td>
+                                        <form method="POST" class="d-inline"
+                                            onsubmit="return confirm('Are you sure you want to delete this reservation?');">
+                                            <input type="hidden" name="reservation_id"
+                                                value="<?php echo $row['id']; ?>"> <button type="submit"
+                                                name="delete_reservation" class="btn btn-danger btn-sm"
+                                                title="Delete Reservation"> <span class="material-symbols-outlined"
+                                                    style="font-size: 18px; vertical-align: middle;">delete</span>
+                                                Delete </button> </form>
+
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
 
-            </div>
-
-        </div> <!-- END sidebar-content -->
-         </div>                       
+            </div> <!-- END sidebar-content -->
+        </div>
     </div> <!-- END app-layout -->
 
+
+   
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
+
 
 </html>
 
