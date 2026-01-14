@@ -19,9 +19,7 @@
 
 body {
     background: var(--color-bg-primary);
-
 }
-/* SIDE  */
 
 .main-content {
     flex: 1;

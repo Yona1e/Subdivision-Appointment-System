@@ -40,7 +40,6 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
 </head>
 
 <body>
-
     <div class="app-layout">
         <!-- SIDEBAR -->
         <aside class="sidebar">

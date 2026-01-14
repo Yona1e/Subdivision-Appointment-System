@@ -133,7 +133,7 @@ body {
 
 .menu-list .menu-link:is(:hover, .active) {
     color: white;
-    background-color: black;
+    background-color: blue;
 }
 
 .menu-list .menu-item .menu-link:hover img {
@@ -149,4 +149,4 @@ body {
     min-height: 100vh;
     width: 100%;
     /* FIX 1 */
-}
+}  
