@@ -18,22 +18,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             WHERE Email = ?";
 
     $stmt = $conn->prepare($sql);
-    
-    // Check if prepare() was successful
+
     if ($stmt === false) {
         die("SQL Error: " . $conn->error);
     }
-    
+
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
+    // If user found
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
 
-        // FIXED: Use password_verify() instead of plain text comparison
+        // Check password
         if (password_verify($password, $user['Password'])) {
 
+            // Set session variables
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['email'] = $user['Email'];
             $_SESSION['role'] = $user['Role'];
@@ -45,11 +46,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 setcookie('email', $email, time() + (86400 * 30), "/");
             }
 
-            // Redirect by role
+            // Redirect based on role
             if ($user['Role'] === 'Resident') {
                 header("Location: ../resident-side/make-reservation.php");
                 exit();
-            } elseif ($user['Role'] === 'Admin') {
+            } else if ($user['Role'] === 'Admin') {
                 header("Location: overview.php");
                 exit();
             } else {
@@ -58,11 +59,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
         } else {
-            header("Location: login.html?error=invalid");
+            // Incorrect password → redirect back
+            header("Location: ../login/login.php?error=invalid");
             exit();
         }
+
     } else {
-        header("Location: login.html?error=invalid");
+        // Email not found → redirect back
+        header("Location: ../login/login.php?error=invalid");
         exit();
     }
 

@@ -7,6 +7,11 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     exit();
 }
 
+// Generate CSRF token if not exists
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Database configuration
 $host = 'localhost';
 $dbname = 'facilityreservationsystem';
@@ -24,10 +29,17 @@ try {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['error'] = "Invalid security token. Please try again.";
+        header("Location: create-account.php");
+        exit();
+    }
+    
     // Get form data
     $firstName = trim($_POST['first_name']);
     $lastName = trim($_POST['last_name']);
-    $birthday = $_POST['birthday'];
+    $birthday = !empty($_POST['birthday']) ? $_POST['birthday'] : null;
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $role = $_POST['role'];
@@ -35,11 +47,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lot = trim($_POST['lot']);
     $streetName = trim($_POST['street_name']);
     
-    // Validate required fields
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($password) || empty($role) || empty($block) || empty($lot) || empty($streetName)) {
-        $_SESSION['error'] = "All fields are required!";
+    // Validate required fields (birthday is optional)
+    if (empty($firstName) || empty($lastName) || empty($email) || empty($password) || 
+        empty($role) || empty($block) || empty($lot) || empty($streetName)) {
+        $_SESSION['error'] = "All fields except birthday are required!";
         header("Location: create-account.php");
         exit();
+    }
+    
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error'] = "Invalid email format!";
+        header("Location: create-account.php");
+        exit();
+    }
+    
+    // Validate password length
+    if (strlen($password) < 6) {
+        $_SESSION['error'] = "Password must be at least 6 characters long!";
+        header("Location: create-account.php");
+        exit();
+    }
+    
+    // Validate birthday if provided
+    if ($birthday !== null) {
+        $dateObj = DateTime::createFromFormat('Y-m-d', $birthday);
+        if (!$dateObj || $dateObj->format('Y-m-d') !== $birthday) {
+            $_SESSION['error'] = "Invalid birthday format!";
+            header("Location: create-account.php");
+            exit();
+        }
+        
+        // Check if birthday is not in the future
+        if ($dateObj > new DateTime()) {
+            $_SESSION['error'] = "Birthday cannot be in the future!";
+            header("Location: create-account.php");
+            exit();
+        }
     }
     
     // Check if email already exists
@@ -55,25 +99,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle profile picture upload
     $profilePictureURL = null;
     if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = '../../uploads/profile_pictures/';
+        
+        $maxFileSize = 5 * 1024 * 1024; // 5MB
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        
+        $fileSize = $_FILES['profile_picture']['size'];
+        $fileTmpName = $_FILES['profile_picture']['tmp_name'];
+        $fileName = $_FILES['profile_picture']['name'];
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $fileMimeType = mime_content_type($fileTmpName);
+        
+        // Validate file size
+        if ($fileSize > $maxFileSize) {
+            $_SESSION['error'] = "Profile picture is too large. Maximum size is 5MB.";
+            header("Location: create-account.php");
+            exit();
+        }
+        
+        // Validate file extension
+        if (!in_array($fileExtension, $allowedExtensions)) {
+            $_SESSION['error'] = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
+            header("Location: create-account.php");
+            exit();
+        }
+        
+        // Validate MIME type
+        if (!in_array($fileMimeType, $allowedMimeTypes)) {
+            $_SESSION['error'] = "Invalid file format detected.";
+            header("Location: create-account.php");
+            exit();
+        }
+        
+        // Validate that it's actually an image
+        $imageInfo = getimagesize($fileTmpName);
+        if ($imageInfo === false) {
+            $_SESSION['error'] = "File is not a valid image.";
+            header("Location: create-account.php");
+            exit();
+        }
+        
+        // FIXED: Use absolute path from document root
+        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/Subdivision-Appointment-System/uploads/profile_pictures/';
         
         // Create directory if it doesn't exist
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            if (!mkdir($uploadDir, 0755, true)) {
+                $_SESSION['error'] = "Failed to create upload directory.";
+                header("Location: create-account.php");
+                exit();
+            }
         }
         
-        $fileExtension = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        // Create .htaccess to prevent PHP execution in upload directory
+        $htaccessPath = $uploadDir . '.htaccess';
+        if (!file_exists($htaccessPath)) {
+            $htaccessContent = "php_flag engine off\nOptions -Indexes";
+            file_put_contents($htaccessPath, $htaccessContent);
+        }
         
-        if (in_array($fileExtension, $allowedExtensions)) {
-            $newFileName = uniqid('profile_', true) . '.' . $fileExtension;
-            $uploadPath = $uploadDir . $newFileName;
-            
-            if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadPath)) {
-                $profilePictureURL = $uploadPath;
-            }
+        $newFileName = 'profile_' . uniqid() . '_' . time() . '.' . $fileExtension;
+        $uploadPath = $uploadDir . $newFileName;
+        
+        if (move_uploaded_file($fileTmpName, $uploadPath)) {
+            chmod($uploadPath, 0644);
+            // FIXED: Store relative path from web root
+            $profilePictureURL = 'uploads/profile_pictures/' . $newFileName;
         } else {
-            $_SESSION['error'] = "Invalid file type. Only JPG, JPEG, PNG, and GIF are allowed.";
+            $_SESSION['error'] = "Failed to upload profile picture.";
             header("Location: create-account.php");
             exit();
         }
@@ -87,13 +180,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     try {
         // Insert user into database
-        $sql = "INSERT INTO users (FirstName, LastName, Email, Password, Role, Block, Lot, StreetName, ProfilePictureURL, Status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')";
+        $sql = "INSERT INTO users (FirstName, LastName, Birthday, Email, Password, Role, Block, Lot, StreetName, ProfilePictureURL, Status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $firstName,
             $lastName,
+            $birthday,
             $email,
             $hashedPassword,
             $roleValue,
@@ -108,6 +202,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
         
     } catch(PDOException $e) {
+        // If database insert fails and file was uploaded, delete the file
+        if ($profilePictureURL) {
+            $deleteFile = $_SERVER['DOCUMENT_ROOT'] . '/Subdivision-Appointment-System/' . $profilePictureURL;
+            if (file_exists($deleteFile)) {
+                unlink($deleteFile);
+            }
+        }
+        
         $_SESSION['error'] = "Error creating account: " . $e->getMessage();
         header("Location: create-account.php");
         exit();
@@ -127,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://getbootstrap.com/docs/5.3/assets/css/docs.css" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
-    <link rel="stylesheet" href="create-account.css">
+    <link rel="stylesheet" href="admin.css">
     <title>Create Account</title>
 </head>
 
@@ -138,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <header class="sidebar-header">
-            <img src="../../asset/logo.png" alt="Header Logo" class="header-logo">
+            <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
             <button class="sidebar-toggle">
                 <span class="material-symbols-outlined">chevron_left</span>
             </button>
@@ -147,32 +249,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="sidebar-content">
             <ul class="menu-list">
                 <li class="menu-item">
-                    <a href="../overview.php" class="menu-link">
-                        <img src="../../asset/home.png" class="menu-icon">
+                    <a href="overview.php" class="menu-link">
+                        <img src="../asset/home.png" class="menu-icon">
                         <span class="menu-label">Overview</span>
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="../reserverequests.php" class="menu-link">
-                        <img src="../../asset/makeareservation.png" class="menu-icon">
+                    <a href="reserverequests.php" class="menu-link">
+                        <img src="../asset/makeareservation.png" class="menu-icon">
                         <span class="menu-label">Requests</span>
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="../reservations.php" class="menu-link">
-                        <img src="../../asset/reservations.png" class="menu-icon">
+                    <a href="reservations.php" class="menu-link">
+                        <img src="../asset/reservations.png" class="menu-icon">
                         <span class="menu-label">Reservations</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="#" class="menu-link">
-                        <img src="../../asset/profile.png" class="menu-icon">
+                        <img src="../asset/profile.png" class="menu-icon">
                         <span class="menu-label">My Account</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="create-account.php" class="menu-link">
-                        <img src="../../asset/profile.png" class="menu-icon">
+                        <img src="../asset/profile.png" class="menu-icon">
                         <span class="menu-label">Create Account</span>
                     </a>
                 </li>
@@ -197,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (isset($_SESSION['success'])): ?>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <?php 
-                        echo $_SESSION['success']; 
+                        echo htmlspecialchars($_SESSION['success']); 
                         unset($_SESSION['success']);
                         ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -207,14 +309,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if (isset($_SESSION['error'])): ?>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <?php 
-                        echo $_SESSION['error']; 
+                        echo htmlspecialchars($_SESSION['error']); 
                         unset($_SESSION['error']);
                         ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" enctype="multipart/form-data" id="createAccountForm">
+                    
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
                     <!-- PERSONAL INFORMATION SECTION -->
                     <div class="p-4 mb-4 border rounded bg-light" style="width: 100%;">
@@ -222,46 +326,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="form-label">First Name</label>
-                                <input type="text" class="form-control" name="first_name" placeholder="e.g., John" required>
+                                <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="first_name" 
+                                       placeholder="e.g., John" required maxlength="75">
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" class="form-control" name="last_name" placeholder="e.g., De La Cruz" required>
+                                <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="last_name" 
+                                       placeholder="e.g., De La Cruz" required maxlength="75">
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Birthday</label>
-                                <input type="date" class="form-control" name="birthday" required>
+                                <label class="form-label">Birthday <span class="text-muted">(Optional)</span></label>
+                                <input type="date" class="form-control" name="birthday" 
+                                       max="<?= date('Y-m-d') ?>" id="birthdayInput">
+                                <small class="text-muted">Leave blank if unknown</small>
                             </div>
                         </div>
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" name="email" placeholder="Enter email address" required>
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" 
+                                       placeholder="Enter email address" required maxlength="64">
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Password</label>
-                                <input type="password" class="form-control" name="password" placeholder="Enter password" required>
+                                <label class="form-label">Password <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" name="password" 
+                                       placeholder="Minimum 6 characters" required minlength="6" maxlength="64">
                             </div>
                         </div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">Role</label>
+                                <label class="form-label">Role <span class="text-danger">*</span></label>
                                 <select class="form-select" name="role" required>
-                                    <option disabled selected>Select Role</option>
+                                    <option value="" disabled selected>Select Role</option>
                                     <option value="resident">Resident</option>
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Profile Picture</label>
-                                <input type="file" class="form-control" name="profile_picture" accept="image/*">
+                                <label class="form-label">Profile Picture <span class="text-muted">(Optional)</span></label>
+                                <input type="file" class="form-control" name="profile_picture" 
+                                       accept="image/jpeg,image/jpg,image/png,image/gif" id="profilePicInput">
+                                <small class="text-muted">Max 5MB. Allowed: JPG, PNG, GIF</small>
                             </div>
                         </div>
                     </div>
@@ -272,24 +384,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label">Block</label>
-                                <input type="text" class="form-control" name="block" placeholder="e.g., 5" required>
+                                <label class="form-label">Block <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="block" 
+                                       placeholder="e.g., 5" required maxlength="64">
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Lot</label>
-                                <input type="text" class="form-control" name="lot" placeholder="e.g., 12" required>
+                                <label class="form-label">Lot <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="lot" 
+                                       placeholder="e.g., 12" required maxlength="64">
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Street Name</label>
-                                <input type="text" class="form-control" name="street_name" placeholder="e.g., Acacia Street" required>
+                                <label class="form-label">Street Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="street_name" 
+                                       placeholder="e.g., Acacia Street" required maxlength="64">
                             </div>
                         </div>
                     </div>
 
                     <div class="d-grid mt-4 p-4">
-                        <button type="submit" class="btn btn-primary" style="padding: 12px; font-size: 1.1rem; font-weight: 500;">
+                        <button type="submit" class="btn btn-primary" 
+                                style="padding: 12px; font-size: 1.1rem; font-weight: 500;">
                             Create Account
                         </button>
                     </div>
@@ -305,5 +421,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script src="../../resident-side/javascript/sidebar.js"></script>
 
+<script>
+// Client-side validation for profile picture
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+
+document.getElementById('profilePicInput')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    
+    if (file) {
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+            alert('File is too large. Maximum size is 5MB.');
+            e.target.value = '';
+            return;
+        }
+        
+        // Check file type
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alert('Invalid file type. Please select a JPG, PNG, or GIF image.');
+            e.target.value = '';
+            return;
+        }
+    }
+});
+
+// Birthday validation
+document.getElementById('birthdayInput')?.addEventListener('change', function(e) {
+    const selectedDate = new Date(e.target.value);
+    const today = new Date();
+    
+    if (selectedDate > today) {
+        alert('Birthday cannot be in the future.');
+        e.target.value = '';
+    }
+});
+
+// Form submission validation
+document.getElementById('createAccountForm')?.addEventListener('submit', function(e) {
+    const password = document.querySelector('input[name="password"]').value;
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long.');
+        return false;
+    }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
+<script src="../resident-side/javascript/sidebar.js"></script>
 </body>
 </html>

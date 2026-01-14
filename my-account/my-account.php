@@ -7,6 +7,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Resident') {
     exit();
 }
 
+// Generate CSRF token if not exists
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Database connection
 $host = 'localhost';
 $dbname = 'facilityreservationsystem';
@@ -27,17 +32,28 @@ try {
 // Fetch current user data
 $user_id = $_SESSION['user_id'];
 $stmt = $conn->prepare("
-    SELECT FirstName, LastName, Email, Birthday, Block, Lot, StreetName, ProfilePictureURL
+    SELECT FirstName, LastName, Email, Birthday, Block, Lot, StreetName, ProfilePictureURL, password
     FROM users
     WHERE user_id = ?
 ");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+if (!$user) {
+    session_destroy();
+    header("Location: ../login/login.php");
+    exit();
+}
+
 // Profile picture fallback
 $profilePic = !empty($user['ProfilePictureURL'])
     ? '../' . $user['ProfilePictureURL']
     : '../asset/default-profile.png';
+
+// Verify the file exists, otherwise use default
+if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
+    $profilePic = '../asset/default-profile.png';
+}
 ?>
 
 <!DOCTYPE html>
@@ -56,7 +72,7 @@ $profilePic = !empty($user['ProfilePictureURL'])
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
 
     <!-- Layout Styles -->
-    <link rel="stylesheet" href="my-account.css">
+    <link rel="stylesheet" href="../adminside/admin.css">
     <link rel="stylesheet" href="navigation.css">
 </head>
 
@@ -82,13 +98,13 @@ $profilePic = !empty($user['ProfilePictureURL'])
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="../make-reservation/make-reservation.php" class="menu-link">
+                    <a href="../resident-side/make-reservation.php" class="menu-link">
                         <img src="../asset/makeareservation.png" class="menu-icon">
                         <span class="menu-label">Make a Reservation</span>
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="../my-reservations/my-reservations.php" class="menu-link">
+                    <a href="../my-reservations/myreservations.php" class="menu-link">
                         <img src="../asset/reservations.png" class="menu-icon">
                         <span class="menu-label">Reservations</span>
                     </a>
@@ -117,16 +133,22 @@ $profilePic = !empty($user['ProfilePictureURL'])
                     <img id="profilePreview"
                          src="<?= htmlspecialchars($profilePic) ?>"
                          class="rounded-circle img-thumbnail mb-3"
-                         style="width:180px;height:180px;object-fit:cover;">
+                         style="width:180px;height:180px;object-fit:cover;"
+                         alt="Profile Picture">
 
-                    <form action="update_profile_picture.php" method="POST" enctype="multipart/form-data">
+                    <form action="update_profile_picture.php" 
+                          method="POST" 
+                          enctype="multipart/form-data"
+                          id="profilePicForm">
+
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
                         <input type="file"
                                name="profile_pic"
                                id="profilePicInput"
-                               accept="image/*"
+                               accept="image/jpeg,image/jpg,image/png,image/gif"
                                hidden
-                               onchange="previewProfilePic(this)">
+                               onchange="validateAndPreviewProfilePic(this)">
 
                         <button type="button"
                                 class="btn btn-primary w-100 mb-2"
@@ -135,44 +157,59 @@ $profilePic = !empty($user['ProfilePictureURL'])
                         </button>
 
                         <button type="submit"
-                                class="btn btn-success w-100">
+                                class="btn btn-success w-100"
+                                id="saveBtn"
+                                disabled>
                             Save Profile Picture
                         </button>
+
+                        <small class="text-muted d-block mt-2">
+                            Max size: 5MB. Allowed: JPG, PNG, GIF
+                        </small>
                     </form>
                 </div>
 
                 <!-- USER INFO -->
                 <div class="col-md-8">
 
-                    <?php if (isset($_SESSION['error_message'])): ?>
-                        <div class="alert alert-danger">
-                            <?= $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (isset($_SESSION['success_message'])): ?>
-                        <div class="alert alert-success">
-                            <?= $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
-                        </div>
-                    <?php endif; ?>
+                    <div id="alertContainer"></div>
 
                     <div class="card p-3 mb-4">
                         <h5 class="mb-3">Personal Information</h5>
                         <p><strong>Name:</strong> <?= htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']) ?></p>
                         <p><strong>Email:</strong> <?= htmlspecialchars($user['Email']) ?></p>
                         <p><strong>Birthday:</strong> <?= htmlspecialchars($user['Birthday']) ?></p>
-                        <p><strong>Address:</strong>
-                            <?= "Blk. {$user['Block']}, Lt. {$user['Lot']}, {$user['StreetName']} St." ?>
+                        <p class="mb-0"><strong>Address:</strong>
+                            <?= htmlspecialchars("Blk. {$user['Block']}, Lt. {$user['Lot']}, {$user['StreetName']} St.") ?>
                         </p>
                     </div>
 
                     <div class="card p-3">
                         <h5 class="mb-3">Change Password</h5>
-                        <form action="update_password.php" method="POST">
-                            <input type="password" name="old_password" class="form-control mb-2" placeholder="Old Password" required>
-                            <input type="password" name="new_password" class="form-control mb-2" placeholder="New Password" required>
-                            <input type="password" name="confirm_password" class="form-control mb-3" placeholder="Confirm Password" required>
-                            <button class="btn btn-warning w-100">Update Password</button>
+                        <form id="passwordForm">
+                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                            
+                            <input type="password" 
+                                   name="old_password" 
+                                   class="form-control mb-2" 
+                                   placeholder="Old Password" 
+                                   required>
+                            
+                            <input type="password" 
+                                   name="new_password" 
+                                   class="form-control mb-2" 
+                                   placeholder="New Password" 
+                                   required
+                                   id="newPassword">
+                            
+                            <input type="password" 
+                                   name="confirm_password" 
+                                   class="form-control mb-3" 
+                                   placeholder="Confirm Password" 
+                                   required
+                                   id="confirmPassword">
+                            
+                            <button type="submit" class="btn btn-warning w-100">Update Password</button>
                         </form>
                     </div>
 
@@ -189,13 +226,88 @@ $profilePic = !empty($user['ProfilePictureURL'])
 <script src="../resident-side/javascript/sidebar.js"></script>
 
 <script>
-function previewProfilePic(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => document.getElementById('profilePreview').src = e.target.result;
-        reader.readAsDataURL(input.files[0]);
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+
+function validateAndPreviewProfilePic(input) {
+    const saveBtn = document.getElementById('saveBtn');
+    const profilePreview = document.getElementById('profilePreview');
+    
+    if (!input.files || !input.files[0]) {
+        saveBtn.disabled = true;
+        return;
     }
+    
+    const file = input.files[0];
+    
+    if (!ALLOWED_TYPES.includes(file.type)) {
+        alert('Invalid file type. Please select a JPG, PNG, or GIF image.');
+        input.value = '';
+        saveBtn.disabled = true;
+        return;
+    }
+    
+    if (file.size > MAX_FILE_SIZE) {
+        alert('File is too large. Maximum size is 5MB.');
+        input.value = '';
+        saveBtn.disabled = true;
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        profilePreview.src = e.target.result;
+        saveBtn.disabled = false;
+    };
+    reader.onerror = function() {
+        alert('Error reading file.');
+        input.value = '';
+        saveBtn.disabled = true;
+    };
+    reader.readAsDataURL(file);
 }
+
+// Password update via AJAX
+document.getElementById('passwordForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const oldPassword = this.old_password.value;
+    const newPassword = this.new_password.value;
+    const confirmPassword = this.confirm_password.value;
+
+    if (newPassword !== confirmPassword) {
+        alert('New password and confirmation do not match.');
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        return;
+    }
+
+    fetch('update-password.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            old_password: oldPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const container = document.getElementById('alertContainer');
+        container.innerHTML = `<div class="alert alert-${data.status === 'success' ? 'success':'danger'} alert-dismissible fade show" role="alert">
+            ${data.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>`;
+
+        if (data.status === 'success') {
+            this.reset();
+        }
+    })
+    .catch(err => console.error(err));
+});
 </script>
 
 </body>
