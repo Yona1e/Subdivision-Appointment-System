@@ -160,8 +160,7 @@ body {
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    width: 100%;
-    max-width: 100%;
+   
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
     padding: 30px;
 }
@@ -277,6 +276,9 @@ body {
     border-radius: 6px;
     padding: 1rem;
 }
+
+
+
 
 /* ADDED: Responsive adjustments */
 @media (max-width: 768px) {

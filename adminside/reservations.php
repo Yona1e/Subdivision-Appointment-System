@@ -205,12 +205,19 @@ $reservations = $conn->query($res_sql);
             </div> <!-- END sidebar-content -->
         </div>
     </div> <!-- END app-layout -->
+    <script src="../resident-side/javacript/sidebar.js"></script>
 
 
+
+
+    <!-- SWAL IMPORT LINK -->
    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
+
+ <script src="../resident-side/javascript/sidebar.js"></script>
 
 
 </html>
