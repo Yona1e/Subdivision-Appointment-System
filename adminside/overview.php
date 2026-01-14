@@ -16,7 +16,7 @@ if ($conn->connect_error) {
 }
 
 // Fetch only active residents from database - Query the 'users' table
-$sql = "SELECT user_id, GeneratedID, Role, FirstName, LastName, Status FROM users WHERE Role = 'Resident' AND Status = 'Active' ORDER BY user_id ASC";
+$sql = "SELECT user_id, Email, Role, FirstName, LastName, Status FROM users WHERE Role = 'Resident' AND Status = 'Active' ORDER BY user_id ASC";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -104,7 +104,7 @@ $result = $conn->query($sql);
                             <thead class="table-dark">
                                 <tr>
                                     <th>User ID</th>
-                                    <th>Generated ID</th>
+                                    <th>Email</th>
                                     <th>First Name</th>
                                     <th>Last Name</th>
                                     <th>Status</th>
@@ -114,7 +114,7 @@ $result = $conn->query($sql);
                                 <?php while($user = $result->fetch_assoc()): ?>
                                     <tr>
                                         <td><?php echo $user['user_id']; ?></td>
-                                        <td><?php echo $user['GeneratedID']; ?></td>
+                                        <td><?php echo $user['Email']; ?></td>
                                         <td><?php echo $user['FirstName']; ?></td>
                                         <td><?php echo $user['LastName']; ?></td>
                                         <td>

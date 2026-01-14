@@ -10,35 +10,38 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $generatedID = trim($_POST['generatedID']);
+    $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    // ✅ FIXED column name: user_id
-    $sql = "SELECT user_id, GeneratedID, Password, Role, FirstName, LastName 
+    $sql = "SELECT user_id, Email, Password, Role, FirstName, LastName 
             FROM users 
-            WHERE GeneratedID = ?";
+            WHERE Email = ?";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $generatedID);
+    
+    // Check if prepare() was successful
+    if ($stmt === false) {
+        die("SQL Error: " . $conn->error);
+    }
+    
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
 
-        // Password check (plain text — consider hashing later)
         if ($password === $user['Password']) {
 
-            // ✅ FIXED session variable names
             $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['generatedID'] = $user['GeneratedID'];
+            $_SESSION['email'] = $user['Email'];
             $_SESSION['role'] = $user['Role'];
             $_SESSION['firstName'] = $user['FirstName'];
             $_SESSION['lastName'] = $user['LastName'];
 
             // Remember Me
             if (isset($_POST['remember'])) {
-                setcookie('generatedID', $generatedID, time() + (86400 * 30), "/");
+                setcookie('email', $email, time() + (86400 * 30), "/");
             }
 
             // Redirect by role
