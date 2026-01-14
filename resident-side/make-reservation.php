@@ -363,7 +363,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                                     <button type="button" class="btn btn-primary" id="saveReservationBtn">
                                         <span class="spinner-border spinner-border-sm d-none" role="status"
                                             aria-hidden="true"></span>
-                                        Save Reservation
+                                        Submit
                                     </button>
                                 </div>
                             </div>

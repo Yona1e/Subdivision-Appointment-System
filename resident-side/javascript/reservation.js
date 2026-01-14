@@ -138,7 +138,7 @@ function load_events() {
 
                 select: function (start, end) {
                     if (!selectedFacility) {
-                        alert("Please select a facility first by clicking on one of the facility cards above.");
+                        alert("Please select a facility first by clicking on one of the facility cards.");
                         $('#calendar').fullCalendar('unselect');
                         return;
                     }
@@ -259,7 +259,7 @@ function saveToPaymentSection() {
 
     // Validate required fields
     if (!facilityName) {
-        alert("Please select a facility from the cards above.");
+        alert("Please select a facility from the cards.");
         return;
     }
 
