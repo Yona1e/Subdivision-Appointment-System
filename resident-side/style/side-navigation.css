@@ -21,6 +21,7 @@ body {
     --color-shadow: rgba(0, 0, 0, 0.05);
 }
 
+/* SIDE  */
 .sidebar {
     position: sticky;
     top: 0;
@@ -116,6 +117,8 @@ body {
     padding-left: 0;
 }
 
+
+
 .menu-list .menu-link {
     text-decoration: none;
     display: flex;
@@ -130,7 +133,7 @@ body {
 
 .menu-list .menu-link:is(:hover, .active) {
     color: white;
-    background-color: var(--color-hover-primary);
+    background-color: black;
 }
 
 .menu-list .menu-item .menu-link:hover img {

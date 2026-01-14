@@ -14,6 +14,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="make-reservation.css">
+    <link rel="stylesheet" href="style/side-navigation.css">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -85,6 +86,12 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                         </a>
                     </li>
                 </ul>
+                <div class="sidebar-footer">
+                    <a href="../logout.php" class="logout-btn">
+                        <img src="../asset/logout.png" alt="Logout Icon" class="menu-icon">
+                        <span class="menu-label">Log Out</span>
+                    </a>
+                </div>
             </div>
         </aside>
 
