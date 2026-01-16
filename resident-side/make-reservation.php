@@ -85,7 +85,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                         <span class="menu-label">Log Out</span>
                     </a>
                 </div>
-            </div>
+            </div>  
         </aside>
 
         <!-- MAIN CONTENT -->

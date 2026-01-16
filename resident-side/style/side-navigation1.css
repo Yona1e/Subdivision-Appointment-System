@@ -10,14 +10,14 @@ body {
 }
 
 :root {
-    --color-text-primary: #1F2936;
+    --color-text-primary: #FFFF;
     --color-text-placeholder: #798EAE;
     --color-bg-primary: #f9fafb;
     --color-bg-secondary: #ECECFD;
-    --color-bg-sidebar: #FFFFFF;
+    --color-bg-sidebar: #292F36;
     --color-border-hr: #E2E8F0;
     --color-hover-primary: #695CFE;
-    --color-hover-secondary: #e2e2fb;
+    --color-hover-secondary: #fff;
     --color-shadow: rgba(0, 0, 0, 0.05);
 }
 
@@ -70,8 +70,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-primary);
-    background: var(--color-bg-secondary);
+    color: black;
+    background: white;
 }
 
 .sidebar.collapsed .sidebar-header .sidebar-toggle {
@@ -81,7 +81,7 @@ body {
 }
 
 .sidebar-header .sidebar-toggle:hover {
-    background: var(--color-hover-secondary);
+    background: white;
 }
 
 .sidebar-header .sidebar-toggle span {
@@ -104,7 +104,7 @@ body {
 }
 
 .sidebar .sidebar-content {
-    padding: 20px 18px;
+    padding: 20px 15px;
     overflow: hidden auto;
     scrollbar-width: thin;
     scrollbar-color: var(--color-text-placeholder) transparent;
@@ -130,15 +130,23 @@ body {
     color: var(--color-text-primary);
     transition: 0.3s ease;
 }
-
-.menu-list .menu-link:is(:hover, .active) {
-    color: white;
-    background-color: blue;
-}
-
-.menu-list .menu-item .menu-link:hover img {
+/* turn the image white */
+.sidebar img{
     filter: brightness(0) invert(1);
 }
+
+    /* if the image is active or hovered the image turn black */
+.menu-list .menu-link:is(:hover, .active) img {
+    filter: brightness(0);
+    
+}
+ /* if the text is active or hovered the image turn black */
+.menu-list .menu-link:is(:hover, .active) {
+    color: black;
+    background-color:white;
+    
+}
+
 
 .menu-link .menu-label {
     transition: 0.3s ease

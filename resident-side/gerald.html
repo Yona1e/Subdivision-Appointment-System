@@ -3,90 +3,551 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toggle Calendar</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
-    
+    <title>Make a Reservation</title>
     <style>
-        body { background-color: #f8f9fa; padding-top: 50px; }
-        #calendar { background: white; }
-        
-        /* Smooth transition for hiding the button */
-        .fade-out {
-            display: none !important;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: var(--color-bg-primary);
+        }
+
+        :root {
+            --color-text-primary: #FFFF;
+            --color-text-placeholder: #798EAE;
+            --color-bg-primary: #f9fafb;
+            --color-bg-secondary: #ECECFD;
+            --color-bg-sidebar: #2c3e50;
+            --color-border-hr: #E2E8F0;
+            --color-hover-primary: #5fd4d4;
+            --color-hover-secondary: #fff;
+            --color-shadow: rgba(0, 0, 0, 0.05);
+            --color-accent-coral: #ff6b6b;
+            --color-accent-teal: #5fd4d4;
+            --color-accent-navy: #2c3e50;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 270px;
+            flex-shrink: 0;
+            background: var(--color-bg-sidebar);
+            border-right: 1px solid var(--color-border-hr);
+            box-shadow: 0 3px 9px var(--color-shadow);
+            transition: width 0.4s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.collapsed {
+            width: 90px;
+        }
+
+        .sidebar .sidebar-header {
+            display: flex;
+            padding: 20px 18px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--color-border-hr);
+        }
+
+        .sidebar-header .header-logo {
+            width: 46px;
+            height: 46px;
+            object-fit: cover;
+            display: block;
+            border-radius: 50%;
+        }
+
+        .sidebar.collapsed .sidebar-header .header-logo {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-header .sidebar-toggle {
+            width: 40px;
+            height: 40px;
+            border: none;
+            position: absolute;
+            right: 18px;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            background: white;
+        }
+
+        .sidebar.collapsed .sidebar-header .sidebar-toggle {
+            height: 48px;
+            width: 50px;
+            transform: translateX(-2px);
+        }
+
+        .sidebar-header .sidebar-toggle:hover {
+            background: white;
+        }
+
+        .sidebar-header .sidebar-toggle span {
+            display: inline-block;
+            font-size: 1.75rem;
+            transition: transform 0.4s ease;
+        }
+
+        .sidebar.collapsed .sidebar-toggle span {
+            transform: rotate(180deg) scale(1.3);
+        }
+
+        .sidebar.collapsed .menu-link .menu-label {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .menu-link .menu-label {
+            transition: 0.3s ease;
+        }
+
+        .sidebar .sidebar-content {
+            padding: 20px 15px;
+            overflow: hidden auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-text-placeholder) transparent;
+            flex: 1;
+        }
+
+        .sidebar-content .menu-list {
+            list-style: none;
+            gap: 5px;
+            flex-direction: column;
+            padding-left: 0;
+        }
+
+        .menu-list .menu-link {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+            padding: 12px 15px;
+            border-radius: 8px;
+            color: var(--color-text-primary);
+            transition: 0.3s ease;
+        }
+
+        /* turn the image white */
+        .sidebar img {
+            filter: brightness(0) invert(1);
+        }
+
+        /* if the image is active or hovered the image turn black */
+        .menu-list .menu-link:is(:hover, .active) img {
+            filter: brightness(0);
+        }
+
+        /* if the text is active or hovered the image turn black */
+        .menu-list .menu-link:is(:hover, .active) {
+            color: black;
+            background-color: white;
+        }
+
+        .menu-link .menu-label {
+            transition: 0.3s ease;
+        }
+
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .logout-section {
+            margin-top: auto;
+            padding: 20px 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-link {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+            padding: 12px 15px;
+            border-radius: 8px;
+            color: var(--color-text-primary);
+            transition: 0.3s ease;
+        }
+
+        .logout-link:hover {
+            color: black;
+            background-color: white;
+        }
+
+        .logout-link:hover img {
+            filter: brightness(0);
+        }
+
+        .sidebar.collapsed .logout-link .menu-label {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+            background: var(--color-bg-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%);
+            padding: 2.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3rem 4rem;
+            position: relative;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 4rem;
+            right: 4rem;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 3px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .step-circle.active {
+            background: var(--color-hover-primary);
+            border-color: var(--color-hover-primary);
+            box-shadow: 0 4px 12px rgba(95, 212, 212, 0.4);
+        }
+
+        .step-circle svg {
+            width: 28px;
+            height: 28px;
+            stroke: #9ca3af;
+        }
+
+        .step-circle.active svg {
+            stroke: white;
+        }
+
+        .step-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .step-label.active {
+            color: var(--color-hover-primary);
+        }
+
+        .facilities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            padding: 2rem 4rem 4rem;
+        }
+
+        .facility-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .facility-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            border-color: var(--color-hover-primary);
+        }
+
+        .facility-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .facility-card:hover .facility-image {
+            transform: scale(1.05);
+        }
+
+        .facility-info {
+            padding: 1.5rem;
+        }
+
+        .facility-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+        }
+
+        .facility-description {
+            color: #6b7280;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .footer-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: 2rem 4rem 3rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            padding: 1rem 3rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-prev {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .btn-prev:hover {
+            background: #d1d5db;
+        }
+
+        .btn-next {
+            background: var(--color-accent-coral);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+            background: #ff5252;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .progress-bar {
+                padding: 2rem 1.5rem;
+            }
+
+            .facilities-grid {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+            }
+
+            .footer-buttons {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="https://via.placeholder.com/46" alt="Logo" class="header-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span>‹</span>
+            </button>
+        </div>
+        
+        <nav class="sidebar-content">
+            <ul class="menu-list">
+                <li>
+                    <a href="#" class="menu-link">
+                        <img src="https://api.iconify.design/mdi/home.svg" alt="Home" class="menu-icon">
+                        <span class="menu-label">Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-link active">
+                        <img src="https://api.iconify.design/mdi/calendar-plus.svg" alt="Make Reservation" class="menu-icon">
+                        <span class="menu-label">Make a Reservation</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-link">
+                        <img src="https://api.iconify.design/mdi/clipboard-list.svg" alt="My Reservations" class="menu-icon">
+                        <span class="menu-label">My Reservations</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="menu-link">
+                        <img src="https://api.iconify.design/mdi/account.svg" alt="My Account" class="menu-icon">
+                        <span class="menu-label">My Account</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="logout-section">
+            <a href="#" class="logout-link">
+                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                <span class="menu-label">Log Out</span>
+            </a>
+        </div>
+    </aside>
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            
-            <div class="text-center">
-                <button 
-                    id="showCalendarBtn"
-                    class="btn btn-primary btn-lg shadow-sm" 
-                    type="button" 
-                    data-bs-toggle="collapse" 
-                    data-bs-target="#calendarCollapse" 
-                    aria-expanded="false">
-                    <i class="bi bi-calendar-event"></i> Open Calendar
-                </button>
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Make a Reservation</h1>
             </div>
 
-            <div class="collapse mt-3" id="calendarCollapse">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Event Schedule</h5>
-                        <button type="button" class="btn-close btn-close-white" id="closeCalendarBtn"></button>
+            <div class="progress-bar">
+                <div class="progress-line"></div>
+                
+                <div class="progress-step">
+                    <div class="step-circle active">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
                     </div>
-                    <div class="card-body">
-                        <div id="calendar"></div>
+                    <span class="step-label active">Select Facility</span>
+                </div>
+
+                <div class="progress-step">
+                    <div class="step-circle">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <span class="step-label">Date & Time</span>
+                </div>
+
+                <div class="progress-step">
+                    <div class="step-circle">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                    </div>
+                    <span class="step-label">Payment</span>
+                </div>
+            </div>
+
+            <div class="facilities-grid">
+                <div class="facility-card">
+                    <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop" alt="Chapel" class="facility-image">
+                    <div class="facility-info">
+                        <h3 class="facility-name">Chapel</h3>
+                        <p class="facility-description">Perfect for weddings, baptisms, and religious ceremonies in a peaceful setting.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&h=400&fit=crop" alt="Basketball Court" class="facility-image">
+                    <div class="facility-info">
+                        <h3 class="facility-name">Basketball Court</h3>
+                        <p class="facility-description">Full-size court for basketball games, tournaments, and sports activities.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <img src="https://images.unsplash.com/photo-1519389884985-f5d9b1cef095?w=600&h=400&fit=crop" alt="Multipurpose Hall" class="facility-image">
+                    <div class="facility-info">
+                        <h3 class="facility-name">Multipurpose Hall</h3>
+                        <p class="facility-description">Spacious hall for events, parties, meetings, and community gatherings.</p>
+                    </div>
+                </div>
+
+                <div class="facility-card">
+                    <img src="https://images.unsplash.com/photo-1622163642998-1ea32b0bbc67?w=600&h=400&fit=crop" alt="Tennis Court" class="facility-image">
+                    <div class="facility-info">
+                        <h3 class="facility-name">Tennis Court</h3>
+                        <p class="facility-description">Professional tennis court for matches, practice, and tennis lessons.</p>
                     </div>
                 </div>
             </div>
 
+            <div class="footer-buttons">
+                <button class="btn btn-prev">Prev</button>
+                <button class="btn btn-next">Next</button>
+            </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('calendar');
-        const showBtn = document.getElementById('showCalendarBtn');
-        const closeBtn = document.getElementById('closeCalendarBtn');
-        const collapseEl = document.getElementById('calendarCollapse');
-        
-        // Initialize Bootstrap Collapse instance
-        const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
-        // Initialize Calendar
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth'
-        });
-        calendar.render();
-
-        // LOGIC: Hide button when calendar shows
-        collapseEl.addEventListener('show.bs.collapse', function () {
-            showBtn.classList.add('fade-out'); // Hides the button
-            // Recalculate calendar size so it fits the new visible container
-            setTimeout(() => calendar.updateSize(), 10);
-        });
-
-        // LOGIC: Show button again when "X" is clicked (Optional)
-        closeBtn.addEventListener('click', function() {
-            bsCollapse.hide();
-        });
-
-        collapseEl.addEventListener('hidden.bs.collapse', function () {
-            showBtn.classList.remove('fade-out'); // Shows the button again
-        });
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
     });
 </script>
-
 </body>
 </html>
