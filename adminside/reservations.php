@@ -10,17 +10,21 @@ if ($conn->connect_error) {
 
 $message = "";
 
-// Handle soft delete (mark as completed to hide from interface)
+// Handle hide reservation (update admin_visible to FALSE)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_reservation'])) {
     $reservation_id = intval($_POST['reservation_id']);
 
-    $update_sql = "UPDATE reservations SET status = 'completed' WHERE id = $reservation_id";
-    if ($conn->query($update_sql)) {
-        $message = "Reservation deleted successfully!";
+    $stmt = $conn->prepare("UPDATE reservations SET admin_visible = FALSE WHERE id = ?");
+    $stmt->bind_param("i", $reservation_id);
+    if ($stmt->execute()) {
+        $message = "Reservation #$reservation_id has been hidden from view.";
+    } else {
+        $message = "Error hiding reservation: " . $stmt->error;
     }
+    $stmt->close();
 }
 
-// Fetch ONLY approved and rejected reservations (exclude completed and pending)
+// Fetch ONLY approved and rejected reservations that are visible to admin
 $res_sql = "SELECT
                 r.id,
                 r.facility_name,
@@ -35,6 +39,7 @@ $res_sql = "SELECT
             FROM reservations r
             LEFT JOIN users u ON r.user_id = u.user_id
             WHERE LOWER(r.status) IN ('approved', 'rejected')
+            AND r.admin_visible = TRUE
             ORDER BY r.status DESC, r.id DESC";
 
 $reservations = $conn->query($res_sql);

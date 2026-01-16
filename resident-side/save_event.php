@@ -120,12 +120,13 @@ if (!in_array($facility_name, $allowed_facilities)) {
 }
 
 try {
-    // Check for conflicting reservations
+    // Check for conflicting reservations (only check visible reservations)
     $checkQuery = "SELECT id, time_start, time_end 
                    FROM reservations 
                    WHERE facility_name = :facility_name 
                    AND event_start_date = :event_start_date 
                    AND status != 'cancelled'
+                   AND admin_visible = TRUE
                    AND (
                        (time_start < :time_end AND time_end > :time_start)
                    )";
@@ -148,13 +149,13 @@ try {
         exit();
     }
     
-    // Insert new reservation
+    // Insert new reservation with visibility defaults
     $sql = "INSERT INTO reservations 
             (user_id, facility_name, phone, event_start_date, event_end_date, 
-             time_start, time_end, note, status, created_at) 
+             time_start, time_end, note, status, admin_visible, resident_visible, created_at) 
             VALUES 
             (:user_id, :facility_name, :phone, :event_start_date, :event_end_date, 
-             :time_start, :time_end, :note, 'pending', NOW())";
+             :time_start, :time_end, :note, 'pending', TRUE, TRUE, NOW())";
     
     $stmt = $conn->prepare($sql);
     $result = $stmt->execute([

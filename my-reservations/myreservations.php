@@ -20,13 +20,39 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
+// Handle AJAX request to hide reservation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'hide_reservation') {
+    header('Content-Type: application/json');
+    
+    $reservation_id = $_POST['reservation_id'] ?? null;
+    $user_id = $_SESSION['user_id'];
+    
+    if ($reservation_id) {
+        try {
+            $stmt = $conn->prepare("UPDATE reservations SET resident_visible = FALSE WHERE id = :id AND user_id = :user_id");
+            $stmt->execute([
+                ':id' => $reservation_id,
+                ':user_id' => $user_id
+            ]);
+            
+            echo json_encode(['success' => true]);
+        } catch(PDOException $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Invalid reservation ID']);
+    }
+    exit();
+}
+
 // Get current user's reservations (include pending, approved, rejected - exclude completed if you want)
 $user_id = $_SESSION['user_id'];
 
-$query = "SELECT facility_name, event_start_date, time_start, time_end, status, created_at 
+$query = "SELECT id, facility_name, event_start_date, time_start, time_end, status, created_at 
           FROM reservations 
           WHERE user_id = :user_id 
           AND status IN ('approved', 'rejected', 'pending')
+          AND resident_visible = TRUE
           ORDER BY FIELD(status, 'pending', 'approved', 'rejected'), created_at DESC";
           
 $stmt = $conn->prepare($query);
@@ -127,7 +153,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tbody>
                             <?php if (count($reservations) > 0): ?>
                                 <?php foreach ($reservations as $reservation): ?>
-                                    <tr>
+                                    <tr data-reservation-id="<?php echo $reservation['id']; ?>">
                                         <td><?php echo htmlspecialchars($reservation['facility_name']); ?></td>
                                         <td><?php echo date('F d, Y', strtotime($reservation['event_start_date'])); ?></td>
                                         <td>
@@ -153,7 +179,11 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </td>
                                         <td><?php echo date('M d, Y g:i A', strtotime($reservation['created_at'])); ?></td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
+                                            <?php if ($reservation['status'] === 'pending'): ?>
+                                                <button class="btn btn-sm btn-outline-secondary" disabled title="Cannot delete pending reservations">Delete</button>
+                                            <?php else: ?>
+                                                <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -184,6 +214,9 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../resident-side/javascript/sidebar.js"></script>
 
+<!-- SWAL IMPORT LINK -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!--  SWAL Inline JS for Delete Button -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -192,6 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     deleteButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             const row = btn.closest('tr');
+            const reservationId = row.dataset.reservationId;
 
             Swal.fire({
                 title: "Remove this reservation?",
@@ -203,9 +237,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 denyButtonText: "Keep",
             }).then((result) => {
                 if (result.isConfirmed) {
-                    row.style.display = 'none';
-
-                    Swal.fire("Removed!", "Reservation hidden successfully.", "success");
+                    // Send AJAX request to update resident_visible
+                    fetch('myreservations.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `action=hide_reservation&reservation_id=${reservationId}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            row.style.display = 'none';
+                            Swal.fire("Removed!", "Reservation hidden successfully.", "success");
+                        } else {
+                            Swal.fire("Error!", "Failed to hide reservation.", "error");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire("Error!", "An error occurred.", "error");
+                    });
                 } 
                 else if (result.isDenied) {
                     Swal.fire("Not removed", "Reservation is still visible.", "info");
@@ -217,7 +269,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- SWAL IMPORT LINK -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>
