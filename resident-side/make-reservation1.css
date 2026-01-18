@@ -303,13 +303,13 @@ body {
 .calendar-wrapper {
     background: white;
     border-radius: 12px;
-    padding: 13px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+   
 }
 
 #calendar {
     border-radius: 12px;
     overflow: hidden;
+    padding:0;
 }
 
 /* FullCalendar Customization */
@@ -569,8 +569,8 @@ body {
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 2rem 4rem 3rem;
-    border-top: 1px solid #e5e7eb;
+    padding: 17px;
+    
 }
 
 .footer-buttons .btn {
@@ -635,6 +635,8 @@ body {
     height: 1rem;
     margin-right: 0.5rem;
 }
+
+
 
 /* ------------------- */
 

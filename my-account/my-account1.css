@@ -45,7 +45,7 @@ body {
 
 /* Header */
 .page-header {
-    background: #dbe2ff;
+    background: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%);
     color: white;
     text-align: center;
     padding: 15px;

@@ -44,6 +44,7 @@ $pending_requests_result = $conn->query($pending_requests_sql);
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
 <link rel="stylesheet" href="adminside.css">
+ <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
 
 <style>
 /* Fixed height and scrollable cards */
@@ -117,6 +118,12 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                     </a>
                 </li>
             </ul>
+        </div>
+        <div class="logout-section">
+            <a  href="../adminside/log-out.php" method="post" class="logout-link">
+                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                <span class="menu-label">Log Out</span>
+            </a>
         </div>
     </aside>
 

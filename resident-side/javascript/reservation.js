@@ -12,6 +12,15 @@ var reservationData = {
 var tempCalendarEvent = null; // Store temporary event for calendar display
 var allEvents = []; // Store all events globally for time slot checking
 
+// NEW: Store temporary modal data that gets discarded if not submitted
+var tempModalData = {
+    phone: '',
+    note: '',
+    timeStart: '',
+    timeEnd: '',
+    selectedDate: ''
+};
+
 $(document).ready(function () {
     // Initialize calendar when page loads
     load_events();
@@ -42,7 +51,7 @@ $(document).ready(function () {
         checkNextButtonState();
     });
 
-    // Time slot selection handler
+    // Time slot selection handler - MODIFIED to use temp data
     $(document).on('click', '.slot-btn', function (e) {
         // Prevent action if button is disabled or booked
         if ($(this).prop('disabled') || $(this).hasClass('disabled') || $(this).hasClass('booked')) {
@@ -61,23 +70,17 @@ $(document).ready(function () {
         $('#selected_time_start').val($(this).data('start'));
         $('#selected_time_end').val($(this).data('end'));
 
-        // Update reservation data with time
+        // Store in TEMPORARY data (not reservationData yet)
         var timeStart = $(this).data('start');
         var timeEnd = $(this).data('end');
-        reservationData.timeStart = moment(timeStart, 'HH:mm').format('h:mm A');
-        reservationData.timeEnd = moment(timeEnd, 'HH:mm').format('h:mm A');
-
-        // Calculate cost
-        calculateAndUpdateCost();
-
-        // Update summary display
-        updateSummaryDisplay();
+        tempModalData.timeStart = moment(timeStart, 'HH:mm').format('h:mm A');
+        tempModalData.timeEnd = moment(timeEnd, 'HH:mm').format('h:mm A');
         
         // Check if form is complete
         checkModalFormCompletion();
     });
 
-    // Phone number validation (only numbers)
+    // Phone number validation - MODIFIED to use temp data
     $('#phone').on('input', function () {
         var value = $(this).val();
 
@@ -94,16 +97,43 @@ $(document).ready(function () {
             $('#phoneFeedback').hide();
         }
 
-        // Update reservation data
-        reservationData.phone = cleaned;
+        // Store in TEMPORARY data (not reservationData yet)
+        tempModalData.phone = cleaned;
         
         // Check if form is complete
         checkModalFormCompletion();
     });
 
+    // Note field - MODIFIED to use temp data
+    $('#event_note').on('input', function () {
+        tempModalData.note = $(this).val().trim();
+    });
+
     // Save reservation button click handler - MODIFIED
     $('#saveReservationBtn').on('click', function () {
         saveToPaymentSection();
+    });
+
+    // NEW: Handle modal close button (X) - discard changes
+    $('.btn-close, [data-bs-dismiss="modal"]').on('click', function() {
+        if ($(this).closest('#myModal').length > 0) {
+            discardModalChanges();
+        }
+    });
+
+    // NEW: Handle clicking outside modal (backdrop) - discard changes
+    $('#myModal').on('click', function(e) {
+        if ($(e.target).hasClass('modal')) {
+            discardModalChanges();
+            $('#myModal').modal('hide');
+        }
+    });
+
+    // NEW: Handle ESC key - discard changes
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && $('#myModal').hasClass('show')) {
+            discardModalChanges();
+        }
     });
 
     // Modal shown event - check time slots after modal is fully loaded
@@ -120,6 +150,11 @@ $(document).ready(function () {
                 checkAndDisableBookedSlots(selectedDate, facilityName);
             }, 100);
         }
+    });
+
+    // Modal hidden event - ensure temp data is cleared
+    $('#myModal').on('hidden.bs.modal', function() {
+        checkNextButtonState();
     });
 
     // Check form completion whenever inputs change
@@ -172,11 +207,33 @@ $(document).ready(function () {
         checkNextButtonState();
     }, 500);
     
-    // Re-check button state when modal closes
-    $('#myModal').on('hidden.bs.modal', function() {
+    // NEW: Continuously monitor and update button state (especially important for calendar page)
+    setInterval(function() {
         checkNextButtonState();
-    });
+    }, 500);
 });
+
+/**
+ * NEW: Discard modal changes when closing without saving
+ */
+function discardModalChanges() {
+    console.log("Modal closed without saving - discarding changes");
+    
+    // Clear temporary modal data
+    tempModalData = {
+        phone: '',
+        note: '',
+        timeStart: '',
+        timeEnd: '',
+        selectedDate: ''
+    };
+    
+    // Clear the form inputs
+    clearModalForm();
+    
+    // Re-check button state to ensure Next button is disabled
+    checkNextButtonState();
+}
 
 /**
  * Open booking modal with selected date
@@ -193,11 +250,10 @@ function openBookingModal(start, end) {
     $("#selected_facility").val(selectedFacility);
     $("#display_selected_date").text(moment(start).format("MMMM DD, YYYY"));
 
-    // Update reservation data with selected date
-    reservationData.date = moment(start).format("MMMM DD, YYYY");
+    // Store selected date in temp data (not in reservationData yet)
+    tempModalData.selectedDate = moment(start).format("MMMM DD, YYYY");
     
-    // Update summary display
-    updateSummaryDisplay();
+    // DO NOT update reservationData.date here - wait for submit
 
     // Check and disable booked time slots for this date and facility
     checkAndDisableBookedSlots(startDate, selectedFacility);
@@ -453,7 +509,8 @@ function canProceedFromCurrentPage() {
         // On facility page, just need a facility selected
         return reservationData.facility !== null && reservationData.facility !== '';
     } else if (currentPage === 'date-time') {
-        // On date & time page, need complete booking
+        // On date & time page, need complete booking (must have submitted the modal)
+        // Check that ALL required fields in reservationData are filled (not just facility)
         return isReservationComplete();
     } else if (currentPage === 'payment') {
         // On payment page, need complete reservation
@@ -495,11 +552,11 @@ function checkNextButtonState() {
 }
 
 /**
- * Check if modal form is complete and enable/disable save button
+ * Check if modal form is complete and enable/disable save button - MODIFIED
  */
 function checkModalFormCompletion() {
     var facilityName = $("#selected_facility").val() || selectedFacility;
-    var phone = $("#phone").val().trim();
+    var phone = tempModalData.phone; // Use temp data instead
     var selectedDate = $("#event_start_date").val();
     var timeStart = $("#selected_time_start").val();
     var timeEnd = $("#selected_time_end").val();
@@ -619,17 +676,17 @@ function checkAndDisableBookedSlots(selectedDate, facilityName) {
 }
 
 /**
- * Save reservation data to payment section - NEW FUNCTION
+ * Save reservation data to payment section - MODIFIED to save from temp data
  */
 function saveToPaymentSection() {
-    // Get form values
+    // Get form values from temp data
     var facilityName = $("#selected_facility").val() || selectedFacility;
-    var phone = $("#phone").val().trim();
+    var phone = tempModalData.phone;
     var startDate = $("#event_start_date").val();
     var endDate = $("#event_end_date").val();
     var timeStart = $("#selected_time_start").val();
     var timeEnd = $("#selected_time_end").val();
-    var note = $("#event_note").val().trim();
+    var note = tempModalData.note;
 
     // Validate required fields
     if (!facilityName) {
@@ -672,20 +729,15 @@ function saveToPaymentSection() {
         return;
     }
 
-    // Store note (if any)
+    // NOW SAVE TO ACTUAL reservationData (only when Submit is clicked)
+    reservationData.date = moment(startDate).format("MMMM DD, YYYY");
+    reservationData.timeStart = moment(timeStart, 'HH:mm').format('h:mm A');
+    reservationData.timeEnd = moment(timeEnd, 'HH:mm').format('h:mm A');
+    reservationData.phone = phone;
     reservationData.note = note;
 
-    // Make sure all data is up to date
-    if (!reservationData.date) {
-        reservationData.date = moment(startDate).format("MMMM DD, YYYY");
-    }
-    if (!reservationData.timeStart || !reservationData.timeEnd) {
-        reservationData.timeStart = moment(timeStart, 'HH:mm').format('h:mm A');
-        reservationData.timeEnd = moment(timeEnd, 'HH:mm').format('h:mm A');
-    }
-    if (!reservationData.totalCost || reservationData.totalCost === 0) {
-        calculateAndUpdateCost();
-    }
+    // Calculate and save cost
+    calculateAndUpdateCost();
 
     // Create temporary calendar event
     var eventStartDateTime = moment(startDate + ' ' + timeStart, 'YYYY-MM-DD HH:mm');
@@ -708,6 +760,15 @@ function saveToPaymentSection() {
 
     // Enable next button since reservation is now complete
     checkNextButtonState();
+
+    // Clear temp modal data since it's now saved
+    tempModalData = {
+        phone: '',
+        note: '',
+        timeStart: '',
+        timeEnd: '',
+        selectedDate: ''
+    };
 
     // Show success message
     Swal.fire({
@@ -834,9 +895,10 @@ function updatePaymentSummary() {
 }
 
 /**
- * Clear modal form fields (but keep facility selection)
+ * Clear modal form fields (but keep facility selection) - MODIFIED
  */
 function clearModalForm() {
+    // Clear form inputs
     $('#phone').val('');
     $('#event_note').val('');
     $('#selected_time_start').val('');
@@ -849,10 +911,17 @@ function clearModalForm() {
     $('#phone').removeClass('is-invalid');
     $('#phoneFeedback').hide();
     
+    // Clear temporary modal data
+    tempModalData = {
+        phone: '',
+        note: '',
+        timeStart: '',
+        timeEnd: '',
+        selectedDate: ''
+    };
+    
     // Disable save button since form is now incomplete
     $('#saveReservationBtn').prop('disabled', true).addClass('disabled');
-    
-    // Don't re-disable slots here - they should remain in their current state
 }
 
 /**

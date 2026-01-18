@@ -185,7 +185,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
                             </div>
                         </div>
                     </div>
-                    <div class="container py-5">
+                    <div class="container py-5" style="display: block;padding-top: 30px;">
                         <div class="row g-4">
                             <!-- Left Side - Calendar -->
                             <div class="col-lg-7">
