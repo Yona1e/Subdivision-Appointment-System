@@ -3,7 +3,6 @@ session_start();
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
-
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -13,7 +12,6 @@ $message = "";
 // Handle hide reservation (update admin_visible to FALSE)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_reservation'])) {
     $reservation_id = intval($_POST['reservation_id']);
-
     $stmt = $conn->prepare("UPDATE reservations SET admin_visible = FALSE WHERE id = ?");
     $stmt->bind_param("i", $reservation_id);
     if ($stmt->execute()) {
@@ -24,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_reservation']))
     $stmt->close();
 }
 
-// Fetch ONLY approved and rejected reservations that are visible to admin
+// Fetch approved & rejected reservations
 $res_sql = "SELECT
                 r.id,
                 r.facility_name,
@@ -39,198 +37,369 @@ $res_sql = "SELECT
             FROM reservations r
             LEFT JOIN users u ON r.user_id = u.user_id
             WHERE LOWER(r.status) IN ('approved', 'rejected')
-            AND r.admin_visible = TRUE
+              AND r.admin_visible = TRUE
             ORDER BY r.status DESC, r.id DESC";
 
 $reservations = $conn->query($res_sql);
 
-// fetch facilities for dropdown
+// Fetch facilities for checkboxes
 $facility_sql = "SELECT DISTINCT facility_name FROM reservations ORDER BY facility_name ASC";
 $facility_list = $conn->query($facility_sql);
+$facilities_array = [];
+while($f = $facility_list->fetch_assoc()) { $facilities_array[] = $f['facility_name']; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Approved Reservations</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <link rel="stylesheet" href="admin.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approved Reservations</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+<link rel="stylesheet" href="adminside.css">
+
+<style>
+/* Search bar styling */
+.search-bar {
+    height: 38px;
+    font-size: 0.9rem;
+    width: 250px;
+}
+
+/* Container for search + filter row */
+.search-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* Filter dropdown container */
+.filter-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+#filterButton {
+    height: 38px;
+    min-width: 120px;
+}
+
+/* Dropdown menu styling */
+.filter-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 15px;
+}
+
+.filter-menu.show {
+    display: block;
+}
+
+.filter-section {
+    margin-bottom: 15px;
+}
+
+.filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.filter-section h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    margin: 4px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.filter-option:hover {
+    background-color: #f0f0f0;
+}
+
+.filter-option input[type="checkbox"] {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.filter-option label {
+    cursor: pointer;
+    margin: 0;
+    flex: 1;
+    user-select: none;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.filter-actions button {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 6px 12px;
+}
+
+/* Table styling improvements */
+.table tbody tr:hover {
+    background-color: #f1f1f1;
+    transition: background-color 0.2s;
+}
+</style>
 </head>
 
 <body>
+<div class="app-layout">
 
-    <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <header class="sidebar-header">
+            <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
+            <button class="sidebar-toggle">
+                <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+        </header>
 
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <header class="sidebar-header">
-                <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
-                <button class="sidebar-toggle">
-                    <span class="material-symbols-outlined">chevron_left</span>
-                </button>
-            </header>
+        <div class="sidebar-content">
+            <ul class="menu-list">
+                <li class="menu-item"><a href="overview.php" class="menu-link"><img src="../asset/home.png"><span class="menu-label">Overview</span></a></li>
+                <li class="menu-item"><a href="reserverequests.php" class="menu-link"><img src="../asset/makeareservation.png"><span class="menu-label">Requests</span></a></li>
+                <li class="menu-item"><a href="reservations.php" class="menu-link"><img src="../asset/reservations.png"><span class="menu-label">Reservations</span></a></li>
+                <li class="menu-item"><a href="#" class="menu-link"><img src="../asset/profile.png"><span class="menu-label">My Account</span></a></li>
+                <li class="menu-item"><a href="create-account.php" class="menu-link"><img src="../asset/profile.png"><span class="menu-label">Create Account</span></a></li>
+            </ul>
+        </div>
+    </aside>
 
-            <div class="sidebar-content">
-                <ul class="menu-list">
-                    <li class="menu-item"><a href="overview.php" class="menu-link"><img src="../asset/home.png"><span class="menu-label">Overview</span></a></li>
-                    <li class="menu-item"><a href="reserverequests.php" class="menu-link"><img src="../asset/makeareservation.png"><span class="menu-label">Requests</span></a></li>
-                    <li class="menu-item"><a href="reservations.php" class="menu-link"><img src="../asset/reservations.png"><span class="menu-label">Reservations</span></a></li>
-                    <li class="menu-item"><a href="#" class="menu-link"><img src="../asset/profile.png"><span class="menu-label">My Account</span></a></li>
-                    <li class="menu-item"><a href="create-account.php" class="menu-link"><img src="../asset/profile.png"><span class="menu-label">Create Account</span></a></li>
-                </ul>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="reservation-card">
+            <div class="page-header">
+                Approved & Rejected Reservations
             </div>
-        </aside>
+            <div class="container mt-4">
 
-        <!-- MAIN CONTENT -->
-        <div class="main-content">
-            <div class="reservation-card">
-                <div class="page-header">
-                    Approved & Rejected Reservations
+                <?php if ($message): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <h5><?php echo $message; ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <div class="container mt-5">
+                <?php endif; ?>
 
-                    <?php if ($message): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <h5><?php echo $message; ?></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    <?php endif; ?>
-
-                    <div class="alert alert-info">
-                        These are all reservations that have been <strong>approved</strong> or <strong>rejected</strong>.
-                        You may delete them to remove from this list.
-                    </div>
-
-                    <!-- Search Bar -->
-                    <div class="search-container mb-3">
-                        <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search...">
-                    </div>
-
-                    <div class="row mb-3">
-
-                        <!-- Facility Filter -->
-                        <div class="col-md-6">
-                            <select id="facilityFilter" class="form-select">
-                                <option value="">All Facilities</option>
-                                <?php while ($f = $facility_list->fetch_assoc()): ?>
-                                    <option value="<?= htmlspecialchars($f['facility_name']); ?>">
-                                        <?= htmlspecialchars($f['facility_name']); ?>
-                                    </option>
-                                <?php endwhile; ?>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <select id="statusFilter" class="form-select">
-                                <option value="">All Status</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <div class="table-responsive mt-3">
-                        <table class="table table-bordered" id="reservationTable">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Facility</th>
-                                    <th>Phone</th>
-                                    <th>Event Date</th>
-                                    <th>Time</th>
-                                    <th>User</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php while ($row = $reservations->fetch_assoc()): ?>
-                                <tr>
-                                    <td><?php echo $row['id']; ?></td>
-                                    <td><?php echo htmlspecialchars($row['facility_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['phone']); ?></td>
-                                    <td>
-                                        <?php
-                                            echo date('M d, Y', strtotime($row['event_start_date']));
-                                            if ($row['event_start_date'] != $row['event_end_date']) {
-                                                echo " - " . date('M d, Y', strtotime($row['event_end_date']));
-                                            }
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <?php echo date('g:i A', strtotime($row['time_start'])) . " - " . date('g:i A', strtotime($row['time_end'])); ?>
-                                    </td>
-                                    <td><?php echo $row['FirstName'] . " " . $row['LastName']; ?></td>
-                                    <td>
-                                        <?php if (strtolower($row['status']) === 'approved'): ?>
-                                        <span class="badge bg-success"><?php echo ucfirst($row['status']); ?></span>
-                                        <?php else: ?>
-                                        <span class="badge bg-danger"><?php echo ucfirst($row['status']); ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this reservation?');">
-                                            <input type="hidden" name="reservation_id" value="<?php echo $row['id']; ?>">
-                                            <button type="submit" name="delete_reservation" class="btn btn-danger btn-sm">
-                                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span>
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
-                    </div>
-
+                <div class="alert alert-info">
+                    These are all reservations that have been <strong>approved</strong> or <strong>rejected</strong>.
+                    You may delete them to remove from this list.
                 </div>
-            </div> 
+
+                <!-- SEARCH + FILTER ROW -->
+                <div class="search-filter-row">
+                    <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search...">
+                    
+                    <div class="filter-dropdown">
+                        <button id="filterButton" class="btn btn-primary">
+                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">filter_list</span>
+                            Filter
+                        </button>
+                        
+                        <div id="filterMenu" class="filter-menu">
+                            <div class="filter-section">
+                                <h6>Facilities</h6>
+                                <div id="facilityFilters">
+                                    <?php foreach ($facilities_array as $facility): ?>
+                                    <div class="filter-option">
+                                        <input type="checkbox" class="facility-checkbox" value="<?php echo htmlspecialchars($facility); ?>" id="fac-<?php echo htmlspecialchars($facility); ?>">
+                                        <label for="fac-<?php echo htmlspecialchars($facility); ?>"><?php echo htmlspecialchars($facility); ?></label>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-section">
+                                <h6>Status</h6>
+                                <div class="filter-option">
+                                    <input type="checkbox" class="status-checkbox" value="approved" id="status-approved">
+                                    <label for="status-approved">Approved</label>
+                                </div>
+                                <div class="filter-option">
+                                    <input type="checkbox" class="status-checkbox" value="rejected" id="status-rejected">
+                                    <label for="status-rejected">Rejected</label>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-actions">
+                                <button class="btn btn-secondary btn-sm" id="clearFilters">Clear All</button>
+                                <button class="btn btn-primary btn-sm" id="applyFilters">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered" id="reservationTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Facility</th>
+                                <th>Phone</th>
+                                <th>Event Date</th>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($row = $reservations->fetch_assoc()): ?>
+                            <tr>
+                                <td><?php echo $row['id']; ?></td>
+                                <td><?php echo htmlspecialchars($row['facility_name']); ?></td>
+                                <td><?php echo htmlspecialchars($row['phone']); ?></td>
+                                <td>
+                                    <?php
+                                        echo date('M d, Y', strtotime($row['event_start_date']));
+                                        if ($row['event_start_date'] != $row['event_end_date']) {
+                                            echo " - " . date('M d, Y', strtotime($row['event_end_date']));
+                                        }
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php echo date('g:i A', strtotime($row['time_start'])) . " - " . date('g:i A', strtotime($row['time_end'])); ?>
+                                </td>
+                                <td><?php echo $row['FirstName'] . " " . $row['LastName']; ?></td>
+                                <td>
+                                    <?php if (strtolower($row['status']) === 'approved'): ?>
+                                    <span class="badge bg-success"><?php echo ucfirst($row['status']); ?></span>
+                                    <?php else: ?>
+                                    <span class="badge bg-danger"><?php echo ucfirst($row['status']); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this reservation?');">
+                                        <input type="hidden" name="reservation_id" value="<?php echo $row['id']; ?>">
+                                        <button type="submit" name="delete_reservation" class="btn btn-danger btn-sm">
+                                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span>
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
         </div>
     </div>
+</div>
 
-    <script src="../resident-side/javascript/sidebar.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../resident-side/javascript/sidebar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- search and filter -->
-    <script>
-    function applyFilters() {
-        let search = document.getElementById('searchInput').value.toLowerCase();
-        let facility = document.getElementById('facilityFilter').value.toLowerCase();
-        let status = document.getElementById('statusFilter').value.toLowerCase();
+<!-- Search -->
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let search = this.value.toLowerCase();
+    document.querySelectorAll("#reservationTable tbody tr").forEach(row => {
+        let facility = row.children[1].textContent.toLowerCase();
+        let phone = row.children[2].textContent.toLowerCase();
+        let user = row.children[5].textContent.toLowerCase();
+        let status = row.children[6].textContent.toLowerCase();
+        row.style.display = (facility.includes(search) || phone.includes(search) || user.includes(search) || status.includes(search)) ? '' : 'none';
+    });
+});
+</script>
 
-        let rows = document.querySelectorAll("#reservationTable tbody tr");
+<!-- Dropdown Filter -->
+<script>
+const filterButton = document.getElementById('filterButton');
+const filterMenu = document.getElementById('filterMenu');
+const applyButton = document.getElementById('applyFilters');
+const clearButton = document.getElementById('clearFilters');
 
-        rows.forEach(row => {
-            let facilityText = row.children[1].textContent.toLowerCase();
-            let phoneText = row.children[2].textContent.toLowerCase();
-            let userText = row.children[5].textContent.toLowerCase();
-            let statusText = row.children[6].textContent.toLowerCase();
+// Toggle dropdown
+filterButton.addEventListener('click', function(e) {
+    e.stopPropagation();
+    filterMenu.classList.toggle('show');
+});
 
-            let matchesSearch = (
-                facilityText.includes(search) ||
-                phoneText.includes(search) ||
-                userText.includes(search) ||
-                statusText.includes(search)
-            );
-
-            let matchesFacility = facility === "" || facilityText.includes(facility);
-            let matchesStatus = status === "" || statusText === status;
-
-            row.style.display = (matchesSearch && matchesFacility && matchesStatus) ? "" : "none";
-        });
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!filterMenu.contains(e.target) && e.target !== filterButton) {
+        filterMenu.classList.remove('show');
     }
+});
 
-    document.getElementById('searchInput').addEventListener('keyup', applyFilters);
-    document.getElementById('facilityFilter').addEventListener('change', applyFilters);
-    document.getElementById('statusFilter').addEventListener('change', applyFilters);
-    </script>
+// Prevent dropdown from closing when clicking inside
+filterMenu.addEventListener('click', function(e) {
+    e.stopPropagation();
+});
+
+// Apply filters
+applyButton.addEventListener('click', function() {
+    let selectedFacilities = [];
+    document.querySelectorAll('.facility-checkbox:checked').forEach(cb => {
+        selectedFacilities.push(cb.value);
+    });
+    
+    let selectedStatuses = [];
+    document.querySelectorAll('.status-checkbox:checked').forEach(cb => {
+        selectedStatuses.push(cb.value);
+    });
+    
+    // Filter table rows
+    document.querySelectorAll("#reservationTable tbody tr").forEach(row => {
+        let facility = row.children[1].textContent.trim();
+        let status = row.children[6].textContent.trim().toLowerCase();
+        
+        let facilityMatch = selectedFacilities.length === 0 || selectedFacilities.includes(facility);
+        let statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(status);
+        
+        row.style.display = (facilityMatch && statusMatch) ? '' : 'none';
+    });
+    
+    filterMenu.classList.remove('show');
+});
+
+// Clear all filters
+clearButton.addEventListener('click', function() {
+    document.querySelectorAll('.facility-checkbox, .status-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    // Show all rows
+    document.querySelectorAll("#reservationTable tbody tr").forEach(row => {
+        row.style.display = '';
+    });
+    
+    filterMenu.classList.remove('show');
+});
+</script>
 
 </body>
 </html>
-
 <?php $conn->close(); ?>

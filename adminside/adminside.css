@@ -329,4 +329,29 @@ body {
     box-shadow: 0 0 5px rgba(105, 92, 254, 0.4);
 }
 
+/* Fixed height for Recent Activity card */
+.recent-activity-card {
+    height: 10px; /* Adjust to desired height */
+    overflow-y: auto;
+}
+
+/* Make each audit entry shorter */
+.audit-entry {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.audit-entry .material-symbols-outlined {
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+}
+
+.audit-entry .flex-grow-1 div {
+    margin-bottom: 2px; /* Reduce spacing inside each entry */
+}
+
+
 }
