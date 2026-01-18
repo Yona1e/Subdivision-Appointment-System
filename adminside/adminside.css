@@ -77,9 +77,13 @@ body {
 }
 
 .reservation-card .card-header {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%);
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
 }
 
 .reservation-card .card-header h5 {
@@ -90,7 +94,7 @@ body {
 
 /* ADDED: Table responsive container */
 .reservation-card .card-body {
-    padding: 0;
+    padding: 10px;
     overflow-x: auto;
 }
 

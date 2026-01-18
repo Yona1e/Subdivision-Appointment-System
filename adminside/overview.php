@@ -198,7 +198,7 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                 <div class="card">
                     <div class="card-header"><h5 class="mb-0">Pending Requests</h5></div>
                     <div class="card-body">
-                        <div class="alert alert-info mb-0">No pending requests found.</div>
+                        <div class="alert alert-info ">No pending requests found.</div>
                     </div>
                 </div>
             <?php endif; ?>
