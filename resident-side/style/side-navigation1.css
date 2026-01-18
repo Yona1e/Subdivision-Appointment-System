@@ -49,7 +49,7 @@ body {
     padding: 20px 18px;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid var(--color-border-hr);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-header .header-logo {
@@ -175,7 +175,6 @@ body {
 
 .logout-link {
     text-decoration: none;
-    display: flex;
     align-items: center;
     gap: 12px;
     white-space: nowrap;

@@ -133,9 +133,6 @@ $pending_requests_result = $conn->query($pending_requests_sql);
         <!-- DASHBOARD TITLE + LOGOUT + CARDS -->
         <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h1 class="mb-0">Admin Dashboard</h1>
-            <form action="log-out.php" method="post">
-                <button type="submit" class="btn btn-danger">Logout</button>
-            </form>
         </div>
 
         <div class="row g-3 mb-4">
