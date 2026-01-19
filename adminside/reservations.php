@@ -199,7 +199,7 @@ while($f = $facility_list->fetch_assoc()) { $facilities_array[] = $f['facility_n
                                 class="menu-label">Overview</span></a></li>
                     <li class="menu-item"><a href="reserverequests.php" class="menu-link"><img
                                 src="../asset/makeareservation.png"><span class="menu-label">Requests</span></a></li>
-                    <li class="menu-item"><a href="reservations.php" class="menu-link"><img
+                    <li class="menu-item"><a href="reservations.php" class="menu-link active"><img
                                 src="../asset/reservations.png"><span class="menu-label">Reservations</span></a></li>
                     <li class="menu-item"><a href="#" class="menu-link"><img src="../asset/profile.png"><span
                                 class="menu-label">My Account</span></a></li>

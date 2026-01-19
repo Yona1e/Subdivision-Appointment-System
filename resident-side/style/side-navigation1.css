@@ -68,7 +68,6 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    border: 3px solid #e63946;
     object-fit: cover;
     flex-shrink: 0;
     filter: none !important;

@@ -280,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="create-account.php" class="menu-link">
+                    <a href="create-account.php" class="menu-link active">
                         <img src="../asset/profile.png" class="menu-icon">
                         <span class="menu-label">Create Account</span>
                     </a>

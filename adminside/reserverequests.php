@@ -115,7 +115,7 @@ if (!$reservations) {
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="reserverequests.php" class="menu-link">
+                    <a href="reserverequests.php" class="menu-link active">
                         <img src="../asset/makeareservation.png" alt="Make a Reservation Icon" class="menu-icon">
                         <span class="menu-label">Requests</span>
                     </a>
