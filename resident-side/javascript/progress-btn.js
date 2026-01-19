@@ -40,34 +40,34 @@ const updateSteps = (e) => {
     updateButtonStates();
 };
 
-// Function to show/hide content based on current step
+// show or hide content based on current step
 const updateContentVisibility = () => {
     const facilitySection = document.querySelector('.facility');
     const calendarWrapper = document.querySelector('.container.py-5');
     const Payment = document.querySelector('.container.py-5.payment');
     
     if (currentSteps === 1) {
-        // Show facility cards, hide calendar
+        // show facility cards, hide calendar and payment
         facilitySection.style.display = 'block';
         Payment.style.display = 'none';
         if (calendarWrapper) {
             calendarWrapper.style.display = 'none';
         }
     } else if (currentSteps === 2) {
-        // Hide facility cards, show calendar
+        // hide facility cards, show calendar
         facilitySection.style.display = 'none';
         Payment.style.display = 'none';
         if (calendarWrapper) {
             calendarWrapper.style.display = 'block';
             
-            // Force calendar to re-render with multiple attempts
-            // For render ONLY!!
+            // force calendar to re-render with multiple attempts
+            // for render ONLY!!
             setTimeout(() => {
                 if (window.fullCalendar) {
-                    // Destroy and re-render
+                    
                     window.fullCalendar.render();
                 }
-                // Trigger window resize
+                -
                 window.dispatchEvent(new Event('resize'));
             }, 50);
             
@@ -79,7 +79,7 @@ const updateContentVisibility = () => {
             }, 200);
         }
     } else if (currentSteps === 3) {
-        // Step 3: Show payment section
+        // Show payment section
         facilitySection.style.display = 'none';
         calendarWrapper.style.display = 'none';
         if (Payment) {

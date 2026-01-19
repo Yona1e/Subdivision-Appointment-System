@@ -212,7 +212,7 @@ $userName = htmlspecialchars(trim($user['FirstName'] . ' ' . $user['LastName']))
                             <div class="col hall">
                                 <a href="#" class="card-link" data-facility="Multipurpose Hall">
                                     <div class="card h-100">
-                                        <img src="../asset/multi-purpose.png" class="card-img-top" alt="hall">
+                                        <img src="../asset/multipurpose.png" class="card-img-top" alt="hall">
                                         <div class="card-body content">
                                             <h5 class="card-title">Multipurpose Hall</h5>
                                             <p class="card-text">The multipurpose hall offers a flexible and spacious

@@ -847,7 +847,7 @@ function calculateAndUpdateCost() {
     var costPerHour = 350; // Default cost per hour
     var facilityPrices = {
         'Chapel': 500,
-        'Basketball Court': 350,
+        'Basketball Court': 100,
         'Multipurpose Hall': 600,
         'Tennis Court': 400
     };
