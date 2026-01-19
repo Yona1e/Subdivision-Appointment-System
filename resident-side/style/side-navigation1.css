@@ -52,6 +52,54 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    transition: opacity 0.3s ease;
+}
+
+.profile-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    filter: none !important;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.profile-name {
+    color: var(--color-text-primary);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.profile-role {
+    color: #94a3b8;
+    font-size: 13px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.sidebar.collapsed .profile-section {
+    opacity: 0;
+    pointer-events: none;
+}
+
 .sidebar-header .header-logo {
     width: 46px;
     height: 46px;
@@ -83,7 +131,6 @@ body {
 .sidebar.collapsed .sidebar-header .sidebar-toggle {
     height: 48px;
     width: 50px;
-    transform: translateX(-2px);
 }
 
 .sidebar-header .sidebar-toggle:hover {
@@ -123,8 +170,6 @@ body {
     padding-left: 0;
 }
 
-
-
 .menu-list .menu-link {
     text-decoration: none;
     display: flex;
@@ -137,24 +182,21 @@ body {
     transition: 0.3s ease;
 }
 
-/* turn the image white */
-.sidebar img {
+/* turn the image white except profile photo */
+.sidebar img:not(.profile-photo) {
     filter: brightness(0) invert(1);
 }
 
 /* if the image is active or hovered the image turn black */
 .menu-list .menu-link:is(:hover, .active) img {
     filter: brightness(0);
-
 }
 
 /* if the text is active or hovered the image turn black */
 .menu-list .menu-link:is(:hover, .active) {
     color: black;
     background-color: white;
-
 }
-
 
 .menu-link .menu-label {
     transition: 0.3s ease
@@ -187,7 +229,6 @@ body {
 
 .logout-link:hover {
     color: black;
-    
 }
 
 .logout-link:hover img {

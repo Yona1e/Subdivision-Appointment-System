@@ -17,6 +17,45 @@ $conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+// Database connection 
+$host = 'localhost';
+$dbname = 'facilityreservationsystem';
+$username = 'root';
+$password = '';
+
+try {
+    $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// fetch current user data for sidebar
+$user_id = $_SESSION['user_id'];
+$userStmt = $conn->prepare("SELECT FirstName, LastName, ProfilePictureURL FROM users WHERE user_id = ?");
+$userStmt->execute([$user_id]);
+$user = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+// Check if user exists
+if (!$user) {
+    session_destroy();
+    header("Location: ../login/login.php");
+    exit();
+}
+
+// Profile picture fallback
+$profilePic = !empty($user['ProfilePictureURL'])
+    ? '../' . $user['ProfilePictureURL']
+    : '../asset/default-profile.png';
+
+// Verify the file exists, otherwise use default
+if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
+    $profilePic = '../asset/default-profile.png';
+}
+
+// User's full name for sidebar
+$userName = htmlspecialchars(trim($user['FirstName'] . ' ' . $user['LastName']));
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -55,11 +94,15 @@ if ($conn->connect_error) {
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <header class="sidebar-header">
-                <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
+                <div class="profile-section">
+                    <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
+                    <div class="profile-info">
+                        <p class="profile-name"><?= $userName ?></p>
+                        <p class="profile-role">Resident</p>
+                    </div>
+                </div>
                 <button class="sidebar-toggle">
-                    <span class="material-symbols-outlined">
-                        chevron_left
-                    </span>
+                    <span class="material-symbols-outlined">chevron_left</span>
                 </button>
             </header>
             <div class="sidebar-content">
@@ -92,11 +135,11 @@ if ($conn->connect_error) {
                 </ul>
             </div>
             <div class="logout-section">
-            <a  href="../adminside/log-out.php" method="post" class="logout-link">
-                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
-                <span class="menu-label">Log Out</span>
-            </a>
-        </div>
+                <a href="../adminside/log-out.php" method="post" class="logout-link">
+                    <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                    <span class="menu-label">Log Out</span>
+                </a>
+            </div>
         </aside>
 
         <!-- MAIN CONTENT -->

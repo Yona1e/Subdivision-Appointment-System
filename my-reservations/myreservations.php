@@ -26,12 +26,30 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
+// Fetch current user data for sidebar
+$user_id = $_SESSION['user_id'];
+$userStmt = $conn->prepare("SELECT FirstName, LastName, ProfilePictureURL FROM users WHERE user_id = ?");
+$userStmt->execute([$user_id]);
+$user = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+// Profile picture fallback
+$profilePic = !empty($user['ProfilePictureURL'])
+    ? '../' . $user['ProfilePictureURL']
+    : '../asset/default-profile.png';
+
+// Verify the file exists, otherwise use default
+if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
+    $profilePic = '../asset/default-profile.png';
+}
+
+// User's full name for sidebar
+$userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
+
 // Handle AJAX request to hide reservation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'hide_reservation') {
     header('Content-Type: application/json');
     
     $reservation_id = $_POST['reservation_id'] ?? null;
-    $user_id = $_SESSION['user_id'];
     
     if ($reservation_id) {
         try {
@@ -52,8 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Get current user's reservations (include pending, approved, rejected - exclude completed if you want)
-$user_id = $_SESSION['user_id'];
-
 $query = "SELECT id, facility_name, event_start_date, time_start, time_end, status, created_at 
           FROM reservations 
           WHERE user_id = :user_id 
@@ -64,15 +80,18 @@ $query = "SELECT id, facility_name, event_start_date, time_start, time_end, stat
 $stmt = $conn->prepare($query);
 $stmt->execute([':user_id' => $user_id]);
 $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// User's full name for sidebar
+$userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="myreservations.css">
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -83,100 +102,111 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <title>My Reservations - Facility Reservation System</title>
 </head>
+
 <body>
 
-<div class="app-layout">
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <header class="sidebar-header">
-            <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
-            <button class="sidebar-toggle">
-                <span class="material-symbols-outlined">
-                    chevron_left
-                </span>
-            </button>
-        </header>
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="profile-section">
+                    <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
+                    <div class="profile-info">
+                        <p class="profile-name"><?= $userName ?></p>
+                        <p class="profile-role">Resident</p>
+                    </div>
+                </div>
+                <button class="sidebar-toggle">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+            </header>
 
-        <div class="sidebar-content">
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="../home/home.php" class="menu-link">
-                        <img src="../asset/home.png" class="menu-icon">
-                        <span class="menu-label">Home</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="../resident-side/make-reservation.php" class="menu-link">
-                        <img src="../asset/makeareservation.png" class="menu-icon">
-                        <span class="menu-label">Make a Reservation</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="myreservations.php" class="menu-link active">
-                        <img src="../asset/reservations.png" class="menu-icon">
-                        <span class="menu-label">My Reservations</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="../my-account/my-account.php" class="menu-link">
-                        <img src="../asset/profile.png" class="menu-icon">
-                        <span class="menu-label">My Account</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-         <div class="logout-section">
-            <a  href="../adminside/log-out.php" method="post" class="logout-link">
-                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
-                <span class="menu-label">Log Out</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-        <div class="reservation-card">
-            <div class="page-header">
-                My Reservations
+            <div class="sidebar-content">
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="../home/home.php" class="menu-link">
+                            <img src="../asset/home.png" class="menu-icon">
+                            <span class="menu-label">Home</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="../resident-side/make-reservation.php" class="menu-link">
+                            <img src="../asset/makeareservation.png" class="menu-icon">
+                            <span class="menu-label">Make a Reservation</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="myreservations.php" class="menu-link active">
+                            <img src="../asset/reservations.png" class="menu-icon">
+                            <span class="menu-label">My Reservations</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="../my-account/my-account.php" class="menu-link">
+                            <img src="../asset/profile.png" class="menu-icon">
+                            <span class="menu-label">My Account</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
+            <div class="logout-section">
+                <a href="../adminside/log-out.php" method="post" class="logout-link">
+                    <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                    <span class="menu-label">Log Out</span>
+                </a>
+            </div>
+        </aside>
 
-            <div class="card-body">
-                <div class="alert alert-info mb-4">
-                    Showing <strong>pending</strong>, <strong>approved</strong>, and <strong>rejected</strong> reservations. Completed reservations are not displayed.
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <div class="reservation-card">
+                <div class="page-header">
+                    My Reservations
                 </div>
 
-                <div class="table-responsive">
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        Showing <strong>pending</strong>, <strong>approved</strong>, and <strong>rejected</strong>
+                        reservations. Completed reservations are not displayed.
+                    </div>
 
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th scope="col">Facility</th>
-                                <th scope="col">Date</th>
-                                <th scope="col">Time Slot</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Booked On</th>
-                                <th scope="col">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (count($reservations) > 0): ?>
+                    <div class="table-responsive">
+
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Facility</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Time Slot</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Booked On</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (count($reservations) > 0): ?>
                                 <?php foreach ($reservations as $reservation): ?>
-                                    <tr data-reservation-id="<?php echo $reservation['id']; ?>">
-                                        <td><?php echo htmlspecialchars($reservation['facility_name']); ?></td>
-                                        <td><?php echo date('F d, Y', strtotime($reservation['event_start_date'])); ?></td>
-                                        <td>
-                                            <?php 
+                                <tr data-reservation-id="<?php echo $reservation['id']; ?>">
+                                    <td>
+                                        <?php echo htmlspecialchars($reservation['facility_name']); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo date('F d, Y', strtotime($reservation['event_start_date'])); ?>
+                                    </td>
+                                    <td>
+                                        <?php 
                                                 echo date('g:i A', strtotime($reservation['time_start'])) . 
                                                      ' - ' . 
                                                      date('g:i A', strtotime($reservation['time_end']));
                                             ?>
-                                        </td>
-                                        <td>
-                                            <?php 
+                                    </td>
+                                    <td>
+                                        <?php 
                                                 $statusClass = match($reservation['status']) {
                                                     'approved' => 'bg-success text-white',
                                                     'rejected' => 'bg-danger text-white',
@@ -185,101 +215,107 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     default => 'bg-dark text-white'
                                                 };
                                             ?>
-                                            <span class="badge rounded-pill <?php echo $statusClass; ?>">
-                                                <?php echo ucfirst($reservation['status']); ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo date('M d, Y g:i A', strtotime($reservation['created_at'])); ?></td>
-                                        <td>
-                                            <?php if ($reservation['status'] === 'pending'): ?>
-                                                <button class="btn btn-sm btn-outline-secondary" disabled title="Cannot delete pending reservations">Delete</button>
-                                            <?php else: ?>
-                                                <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
+                                        <span class="badge rounded-pill <?php echo $statusClass; ?>">
+                                            <?php echo ucfirst($reservation['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php echo date('M d, Y g:i A', strtotime($reservation['created_at'])); ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($reservation['status'] === 'pending'): ?>
+                                        <button class="btn btn-sm btn-outline-secondary" disabled
+                                            title="Cannot delete pending reservations">Delete</button>
+                                        <?php else: ?>
+                                        <button class="btn btn-sm btn-outline-danger delete-btn">Delete</button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
                                 <?php endforeach; ?>
-                            <?php else: ?>
+                                <?php else: ?>
                                 <tr>
                                     <td colspan="6" class="text-center py-5">
                                         <div class="alert alert-info mb-0">
                                             <h5 class="alert-heading mb-3">No reservations found!</h5>
                                             <p>You currently have no reservations to display.
-                                            <a href="../resident-side/make-reservation.php" class="alert-link fw-bold">
-                                                Make a reservation now!
-                                            </a></p>
+                                                <a href="../resident-side/make-reservation.php"
+                                                    class="alert-link fw-bold">
+                                                    Make a reservation now!
+                                                </a>
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
 
+                    </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../resident-side/javascript/sidebar.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../resident-side/javascript/sidebar.js"></script>
 
-<!-- SWAL IMPORT LINK -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SWAL IMPORT LINK -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!--  SWAL Inline JS for Delete Button -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const deleteButtons = document.querySelectorAll('.delete-btn');
+    <!--  SWAL Inline JS for Delete Button -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const deleteButtons = document.querySelectorAll('.delete-btn');
 
-    deleteButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const row = btn.closest('tr');
-            const reservationId = row.dataset.reservationId;
+            deleteButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const row = btn.closest('tr');
+                    const reservationId = row.dataset.reservationId;
 
-            Swal.fire({
-                title: "Remove this reservation?",
-                text: "This will only remove it from view.",
-                icon: "warning",
-                showDenyButton: true,
-                showCancelButton: false,
-                confirmButtonText: "Remove",
-                denyButtonText: "Keep",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Send AJAX request to update resident_visible
-                    fetch('myreservations.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `action=hide_reservation&reservation_id=${reservationId}`
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            row.style.display = 'none';
-                            Swal.fire("Removed!", "Reservation hidden successfully.", "success");
-                        } else {
-                            Swal.fire("Error!", "Failed to hide reservation.", "error");
+                    Swal.fire({
+                        title: "Remove this reservation?",
+                        text: "This will only remove it from view.",
+                        icon: "warning",
+                        showDenyButton: true,
+                        showCancelButton: false,
+                        confirmButtonText: "Remove",
+                        denyButtonText: "Keep",
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Send AJAX request to update resident_visible
+                            fetch('myreservations.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `action=hide_reservation&reservation_id=${reservationId}`
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        row.style.display = 'none';
+                                        Swal.fire("Removed!", "Reservation hidden successfully.", "success");
+                                    } else {
+                                        Swal.fire("Error!", "Failed to hide reservation.", "error");
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    Swal.fire("Error!", "An error occurred.", "error");
+                                });
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire("Error!", "An error occurred.", "error");
+                        else if (result.isDenied) {
+                            Swal.fire("Not removed", "Reservation is still visible.", "info");
+                        }
                     });
-                } 
-                else if (result.isDenied) {
-                    Swal.fire("Not removed", "Reservation is still visible.", "info");
-                }
-            });
 
+                });
+            });
         });
-    });
-});
-</script>
+    </script>
 
 </body>
+
 </html>

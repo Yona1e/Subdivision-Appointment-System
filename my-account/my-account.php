@@ -65,6 +65,9 @@ $profilePic = !empty($user['ProfilePictureURL'])
 if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
     $profilePic = '../asset/default-profile.png';
 }
+
+// User's full name for sidebar
+$userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
 ?>
 
 <!DOCTYPE html>
@@ -95,7 +98,13 @@ if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePic
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <header class="sidebar-header">
-                <img src="../asset/logo.png" class="header-logo">
+                <div class="profile-section">
+                    <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
+                    <div class="profile-info">
+                        <p class="profile-name"><?= $userName ?></p>
+                        <p class="profile-role">Resident</p>
+                    </div>
+                </div>
                 <button class="sidebar-toggle">
                     <span class="material-symbols-outlined">chevron_left</span>
                 </button>
@@ -118,7 +127,7 @@ if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePic
                     <li class="menu-item">
                         <a href="../my-reservations/myreservations.php" class="menu-link">
                             <img src="../asset/reservations.png" class="menu-icon">
-                            <span class="menu-label">Reservations</span>
+                            <span class="menu-label"> My Reservations</span>
                         </a>
                     </li>
                     <li class="menu-item">
@@ -129,13 +138,13 @@ if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePic
                     </li>
                 </ul>
             </div>
-             <div class="logout-section">
-            <a  href="../adminside/log-out.php" method="post" class="logout-link">
-                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
-                <span class="menu-label">Log Out</span>
-            </a>
-        </div>
-        
+            <div class="logout-section">
+                <a href="../adminside/log-out.php" method="post" class="logout-link">
+                    <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                    <span class="menu-label">Log Out</span>
+                </a>
+            </div>
+
         </aside>
 
         <!-- MAIN CONTENT -->
@@ -143,7 +152,7 @@ if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePic
             <div class="reservation-card">
                 <div class="page-header">
                     My Account
-                    </div>
+                </div>
                 <div class="card-body">
                     <div class="row g-4">
 

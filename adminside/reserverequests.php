@@ -110,11 +110,17 @@ if (!$reservations) {
 
     <aside class="sidebar">
         <header class="sidebar-header">
-            <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
-            <button class="sidebar-toggle">
-                <span class="material-symbols-outlined">chevron_left</span>
-            </button>
-        </header>
+    <div class="profile-section">
+        <img src="../asset/profile.jpg" alt="Profile" class="profile-photo">
+        <div class="profile-info">
+            <p class="profile-name">Name</p>
+            <p class="profile-role">Resident</p>
+        </div>
+    </div>
+    <button class="sidebar-toggle">
+        <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+</header>
 
         <div class="sidebar-content">
             <ul class="menu-list">
@@ -125,7 +131,7 @@ if (!$reservations) {
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="reserverequests.php" class="menu-link">
+                    <a href="reserverequests.php" class="menu-link active">
                         <img src="../asset/makeareservation.png" alt="Make a Reservation Icon" class="menu-icon">
                         <span class="menu-label">Requests</span>
                     </a>
