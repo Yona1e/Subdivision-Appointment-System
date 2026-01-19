@@ -68,55 +68,61 @@ $pending_requests_result = $conn->query($pending_requests_sql);
 <div class="app-layout">
 
     <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <header class="sidebar-header">
-            <img src="../asset/logo.png" alt="Header Logo" class="header-logo">
-            <button class="sidebar-toggle">
-                <span class="material-symbols-outlined">chevron_left</span>
-            </button>
-        </header>
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="profile-section">
+                    <img src="../asset/profile.jpg" alt="Profile" class="profile-photo">
+                    <div class="profile-info">
+                        <p class="profile-name">Name</p>
+                        <p class="profile-role">Resident</p>
+                    </div>
+                </div>
+                <button class="sidebar-toggle">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+            </header>
 
-        <div class="sidebar-content">
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="overview.php" class="menu-link active">
-                        <img src="../asset/home.png" alt="Home Icon" class="menu-icon">
-                        <span class="menu-label">Overview</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="reserverequests.php" class="menu-link">
-                        <img src="../asset/makeareservation.png" alt="Requests Icon" class="menu-icon">
-                        <span class="menu-label">Requests</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="reservations.php" class="menu-link">
-                        <img src="../asset/reservations.png" alt="Reservations Icon" class="menu-icon">
-                        <span class="menu-label">Reservations</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" class="menu-link">
-                        <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
-                        <span class="menu-label">My Account</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="create-account.php" class="menu-link">
-                        <img src="../asset/profile.png" alt="Create Acc Icon" class="menu-icon">
-                        <span class="menu-label">Create Account</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="logout-section">
-            <a  href="../adminside/log-out.php" method="post" class="logout-link">
-                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
-                <span class="menu-label">Log Out</span>
-            </a>
-        </div>
-    </aside>
+            <div class="sidebar-content">
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="overview.php" class="menu-link active">
+                            <img src="../asset/home.png" alt="Home Icon" class="menu-icon">
+                            <span class="menu-label">Overview</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="reserverequests.php" class="menu-link">
+                            <img src="../asset/makeareservation.png" alt="Make a Reservation Icon" class="menu-icon">
+                            <span class="menu-label">Requests</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="reservations.php" class="menu-link">
+                            <img src="../asset/reservations.png" alt="Reservations Icon" class="menu-icon">
+                            <span class="menu-label">Reservations</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="#" class="menu-link">
+                            <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
+                            <span class="menu-label">My Account</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="create-account.php" class="menu-link">
+                            <img src="../asset/profile.png" alt="Create Account Icon" class="menu-icon">
+                            <span class="menu-label">Create Account</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="logout-section">
+                <a href="log-out.php" method="post" class="logout-link">
+                    <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                    <span class="menu-label">Log Out</span>
+                </a>
+            </div>
+        </aside>
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
