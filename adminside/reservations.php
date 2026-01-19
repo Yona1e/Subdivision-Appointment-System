@@ -1,6 +1,21 @@
 <?php
 session_start();
 
+// Prevent page caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
+    header("Location: ../login/login.php");
+    exit();
+}
+
+$conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 // Database connection
 $conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
 if ($conn->connect_error) {
@@ -50,6 +65,15 @@ while($f = $facility_list->fetch_assoc()) { $facilities_array[] = $f['facility_n
 ?>
 <!DOCTYPE html>
 <html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approved Reservations</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+<link rel="stylesheet" href="adminside.css">
+<link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
+<link rel="stylesheet" href="reservations-filter.css">
 
 <head>
     <meta charset="UTF-8">
@@ -187,6 +211,19 @@ while($f = $facility_list->fetch_assoc()) { $facilities_array[] = $f['facility_n
             <p class="profile-name">Name</p>
             <p class="profile-role">Resident</p>
         </div>
+        <div class="logout-section">
+            <a  href="log-out.php" method="post" class="logout-link">
+                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                <span class="menu-label">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <div class="reservation-card">
+            <div class="page-header">
+                Approved & Rejected Reservations
     </div>
     <button class="sidebar-toggle">
         <span class="material-symbols-outlined">chevron_left</span>
@@ -362,6 +399,108 @@ while($f = $facility_list->fetch_assoc()) { $facilities_array[] = $f['facility_n
             </div>
         </div>
     </div>
+</div>
+
+<script src="../resident-side/javascript/sidebar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Search -->
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let search = this.value.toLowerCase();
+    document.querySelectorAll("#reservationTable tbody tr").forEach(row => {
+        let facility = row.children[1].textContent.toLowerCase();
+        let phone = row.children[2].textContent.toLowerCase();
+        let user = row.children[5].textContent.toLowerCase();
+        let status = row.children[6].textContent.toLowerCase();
+        row.style.display = (facility.includes(search) || phone.includes(search) || user.includes(search) || status.includes(search)) ? '' : 'none';
+    });
+});
+</script>
+
+<!-- Dropdown Filter -->
+<script>
+const filterButton = document.getElementById('filterButton');
+const filterMenu = document.getElementById('filterMenu');
+const applyButton = document.getElementById('applyFilters');
+const clearButton = document.getElementById('clearFilters');
+
+// Toggle dropdown
+filterButton.addEventListener('click', function(e) {
+    e.stopPropagation();
+    filterMenu.classList.toggle('show');
+    
+    // Position the dropdown below the button
+    if (filterMenu.classList.contains('show')) {
+        const rect = filterButton.getBoundingClientRect();
+        const dropdownHeight = 500; // max-height from CSS
+        const spaceBelow = window.innerHeight - rect.bottom;
+        
+        // If not enough space below, position above the button
+        if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+            filterMenu.style.bottom = (window.innerHeight - rect.top + 5) + 'px';
+            filterMenu.style.top = 'auto';
+        } else {
+            filterMenu.style.top = (rect.bottom + 5) + 'px';
+            filterMenu.style.bottom = 'auto';
+        }
+        
+        filterMenu.style.left = (rect.right - 280) + 'px'; // Align right edge with button
+    }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!filterMenu.contains(e.target) && e.target !== filterButton) {
+        filterMenu.classList.remove('show');
+    }
+});
+
+// Prevent dropdown from closing when clicking inside
+filterMenu.addEventListener('click', function(e) {
+    e.stopPropagation();
+});
+
+// Apply filters
+applyButton.addEventListener('click', function() {
+    let selectedFacilities = [];
+    document.querySelectorAll('.facility-checkbox:checked').forEach(cb => {
+        selectedFacilities.push(cb.value);
+    });
+    
+    let selectedStatuses = [];
+    document.querySelectorAll('.status-checkbox:checked').forEach(cb => {
+        selectedStatuses.push(cb.value);
+    });
+    
+    // Filter table rows
+    document.querySelectorAll("#reservationTable tbody tr").forEach(row => {
+        let facility = row.children[1].textContent.trim();
+        let status = row.children[6].textContent.trim().toLowerCase();
+        
+        let facilityMatch = selectedFacilities.length === 0 || selectedFacilities.includes(facility);
+        let statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(status);
+        
+        row.style.display = (facilityMatch && statusMatch) ? '' : 'none';
+    });
+    
+    filterMenu.classList.remove('show');
+});
+
+// Clear all filters
+clearButton.addEventListener('click', function() {
+    document.querySelectorAll('.facility-checkbox, .status-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    // Show all rows
+    document.querySelectorAll("#reservationTable tbody tr").forEach(row => {
+        row.style.display = '';
+    });
+    
+    filterMenu.classList.remove('show');
+});
+</script>
 
     <script src="../resident-side/javascript/sidebar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>

@@ -23,8 +23,6 @@ body {
     --color-shadow: rgba(0, 0, 0, 0.05);
 }
 
-
-
 .app-layout {
     display: flex;
     min-height: 100vh;
@@ -163,6 +161,12 @@ body {
     padding: 1rem;
 }
 
+/* Search container and bar */
+.search-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+}
 
 
 
@@ -216,6 +220,26 @@ body {
         box-shadow: 0 0 5px rgba(105, 92, 254, 0.4);
     }
 
+/* Fixed height and scrollable cards */
+.recent-activity-card,
+.pending-requests-card {
+    min-height: auto;
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.recent-activity-card .card-body,
+.pending-requests-card .card-body {
+    min-height: auto;
+}
+
+/* Shorter entries */
+.audit-entry {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
     /* Fixed height for Recent Activity card */
     .recent-activity-card {
         height: 10px;
@@ -237,10 +261,46 @@ body {
         font-size: 18px;
     }
 
+.audit-entry .flex-grow-1 div {
+    margin-bottom: 2px;
+}
     .audit-entry .flex-grow-1 div {
         margin-bottom: 2px;
         /* Reduce spacing inside each entry */
     }
 
+/* ADDED: Responsive adjustments */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 15px;
+    }
+    
+    .reservation-card {
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .reservation-card .table {
+        font-size: 0.875rem;
+    }
+    
+    .reservation-card .table thead th,
+    .reservation-card .table tbody td {
+        padding: 0.5rem;
+    }
+    
+    .reservation-card h1 {
+        font-size: 1.5rem;
+    }
 
+    .search-container {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .search-bar {
+        width: 100%;
+        max-width: 350px;
+    }
 }

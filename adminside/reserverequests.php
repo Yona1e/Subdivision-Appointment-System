@@ -1,6 +1,22 @@
 <?php
 session_start();
 
+// Prevent page caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
+    header("Location: ../login/login.php");
+    exit();
+}
+
+$conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
 $conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
 
 if ($conn->connect_error) {
@@ -141,7 +157,7 @@ if (!$reservations) {
             </ul>
         </div>
         <div class="logout-section">
-            <a  href="../adminside/log-out.php" method="post" class="logout-link">
+            <a  href="log-out.php" method="post" class="logout-link">
                 <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
                 <span class="menu-label">Log Out</span>
             </a>

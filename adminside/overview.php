@@ -1,6 +1,22 @@
 <?php
 session_start();
 
+// Prevent page caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
+    header("Location: ../login/login.php");
+    exit();
+}
+
+$conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     header("Location: ../login/login.php");
     exit();
@@ -173,6 +189,25 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                 </div>
             </div>
 
+        <!-- PENDING REQUESTS CARD -->
+        <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
+            <div class="card pending-requests-card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Pending Requests</h5>
+                    <a href="reserverequests.php" class="btn btn-sm">View All</a>
+                </div>
+                <div class="card-body p-3">
+                    <?php while($request = $pending_requests_result->fetch_assoc()): ?>
+                        <?php
+                            $residentName = htmlspecialchars($request['FirstName'] . ' ' . $request['LastName']);
+                            $facilityName = htmlspecialchars($request['facility_name']);
+                            $eventDate = date('F d, Y', strtotime($request['event_start_date']));
+                            $timeRange = date('g:i A', strtotime($request['time_start'])) . ' - ' . date('g:i A', strtotime($request['time_end']));
+                            $timestamp = date('F d, Y \a\t g:i A', strtotime($request['created_at']));
+                        ?>
+                        <div class="d-flex align-items-start audit-entry bg-warning bg-opacity-10 border border-warning">
+                            <div class="me-2 mt-1">
+                                <span class="material-symbols-outlined text-white bg-warning rounded-circle d-flex align-items-center justify-content-center">
             <!-- PENDING REQUESTS CARD -->
             <div class="reservation-card mt-4">
                 <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
@@ -199,6 +234,40 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                                 </span>
                             </div>
                             <div class="flex-grow-1">
+                                <div class="fw-bold"><?= $residentName; ?> requested a reservation</div>
+                                <div class="text-muted small"><?= $timestamp; ?></div>
+                                <div class="small">
+                                    <span><strong>Facility:</strong> <?= $facilityName; ?></span><br>
+                                    <span><strong>Date:</strong> <?= $eventDate; ?></span><br>
+                                    <span><strong>Time:</strong> <?= $timeRange; ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="card mt-4">
+                <div class="card-header"><h5 class="mb-0">Pending Requests</h5></div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">No pending requests found.</div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- RECENT ACTIVITY CARD -->
+        <?php if ($recent_audit_result && $recent_audit_result->num_rows > 0): ?>
+            <div class="card recent-activity-card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Activity</h5>
+                    <a href="#" class="btn btn-sm">View All</a>
+                </div>
+                <div class="card-body p-3">
+                    <?php while($log = $recent_audit_result->fetch_assoc()): ?>
+                        <?php
+                            $bgClass = 'bg-success';
+                            $iconSymbol = 'check_circle';
+                            $actionText = '';
                                 <div class="fw-bold">
                                     <?= $residentName; ?> requested a reservation
                                 </div>
@@ -248,13 +317,23 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                                 $iconSymbol = 'check_circle';
                                 $actionText = '';
 
-                                switch($log['ActionType']) {
-                                    case 'Approved': $bgClass='bg-success'; $iconSymbol='check_circle'; $actionText='approved'; break;
-                                    case 'Rejected': $bgClass='bg-danger'; $iconSymbol='cancel'; $actionText='rejected'; break;
-                                    case 'Event_Created': $bgClass='bg-primary'; $iconSymbol='add_circle'; $actionText='created'; break;
-                                    case 'Updated': $bgClass='bg-warning'; $iconSymbol='edit'; $actionText='updated'; break;
-                                }
+                            switch($log['ActionType']) {
+                                case 'Approved': $bgClass='bg-success'; $iconSymbol='check_circle'; $actionText='approved'; break;
+                                case 'Rejected': $bgClass='bg-danger'; $iconSymbol='cancel'; $actionText='rejected'; break;
+                                case 'Event_Created': $bgClass='bg-primary'; $iconSymbol='add_circle'; $actionText='created'; break;
+                                case 'Updated': $bgClass='bg-warning'; $iconSymbol='edit'; $actionText='updated'; break;
+                            }
 
+                            $adminName = $log['AdminName'] ?? 'System';
+                            $residentName = $log['ResidentName'] ?? 'Unknown';
+                            $facilityName = $log['FacilityName'] ?? 'Unknown Facility';
+                            $eventDate = $log['EventStartDate'] ? date('F d, Y', strtotime($log['EventStartDate'])) : 'N/A';
+                            $timeRange = ($log['TimeStart'] && $log['TimeEnd']) ? date('g:i A', strtotime($log['TimeStart'])) . ' - ' . date('g:i A', strtotime($log['TimeEnd'])) : '';
+                            $timestamp = date('F d, Y \a\t g:i A', strtotime($log['Timestamp']));
+                        ?>
+                        <div class="d-flex align-items-start audit-entry <?= $bgClass ?> bg-opacity-10 border border-<?= str_replace('bg-', '', $bgClass); ?>">
+                            <div class="me-2 mt-1">
+                                <span class="material-symbols-outlined text-white bg-<?= str_replace('bg-', '', $bgClass); ?> rounded-circle d-flex align-items-center justify-content-center">
                                 $adminName = $log['AdminName'] ?? 'System';
                                 $residentName = $log['ResidentName'] ?? 'Unknown';
                                 $facilityName = $log['FacilityName'] ?? 'Unknown Facility';
@@ -271,6 +350,14 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                                 </span>
                             </div>
                             <div class="flex-grow-1">
+                                <div class="fw-bold"><?= htmlspecialchars($adminName); ?> <?= $actionText; ?> a reservation request</div>
+                                <div class="text-muted small"><?= htmlspecialchars($timestamp); ?></div>
+                                <div class="small">
+                                    <span><strong>Resident:</strong> <?= htmlspecialchars($residentName); ?></span><br>
+                                    <span><strong>Facility:</strong> <?= htmlspecialchars($facilityName); ?></span><br>
+                                    <span><strong>Date:</strong> <?= htmlspecialchars($eventDate); ?></span>
+                                    <?php if ($timeRange): ?>
+                                        <br><span><strong>Time:</strong> <?= htmlspecialchars($timeRange); ?></span>
                                 <div class="fw-bold">
                                     <?= htmlspecialchars($adminName); ?>
                                     <?= $actionText; ?> a reservation request
@@ -296,6 +383,17 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                                 </div>
                             </div>
                         </div>
+                    <?php endwhile; ?>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="card mt-4">
+                <div class="card-header"><h5 class="mb-0">Recent Activity</h5></div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">No recent activity found.</div>
+                </div>
+            </div>
+        <?php endif; ?>
                         <?php endwhile; ?>
                     </div>
                 </div>

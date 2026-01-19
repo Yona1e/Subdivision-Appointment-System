@@ -380,7 +380,7 @@ body {
 }
 
 #calendar .fc-header-toolbar {
-    background-color: #D0D7FF;
+    background-color: #4fb8b8;
     color: white;
     padding: 10px;
     border-radius: 8px 8px 0 0;
@@ -397,14 +397,14 @@ body {
 }
 
 .summary-header {
-    background: #c8d5ff;
+    background: #4fb8b8;
     padding: 20px 25px;
 }
 
 .summary-title {
     font-size: 22px;
     font-weight: 600;
-    color: #333;
+    color: #ffffff;
     margin: 0;
 }
 

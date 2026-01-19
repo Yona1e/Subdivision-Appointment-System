@@ -7,6 +7,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Resident') {
     exit();
 }
 
+// Prevent page caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+
+$conn = new mysqli("localhost", "root", "", "facilityreservationsystem");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
 // Generate CSRF token if not exists
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
