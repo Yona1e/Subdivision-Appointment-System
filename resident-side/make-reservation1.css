@@ -131,18 +131,18 @@ body {
 
 /* ADD THIS - Active label green */
 .step-wrapper .circle.active~.step-label {
-    color: #22c55e;
+    color: #10B981;
 }
 
 /* ADD THIS - Completed label green */
 .step-wrapper .circle.completed~.step-label {
-    color: #22c55e;
+    color: #10B981;
 }
 
 .steps .progress-bar {
     position: absolute;
     height: 4px;
-    width: 100%;
+    width: 100%;    
     background: #e0e0e0;
     z-index: 1;
     top: 50%;
@@ -153,7 +153,7 @@ body {
     position: absolute;
     height: 100%;
     width: 0%;
-    background: #22c55e;
+    background: #10B981;
     transition: all 300ms ease;
     z-index: 1;
 }
@@ -161,8 +161,8 @@ body {
 /* ------------------------------- */
 
 .steps .circle.active {
-    border-color: green;
-    color: green;
+    border-color: #10B981;
+    color: #10B981;
     transition-delay: 0s;
 }
 
@@ -265,9 +265,10 @@ body {
 }
 
 .col.selected .card {
-    background-color: #0d6efd;
-    border: 2px solid #0d6efd;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    background-color: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%);
+    border: 3px solid;
+    border-image: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%) 1;
+    box-shadow: 0 4px 12px #5fd4d4;
     position: relative;
 }
 

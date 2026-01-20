@@ -239,7 +239,7 @@ $userName = htmlspecialchars(trim($user['FirstName'] . ' ' . $user['LastName']))
                             </div>
                         </div>
                     </div>
-                    <div class="container py-5" style="display: block;padding-top: 30px;">
+                    <div class="container py-5" style="display: block;padding-top: 30px !important;">
                         <div class="row g-4">
                             <!-- Left Side - Calendar -->
                             <div class="col-lg-7">

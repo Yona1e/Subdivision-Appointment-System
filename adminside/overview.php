@@ -147,7 +147,7 @@ $pending_requests_result = $conn->query($pending_requests_sql);
 
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                    <div class="card p-3 shadow-sm">
+                    <div class="card p-3 shadow-sm" style="background:rgba(255, 193, 7, 0.8);">
                         <h6 class="text-muted">Pending Requests</h6>
                         <h2>
                             <?php echo $pending_count; ?>

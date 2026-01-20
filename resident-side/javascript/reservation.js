@@ -387,7 +387,12 @@ function load_events() {
 
                 select: function (start, end) {
                     if (!selectedFacility) {
-                        alert("Please select a facility first by clicking on one of the facility cards.");
+                        Swal.fire({
+                            icon: "warning",
+                            title: "No Facility Selected",
+                            text: "Please select a facility first by clicking on one of the facility cards.",
+                            confirmButtonText: "OK"
+                        });
                         $('#calendar').fullCalendar('unselect');
                         return;
                     }
@@ -438,18 +443,22 @@ function load_events() {
                 },
 
                 eventClick: function (event) {
-                    var eventDetails = "Event Details:\n\n";
-                    eventDetails += "Facility: " + event.title + "\n";
-                    eventDetails += "Date: " + moment(event.start).format("MMMM DD, YYYY") + "\n";
-                    eventDetails += "Time: " + moment(event.start).format("h:mm A") + " - " + moment(event.end).format("h:mm A") + "\n";
+                    var eventDetails = "<strong>Facility:</strong> " + event.title + "<br>";
+                    eventDetails += "<strong>Date:</strong> " + moment(event.start).format("MMMM DD, YYYY") + "<br>";
+                    eventDetails += "<strong>Time:</strong> " + moment(event.start).format("h:mm A") + " - " + moment(event.end).format("h:mm A") + "<br>";
                     
                     if (event.status) {
-                        eventDetails += "Status: " + event.status.charAt(0).toUpperCase() + event.status.slice(1) + "\n";
+                        eventDetails += "<strong>Status:</strong> " + event.status.charAt(0).toUpperCase() + event.status.slice(1);
                     } else if (event.isPending) {
-                        eventDetails += "Status: Pending (Not yet submitted)\n";
+                        eventDetails += "<strong>Status:</strong> Pending (Not yet submitted)";
                     }
 
-                    alert(eventDetails);
+                    Swal.fire({
+                        title: "Event Details",
+                        html: eventDetails,
+                        icon: "info",
+                        confirmButtonText: "OK"
+                    });
                 },
 
                 selectConstraint: {
@@ -463,7 +472,12 @@ function load_events() {
         },
         error: function (xhr, status, error) {
             console.error("Error loading events:", xhr.responseText);
-            alert("Error loading calendar events. Please refresh the page.");
+            Swal.fire({
+                icon: "error",
+                title: "Error Loading Calendar",
+                text: "Error loading calendar events. Please refresh the page.",
+                confirmButtonText: "OK"
+            });
 
             // Initialize empty calendar on error but still include temp event
             var events = [];
@@ -487,7 +501,12 @@ function load_events() {
 
                 select: function (start, end) {
                     if (!selectedFacility) {
-                        alert("Please select a facility first by clicking on one of the facility cards above.");
+                        Swal.fire({
+                            icon: "warning",
+                            title: "No Facility Selected",
+                            text: "Please select a facility first by clicking on one of the facility cards above.",
+                            confirmButtonText: "OK"
+                        });
                         $('#calendar').fullCalendar('unselect');
                         return;
                     }
@@ -922,7 +941,7 @@ function updateSummaryDisplay() {
                 breakdownText += ', ' + reservationData.timeStart + ' - ' + reservationData.timeEnd;
             }
         } else {
-            breakdownText = 'Select facility and date';
+            breakdownText = 'Select time and date';
         }
         $summaryCard.find('.breakdown-item').html(breakdownText);
         
@@ -1039,12 +1058,22 @@ function getReservationData() {
 function saveFinalReservation() {
     // Validate that reservation data exists
     if (!reservationData.facility || !reservationData.date || !reservationData.timeStart || !reservationData.timeEnd) {
-        alert("Please complete the reservation details first by selecting a facility, date, and time.");
+        Swal.fire({
+            icon: "warning",
+            title: "Incomplete Reservation",
+            text: "Please complete the reservation details first by selecting a facility, date, and time.",
+            confirmButtonText: "OK"
+        });
         return false;
     }
 
     if (!reservationData.phone) {
-        alert("Phone number is required. Please go back and enter your phone number.");
+        Swal.fire({
+            icon: "warning",
+            title: "Phone Number Required",
+            text: "Phone number is required. Please go back and enter your phone number.",
+            confirmButtonText: "OK"
+        });
         return false;
     }
 
@@ -1131,7 +1160,12 @@ function saveFinalReservation() {
                 // Could not parse error response
             }
 
-            alert(errorMsg);
+            Swal.fire({
+                icon: "error",
+                title: "Save Failed",
+                text: errorMsg,
+                confirmButtonText: "OK"
+            });
         }
     });
     
