@@ -69,6 +69,7 @@ while($f = $facility_list->fetch_assoc()) { $facilities_array[] = $f['facility_n
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="adminside.css">
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
+    <link rel="stylesheet" href="reservations-filter.css">
 </head>
 
 <body>
