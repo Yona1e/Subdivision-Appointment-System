@@ -113,7 +113,7 @@ $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
             <div class="sidebar-content">
                 <ul class="menu-list">
                     <li class="menu-item">
-                        <a href="#" class="menu-link">
+                        <a href="../home/home.php" class="menu-link">
                             <img src="../asset/home.png" class="menu-icon">
                             <span class="menu-label">Home</span>
                         </a>
