@@ -136,7 +136,7 @@ while ($f = $facility_list->fetch_assoc()) {
                     </li>
                     <li class="menu-item">
                         <a href="#" class="menu-link">
-                            <img src="manageaccounts.php" alt="My Account Icon" class="menu-icon">
+                            <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
                             <span class="menu-label">Manage Accounts</span>
                         </a>
                     </li>
