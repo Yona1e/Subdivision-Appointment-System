@@ -1,7 +1,7 @@
 <?php
 /**
  * save_event.php
- * Handles saving facility reservations to the database
+ * Handles saving facility reservations to the database with payment proof upload
  */
 
 session_start();
@@ -119,6 +119,67 @@ if (!in_array($facility_name, $allowed_facilities)) {
     exit();
 }
 
+// Handle payment proof file upload
+$payment_proof_path = null;
+
+if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
+    $file = $_FILES['payment_proof'];
+    
+    // Validate file size (max 5MB)
+    $maxFileSize = 5 * 1024 * 1024; // 5MB in bytes
+    if ($file['size'] > $maxFileSize) {
+        echo json_encode([
+            'status' => false,
+            'msg' => 'Payment proof file is too large. Maximum size is 5MB.'
+        ]);
+        exit();
+    }
+    
+    // Validate file type (only images)
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mimeType, $allowedTypes)) {
+        echo json_encode([
+            'status' => false,
+            'msg' => 'Invalid file type. Only JPG, PNG, and GIF images are allowed.'
+        ]);
+        exit();
+    }
+    
+    // Create uploads directory if it doesn't exist
+    $uploadDir = '../uploads/payment_proofs/';
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    // Generate unique filename
+    $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $uniqueFileName = 'payment_' . $user_id . '_' . time() . '_' . uniqid() . '.' . $fileExtension;
+    $targetPath = $uploadDir . $uniqueFileName;
+    
+    // Move uploaded file
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        // Store relative path for database
+        $payment_proof_path = 'uploads/payment_proofs/' . $uniqueFileName;
+    } else {
+        echo json_encode([
+            'status' => false,
+            'msg' => 'Failed to upload payment proof. Please try again.'
+        ]);
+        exit();
+    }
+} else {
+    // Payment proof is required
+    echo json_encode([
+        'status' => false,
+        'msg' => 'Payment proof is required. Please upload a screenshot of your payment.'
+    ]);
+    exit();
+}
+
 try {
     // Check for conflicting reservations (only check visible reservations)
     $checkQuery = "SELECT id, time_start, time_end 
@@ -142,6 +203,11 @@ try {
     $conflict = $checkStmt->fetch(PDO::FETCH_ASSOC);
     
     if ($conflict) {
+        // Delete uploaded file if there's a conflict
+        if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
+            unlink('../' . $payment_proof_path);
+        }
+        
         echo json_encode([
             'status' => false,
             'msg' => 'This time slot is already booked. Please select another time or date.'
@@ -149,13 +215,13 @@ try {
         exit();
     }
     
-    // Insert new reservation with visibility defaults
+    // Insert new reservation with payment proof and visibility defaults
     $sql = "INSERT INTO reservations 
             (user_id, facility_name, phone, event_start_date, event_end_date, 
-             time_start, time_end, note, status, admin_visible, resident_visible, created_at) 
+             time_start, time_end, note, payment_proof, status, admin_visible, resident_visible, created_at) 
             VALUES 
             (:user_id, :facility_name, :phone, :event_start_date, :event_end_date, 
-             :time_start, :time_end, :note, 'pending', TRUE, TRUE, NOW())";
+             :time_start, :time_end, :note, :payment_proof, 'pending', TRUE, TRUE, NOW())";
     
     $stmt = $conn->prepare($sql);
     $result = $stmt->execute([
@@ -166,7 +232,8 @@ try {
         ':event_end_date' => $event_end_date,
         ':time_start' => $time_start,
         ':time_end' => $time_end,
-        ':note' => $note
+        ':note' => $note,
+        ':payment_proof' => $payment_proof_path
     ]);
     
     if ($result) {
@@ -178,6 +245,11 @@ try {
             'reservation_id' => $reservation_id
         ]);
     } else {
+        // Delete uploaded file if database insert fails
+        if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
+            unlink('../' . $payment_proof_path);
+        }
+        
         echo json_encode([
             'status' => false,
             'msg' => 'Failed to save reservation. Please try again.'
@@ -186,6 +258,11 @@ try {
     
 } catch(PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
+    
+    // Delete uploaded file if there's a database error
+    if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
+        unlink('../' . $payment_proof_path);
+    }
     
     echo json_encode([
         'status' => false,
