@@ -43,11 +43,23 @@ $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
 $pending_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='pending' AND admin_visible = 1");
 $pending_count = $pending_query->fetch_assoc()['total'];
 
-$upcoming_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='approved' AND event_start_date >= CURDATE()");
-$upcoming_count = $upcoming_query->fetch_assoc()['total'];
+// Changed: Rejected requests count
+$rejected_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='rejected' AND admin_visible = 1");
+$rejected_count = $rejected_query->fetch_assoc()['total'];
 
 $total_accounts_query = $conn->query("SELECT COUNT(*) AS total FROM users WHERE Status='Active'");
 $total_accounts = $total_accounts_query->fetch_assoc()['total'];
+
+// NEW: Completed reservations this week
+$completed_week_query = $conn->query("
+    SELECT COUNT(*) AS total 
+    FROM reservations 
+    WHERE status='approved' 
+    AND event_end_date < CURDATE() 
+    AND YEARWEEK(event_end_date, 1) = YEARWEEK(CURDATE(), 1)
+    AND admin_visible = 1
+");
+$completed_week_count = $completed_week_query->fetch_assoc()['total'];
 
 // FETCH STATUS DATA FOR CHART
 $status_query = $conn->query("
@@ -64,14 +76,24 @@ $status_data = $status_query->fetch_assoc();
 $recent_audit_sql = "SELECT * FROM v_audit_logs_detailed ORDER BY Timestamp DESC LIMIT 10";
 $recent_audit_result = $conn->query($recent_audit_sql);
 
-// Pending requests
+// Pending requests (for Quick Actions in chart section)
 $pending_requests_sql = "SELECT r.*, u.FirstName, u.LastName 
                          FROM reservations r
                          JOIN users u ON r.user_id = u.user_id
                          WHERE r.status='pending' AND r.admin_visible = 1
-                         ORDER BY r.created_at DESC
-                         LIMIT 10";
+                         ORDER BY r.created_at DESC";
 $pending_requests_result = $conn->query($pending_requests_sql);
+
+// Completed reservations this week (for bottom card)
+$completed_week_sql = "SELECT r.*, u.FirstName, u.LastName 
+                       FROM reservations r
+                       JOIN users u ON r.user_id = u.user_id
+                       WHERE r.status='approved' 
+                       AND r.event_end_date < CURDATE() 
+                       AND YEARWEEK(r.event_end_date, 1) = YEARWEEK(CURDATE(), 1)
+                       AND r.admin_visible = 1
+                       ORDER BY r.event_end_date DESC";
+$completed_week_result = $conn->query($completed_week_sql);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -128,9 +150,9 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="#" class="menu-link">
+                        <a href="manageaccounts.php" class="menu-link">
                             <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
-                            <span class="menu-label">My Account</span>
+                            <span class="menu-label">Manage Accounts</span>
                         </a>
                     </li>
                     <li class="menu-item">
@@ -159,44 +181,84 @@ $pending_requests_result = $conn->query($pending_requests_sql);
 
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                    <div class="card p-3 shadow-sm" style="background:rgba(255, 193, 7, 0.8);">
-                        <h6 class="text-muted">Pending Requests</h6>
-                        <h2>
-                            <?php echo $pending_count; ?>
-                        </h2>
+                    <div class="card p-3 shadow-sm" style="background:rgba(40, 167, 69, 0.8);">
+                        <h6 class="text-white">Completed Reservations This Week</h6>
+                        <h2 class="text-white"><?php echo $completed_week_count; ?></h2>
                     </div>
                 </div>
 
                 <div class="col-md-4">
-                    <div class="card p-3 shadow-sm">
-                        <h6 class="text-muted">Upcoming Events</h6>
-                        <h2>
-                            <?php echo $upcoming_count; ?>
-                        </h2>
+                    <div class="card p-3 shadow-sm" style="background:rgba(220, 53, 69, 0.8);">
+                        <h6 class="text-white">Rejected Requests</h6>
+                        <h2 class="text-white"><?php echo $rejected_count; ?></h2>
                     </div>
                 </div>
 
                 <div class="col-md-4">
-                    <div class="card p-3 shadow-sm">
-                        <h6 class="text-muted">Total Accounts</h6>
-                        <h2>
-                            <?php echo $total_accounts; ?>
-                        </h2>
+                    <div class="card p-3 shadow-sm" style="background: #0b5ed7;">
+                        <h6 class="text-white">Active Accounts</h6>
+                        <h2 class="text-white"><?php echo $total_accounts; ?></h2>
                     </div>
                 </div>
             </div>
 
             <!-- CHART SECTION -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Reservation Status Overview</h5>
+    <div class="card-header">
                 </div>
-                <div class="card-body">
-                    <canvas id="myChart" style="max-height: 400px;"></canvas>   
-</div>
-            </div>
+                <div class="card-body p-3">
+                    
+                    <div class="row g-4">
+                        <!-- Left Column: Chart -->
+                        <div class="col-lg-8">
+                            <div class="card shadow-sm border h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center"> 
+                    <h5 class="mb-0">Reservation Status Overview</h5>
+                                </div>
+                                <div class="card-body"><canvas id="myChart" style="max-height: 400px;"></canvas> </div>
+                               
+                                
+                            </div>
+                        </div>
 
-            <!-- RECENT ACTIVITY CARD -->
+                        <!-- Right Column: Quick Actions -->
+                        <div class="col-lg-4">
+    <div class="card shadow-sm border h-100 d-flex flex-column">
+        <div class="card-header d-flex justify-content-between align-items-center"> 
+                    <h5 class="mb-0">Pending Requests</h5>
+                                </div>
+        <div class="card-body p-3 flex-grow-1 d-flex flex-column">
+            <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
+                <div class="flex-grow-1" style="max-height: 320px; overflow-y: auto;">
+                    <?php while($req = $pending_requests_result->fetch_assoc()): ?>
+                        <div class="request-item mb-3 p-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong><?= htmlspecialchars($req['facility_name']) ?></strong>
+                                    <div class="text-muted small">
+                                        <?= htmlspecialchars($req['FirstName'] . ' ' . $req['LastName']) ?>
+                                    </div>
+                                </div>
+                                <span class="badge bg-warning text-white">Pending</span>
+                            </div>
+                            <div class="small text-muted">
+                                <?= date('M d, Y', strtotime($req['event_start_date'])) ?>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+                <a href="reserverequests.php" class="btn btn-warning w-100 mt-3">View All</a>
+            <?php else: ?>
+                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                    <p class="text-muted mb-0">No Pending Requests</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- RECENT ACTIVITY LOG -->
             <?php if ($recent_audit_result && $recent_audit_result->num_rows > 0): ?>
             <div class="card recent-activity-card mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -224,11 +286,9 @@ $pending_requests_result = $conn->query($pending_requests_sql);
                             $timeRange = ($log['TimeStart'] && $log['TimeEnd']) ? date('g:i A', strtotime($log['TimeStart'])) . ' - ' . date('g:i A', strtotime($log['TimeEnd'])) : '';
                             $timestamp = date('F d, Y \a\t g:i A', strtotime($log['Timestamp']));
                         ?>
-                    <div
-                        class="d-flex align-items-start audit-entry <?= $bgClass ?> bg-opacity-10 border border-<?= str_replace('bg-', '', $bgClass); ?>">
+                    <div class="d-flex align-items-start audit-entry <?= $bgClass ?> bg-opacity-10 border border-<?= str_replace('bg-', '', $bgClass); ?>">
                         <div class="me-2 mt-1">
-                            <span
-                                class="material-symbols-outlined text-white bg-<?= str_replace('bg-', '', $bgClass); ?> rounded-circle d-flex align-items-center justify-content-center">
+                            <span class="material-symbols-outlined text-white bg-<?= str_replace('bg-', '', $bgClass); ?> rounded-circle d-flex align-items-center justify-content-center">
                                 <?= $iconSymbol ?>
                             </span>
                         </div>
@@ -288,7 +348,6 @@ $pending_requests_result = $conn->query($pending_requests_sql);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
     <script src="../resident-side/javascript/chart.js"></script>
     <script src="../resident-side/javascript/sidebar.js"></script>
-
 
 </body>
 

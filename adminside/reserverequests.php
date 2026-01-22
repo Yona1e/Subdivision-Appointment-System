@@ -85,6 +85,7 @@ if ($result && $result->num_rows > 0) {
     $notes_column_exists = true;
 }
 
+// Updated query to include note and payment_proof
 $res_sql = "SELECT
                 r.id,
                 r.facility_name,
@@ -94,6 +95,9 @@ $res_sql = "SELECT
                 r.time_start,
                 r.time_end,
                 r.status,
+                r.note,
+                r.created_at,
+                r.payment_proof,
                 " . ($notes_column_exists ? "r.notes," : "") . "
                 u.FirstName,
                 u.LastName
@@ -120,6 +124,21 @@ if (!$reservations) {
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="adminside.css">
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
+    <style>
+    .reservation-row {
+        cursor: pointer;
+    }
+    .reservation-row:hover {
+        background-color: #f8f9fa;
+    }
+    .payment-proof-img {
+        width: 100%;
+        max-height: 350px;
+        object-fit: contain;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+    }
+    </style>
 </head>
 <body>
 <div class="app-layout">
@@ -159,9 +178,9 @@ if (!$reservations) {
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="#" class="menu-link">
+                    <a href="manageaccounts" class="menu-link">
                         <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
-                        <span class="menu-label">My Account</span>
+                        <span class="menu-label">Manage Accounts</span>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -195,6 +214,10 @@ if (!$reservations) {
                 </div>
                 <?php endif; ?>
 
+                <div class="alert alert-info">
+                    Pending reservations awaiting approval. Click a row to view full details.
+                </div>
+
                 <div class="table-responsive mt-3">
                     <table class="table table-bordered table-hover align-middle">
                         <thead class="table-dark">
@@ -215,7 +238,17 @@ if (!$reservations) {
                         <tbody>
                             <?php if ($reservations->num_rows > 0): ?>
                                 <?php while ($row = $reservations->fetch_assoc()): ?>
-                                <tr>
+                                <tr class="reservation-row"
+                                    data-facility="<?= htmlspecialchars($row['facility_name']) ?>"
+                                    data-user="<?= htmlspecialchars($row['FirstName'].' '.$row['LastName']) ?>"
+                                    data-phone="<?= htmlspecialchars($row['phone']) ?>"
+                                    data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?><?php if ($row['event_start_date'] != $row['event_end_date']) echo ' - ' . date('M d, Y', strtotime($row['event_end_date'])); ?>"
+                                    data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
+                                    data-status="<?= ucfirst($row['status']) ?>"
+                                    data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
+                                    data-created="<?= date('M d, Y g:i A', strtotime($row['created_at'])) ?>"
+                                    data-payment="<?= htmlspecialchars($row['payment_proof']) ?>"
+                                >
                                     <td><?php echo $row['id']; ?></td>
                                     <td><?php echo htmlspecialchars($row['facility_name']); ?></td>
                                     <td><?php echo htmlspecialchars($row['phone']); ?></td>
@@ -239,7 +272,7 @@ if (!$reservations) {
                                         <?php echo !empty($row['notes']) ? htmlspecialchars($row['notes']) : "<span class='text-muted'>No notes</span>"; ?>
                                     </td>
                                     <?php endif; ?>
-                                    <td><span class="badge bg-warning text-dark"><?php echo ucfirst($row['status']); ?></span></td>
+                                    <td><span class="badge bg-warning text-white"><?php echo ucfirst($row['status']); ?></span></td>
                                     <td>
                                         <form method="POST" class="d-inline">
                                             <input type="hidden" name="reservation_id" value="<?php echo $row['id']; ?>">
@@ -271,9 +304,66 @@ if (!$reservations) {
         </div>
     </div>
 </div>
-<script src="../resident-side/javascript/sidebar.js"></script>
+
+<!-- MODAL -->
+<div class="modal fade" id="reservationModal">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Reservation Details</h5>
+<button class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<p><strong>Facility:</strong> <span id="mFacility"></span></p>
+<p><strong>User:</strong> <span id="mUser"></span></p>
+<p><strong>Phone:</strong> <span id="mPhone"></span></p>
+<p><strong>Date:</strong> <span id="mDate"></span></p>
+<p><strong>Time:</strong> <span id="mTime"></span></p>
+<p><strong>Status:</strong> <span id="mStatus"></span></p>
+<p><strong>Created:</strong> <span id="mCreated"></span></p>
+
+<hr>
+<p><strong>Resident Note:</strong></p>
+<p id="mNote" class="text-muted"></p>
+
+<hr>
+<p><strong>Payment Proof:</strong></p>
+<div id="paymentContainer" class="text-center text-muted">No payment proof uploaded</div>
+</div>
+</div>
+</div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+document.querySelectorAll('.reservation-row').forEach(row => {
+    row.addEventListener('click', e => {
+        if (e.target.closest('form')) return;
+
+        mFacility.textContent = row.dataset.facility;
+        mUser.textContent = row.dataset.user;
+        mPhone.textContent = row.dataset.phone;
+        mDate.textContent = row.dataset.date;
+        mTime.textContent = row.dataset.time;
+        mStatus.textContent = row.dataset.status;
+        mCreated.textContent = row.dataset.created;
+        mNote.textContent = row.dataset.note;
+
+        const payment = row.dataset.payment;
+        const container = document.getElementById('paymentContainer');
+
+        if (payment) {
+            container.innerHTML = `<img src="../${payment}" class="payment-proof-img">`;
+        } else {
+            container.textContent = "No payment proof uploaded";
+        }
+
+        new bootstrap.Modal(document.getElementById('reservationModal')).show();
+    });
+});
+</script>
+<script src="../resident-side/javascript/sidebar.js"></script>
 </body>
 </html>
 

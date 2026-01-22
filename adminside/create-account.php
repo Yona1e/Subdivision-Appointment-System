@@ -319,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li class="menu-item">
                     <a href="#" class="menu-link">
                         <img src="../asset/profile.png" class="menu-icon">
-                        <span class="menu-label">My Account</span>
+                        <span class="menu-label">Manage Accounts</span>
                     </a>
                 </li>
                 <li class="menu-item">

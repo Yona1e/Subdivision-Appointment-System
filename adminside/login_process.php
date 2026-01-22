@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Redirect based on role
             if ($user['Role'] === 'Resident') {
-                header("Location: ../resident-side/make-reservation.php");
+                header("Location: ../home/home.php");
                 exit();
             } else if ($user['Role'] === 'Admin') {
                 header("Location: overview.php");
