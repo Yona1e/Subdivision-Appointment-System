@@ -123,6 +123,19 @@ body {
     background-color: #f8f9fa;
 }
 
+/* ENHANCED: Fancy table hover effect from second CSS */
+.table.table-hover tbody tr {
+    transition: all 0.3s ease;
+    height: 60px;
+}
+
+.table.table-hover tbody tr:hover {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
 /* ADDED: Badge styling */
 .reservation-card .badge {
     padding: 0.35rem 0.65rem;
@@ -168,58 +181,6 @@ body {
     justify-content: flex-start;
 }
 
-
-
-/* ADDED: Responsive adjustments */
-@media (max-width: 768px) {
-    .main-content {
-        padding: 15px;
-    }
-
-    .reservation-card {
-        padding: 20px;
-        border-radius: 8px;
-    }
-
-    .reservation-card .table {
-        font-size: 0.875rem;
-    }
-
-    .reservation-card .table thead th,
-    .reservation-card .table tbody td {
-        padding: 0.5rem;
-    }
-
-    .reservation-card h1 {
-        font-size: 1.5rem;
-    }
-
-    .search-container {
-        width: 100%;
-        display: flex;
-        justify-content: flex-start;
-    }
-
-    .search-bar {
-        width: 350px;
-        padding: 12px 15px;
-        border-radius: 8px;
-        border: 1px solid var(--color-border-hr);
-        background: white;
-        font-size: 15px;
-        outline: none;
-        color: var(--color-text-primary);
-    }
-
-    .search-bar::placeholder {
-        color: var(--color-text-placeholder);
-    }
-
-    .search-bar:focus {
-        border-color: var(--color-hover-primary);
-        box-shadow: 0 0 5px rgba(105, 92, 254, 0.4);
-    }
-
 /* Fixed height and scrollable cards */
 .recent-activity-card,
 .pending-requests-card {
@@ -240,55 +201,51 @@ body {
     border-radius: 8px;
     font-size: 0.9rem;
 }
-    /* Fixed height for Recent Activity card */
-    .recent-activity-card {
-        height: 10px;
-        /* Adjust to desired height */
-        overflow-y: auto;
-    }
 
-    /* Make each audit entry shorter */
-    .audit-entry {
-        padding: 10px 12px;
-        margin-bottom: 8px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-    }
+/* Fixed height for Recent Activity card */
+.recent-activity-card {
+    height: 10px;
+    overflow-y: auto;
+}
 
-    .audit-entry .material-symbols-outlined {
-        width: 35px;
-        height: 35px;
-        font-size: 18px;
-    }
+/* Make each audit entry shorter */
+.audit-entry {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.audit-entry .material-symbols-outlined {
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+}
 
 .audit-entry .flex-grow-1 div {
     margin-bottom: 2px;
 }
-    .audit-entry .flex-grow-1 div {
-        margin-bottom: 2px;
-        /* Reduce spacing inside each entry */
-    }
 
 /* ADDED: Responsive adjustments */
 @media (max-width: 768px) {
     .main-content {
         padding: 15px;
     }
-    
+
     .reservation-card {
         padding: 20px;
         border-radius: 8px;
     }
-    
+
     .reservation-card .table {
         font-size: 0.875rem;
     }
-    
+
     .reservation-card .table thead th,
     .reservation-card .table tbody td {
         padding: 0.5rem;
     }
-    
+
     .reservation-card h1 {
         font-size: 1.5rem;
     }
@@ -302,114 +259,123 @@ body {
     .search-bar {
         width: 100%;
         max-width: 350px;
+        padding: 12px 15px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border-hr);
+        background: white;
+        font-size: 15px;
+        outline: none;
+        color: var(--color-text-primary);
+    }
+
+    .search-bar::placeholder {
+        color: var(--color-text-placeholder);
+    }
+
+    .search-bar:focus {
+        border-color: var(--color-hover-primary);
+        box-shadow: 0 0 5px rgba(105, 92, 254, 0.4);
     }
 
     /* Search bar styling */
-        .search-bar {
-            height: 38px;
-            font-size: 0.9rem;
-            width: 250px;
-        }
+    .search-bar {
+        height: 38px;
+        font-size: 0.9rem;
+        width: 250px;
+    }
 
-        /* Container for search + filter row */
-        .search-filter-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
+    /* Container for search + filter row */
+    .search-filter-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
 
-        /* Filter dropdown container */
-        .filter-dropdown {
-            position: relative;
-            display: inline-block;
-        }
+    /* Filter dropdown container */
+    .filter-dropdown {
+        position: relative;
+        display: inline-block;
+    }
 
-        #filterButton {
-            height: 38px;
-            min-width: 120px;
-        }
+    #filterButton {
+        height: 38px;
+        min-width: 120px;
+    }
 
-        /* Dropdown menu styling */
-        .filter-menu {
-            display: none;
-            position: fixed;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 280px;
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 9999;
-            padding: 15px;
-        }
+    /* Dropdown menu styling */
+    .filter-menu {
+        display: none;
+        position: fixed;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 280px;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 9999;
+        padding: 15px;
+    }
 
-        .filter-menu.show {
-            display: block;
-        }
+    .filter-menu.show {
+        display: block;
+    }
 
-        .filter-section {
-            margin-bottom: 15px;
-        }
+    .filter-section {
+        margin-bottom: 15px;
+    }
 
-        .filter-section:last-child {
-            margin-bottom: 0;
-        }
+    .filter-section:last-child {
+        margin-bottom: 0;
+    }
 
-        .filter-section h6 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #333;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
+    .filter-section h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
 
-        .filter-option {
-            display: flex;
-            align-items: center;
-            padding: 6px 8px;
-            margin: 4px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+    .filter-option {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        margin: 4px 0;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
 
-        .filter-option:hover {
-            background-color: #f0f0f0;
-        }
+    .filter-option:hover {
+        background-color: #f0f0f0;
+    }
 
-        .filter-option input[type="checkbox"] {
-            margin-right: 10px;
-            cursor: pointer;
-        }
+    .filter-option input[type="checkbox"] {
+        margin-right: 10px;
+        cursor: pointer;
+    }
 
-        .filter-option label {
-            cursor: pointer;
-            margin: 0;
-            flex: 1;
-            user-select: none;
-        }
+    .filter-option label {
+        cursor: pointer;
+        margin: 0;
+        flex: 1;
+        user-select: none;
+    }
 
-        .filter-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
+    .filter-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
 
-        .filter-actions button {
-            flex: 1;
-            font-size: 0.85rem;
-            padding: 6px 12px;
-        }
-
-        /* Table styling improvements */
-        .table tbody tr:hover {
-            background-color: #f1f1f1;
-            transition: background-color 0.2s;
-        }
-}
+    .filter-actions button {
+        flex: 1;
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
 }

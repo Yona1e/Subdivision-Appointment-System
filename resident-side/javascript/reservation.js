@@ -338,7 +338,7 @@ function openBookingModal(start, end) {
     
     // DO NOT update reservationData.date here - wait for submit
 
-    // Check and disable booked time slots for this date and facility
+    // Check and disable booked time slots AND past time slots for this date and facility
     checkAndDisableBookedSlots(startDate, selectedFacility);
 
     $("#myModal").modal("show");
@@ -713,9 +713,14 @@ function checkModalFormCompletion() {
 }
 
 /**
- * Check and disable already booked time slots
+ * Check and disable already booked time slots AND past time slots
  */
 function checkAndDisableBookedSlots(selectedDate, facilityName) {
+    // Get current date and time
+    var now = moment();
+    var currentDate = now.format("YYYY-MM-DD");
+    var isToday = selectedDate === currentDate;
+
     // Get list of booked events first
     var bookedSlots = allEvents.filter(function(event) {
         var eventDate = moment(event.start).format("YYYY-MM-DD");
@@ -743,6 +748,13 @@ function checkAndDisableBookedSlots(selectedDate, facilityName) {
         
         var slotStartTime = moment(selectedDate + ' ' + slotStart, 'YYYY-MM-DD HH:mm');
         var slotEndTime = moment(selectedDate + ' ' + slotEnd, 'YYYY-MM-DD HH:mm');
+        
+        // Check if this slot is in the past (only for today's date)
+        var isPastTime = false;
+        if (isToday) {
+            // If the slot end time has already passed, disable it
+            isPastTime = slotEndTime.isBefore(now) || slotEndTime.isSameOrBefore(now);
+        }
         
         // Check if this slot conflicts with any booked event
         var isBooked = bookedSlots.some(function(event) {
@@ -772,10 +784,30 @@ function checkAndDisableBookedSlots(selectedDate, facilityName) {
             if ($button.find('.badge-danger').length === 0) {
                 $button.append(' <span class="badge badge-danger ml-2">Booked</span>');
             }
+        } else if (isPastTime) {
+            // Disable past time slots
+            $button.prop('disabled', true)
+                   .addClass('disabled past-time')
+                   .removeClass('selected') // Remove selected if it was selected
+                   .css({
+                       'opacity': '0.4',
+                       'cursor': 'not-allowed',
+                       'background-color': '#f5f5f5',
+                       'color': '#aaa',
+                       'pointer-events': 'none'
+                   });
+            
+            // Add "Past" badge if not already present
+            if ($button.find('.badge-secondary').length === 0) {
+                $button.append(' <span class="badge badge-secondary ml-2">Past</span>');
+            }
+            
+            // Remove any "Booked" badge
+            $button.find('.badge-danger').remove();
         } else {
             // Enable the available slot (remove any previous disabled state)
             $button.prop('disabled', false)
-                   .removeClass('disabled booked')
+                   .removeClass('disabled booked past-time')
                    .css({
                        'opacity': '',
                        'cursor': '',
@@ -784,8 +816,8 @@ function checkAndDisableBookedSlots(selectedDate, facilityName) {
                        'pointer-events': ''
                    });
             
-            // Remove "Booked" badge
-            $button.find('.badge-danger').remove();
+            // Remove both "Booked" and "Past" badges
+            $button.find('.badge-danger, .badge-secondary').remove();
         }
     });
 }

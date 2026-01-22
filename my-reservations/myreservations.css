@@ -81,6 +81,15 @@ body {
     overflow-y: auto;  /* Enable vertical scroll */
 }
 
+.reservation-card .table-dark th {
+    background-color: #2c3e50;
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem;
+    text-align: left;
+    border: none;
+}
+
 /* Make the table stretch wider */
 .table {
     width: 100%;

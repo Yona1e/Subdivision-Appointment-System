@@ -131,7 +131,9 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="profile-section">
                     <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
                     <div class="profile-info">
-                        <p class="profile-name"><?= $userName ?></p>
+                        <p class="profile-name">
+                            <?= $userName ?>
+                        </p>
                         <p class="profile-role">Resident</p>
                     </div>
                 </div>
@@ -188,11 +190,10 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         Showing <strong>pending</strong>, <strong>approved</strong>, and <strong>rejected</strong>
                         reservations. Completed reservations are not displayed.
                     </div>
-
+                    <!-- TABLE -->
                     <div class="table-responsive">
-
                         <table class="table table-hover">
-                            <thead class="table-light">
+                            <thead class="table-dark">
                                 <tr>
                                     <th scope="col">Facility</th>
                                     <th scope="col">Date</th>
@@ -251,8 +252,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <?php else: ?>
                                             <!-- Approved/Rejected status - Show PDF and Delete buttons -->
                                             <a href="invoice.php?id=<?php echo $reservation['id']; ?>"
-                                                class="btn btn-sm btn-primary" download
-                                                title="Download PDF Invoice">
+                                                class="btn btn-sm btn-primary" download title="Download PDF Invoice">
                                                 <i class="bi bi-file-pdf"></i> PDF
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger delete-btn"

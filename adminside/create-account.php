@@ -276,79 +276,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-<div class="app-layout">
+    <div class="app-layout">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <header class="sidebar-header">
-    <div class="profile-section">
-        <img src="<?= htmlspecialchars($loggedInUserProfilePic) ?>" 
-             alt="Profile" 
-             class="profile-photo"
-             onerror="this.src='../asset/profile.jpg'">
-        <div class="profile-info">
-            <p class="profile-name"><?= htmlspecialchars($loggedInUserName) ?></p>
-            <p class="profile-role">Admin</p>
-        </div>
-    </div>
-    <button class="sidebar-toggle">
-        <span class="material-symbols-outlined">chevron_left</span>
-    </button>
-</header>
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="profile-section">
+                    <img src="<?= htmlspecialchars($loggedInUserProfilePic) ?>" alt="Profile" class="profile-photo"
+                        onerror="this.src='../asset/profile.jpg'">
+                    <div class="profile-info">
+                        <p class="profile-name">
+                            <?= htmlspecialchars($loggedInUserName) ?>
+                        </p>
+                        <p class="profile-role">Admin</p>
+                    </div>
+                </div>
+                <button class="sidebar-toggle">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+            </header>
 
-        <div class="sidebar-content">
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="overview.php" class="menu-link">
-                        <img src="../asset/home.png" class="menu-icon">
-                        <span class="menu-label">Overview</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="reserverequests.php" class="menu-link">
-                        <img src="../asset/makeareservation.png" class="menu-icon">
-                        <span class="menu-label">Requests</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="reservations.php" class="menu-link">
-                        <img src="../asset/reservations.png" class="menu-icon">
-                        <span class="menu-label">Reservations</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" class="menu-link">
-                        <img src="../asset/profile.png" class="menu-icon">
-                        <span class="menu-label">Manage Accounts</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="create-account.php" class="menu-link active">
-                        <img src="../asset/profile.png" class="menu-icon">
-                        <span class="menu-label">Create Account</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="logout-section">
-            <a  href="../adminside/log-out.php" method="post" class="logout-link menu-link">
-                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
-                <span class="menu-label">Log Out</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-
-        <div class="reservation-card">
-            <div class="page-header">
-                Create Account
+            <div class="sidebar-content">
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="overview.php" class="menu-link">
+                            <img src="../asset/home.png" class="menu-icon">
+                            <span class="menu-label">Overview</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="reserverequests.php" class="menu-link">
+                            <img src="../asset/makeareservation.png" class="menu-icon">
+                            <span class="menu-label">Requests</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="reservations.php" class="menu-link">
+                            <img src="../asset/reservations.png" class="menu-icon">
+                            <span class="menu-label">Reservations</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="quick-reservation.php" class="menu-link">
+                            <img src="../asset/profile.png" class="menu-icon">
+                            <span class="menu-label">Manage Accounts</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="create-account.php" class="menu-link active">
+                            <img src="../asset/profile.png" class="menu-icon">
+                            <span class="menu-label">Create Account</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
+            <div class="logout-section">
+                <a href="../adminside/log-out.php" method="post" class="logout-link menu-link">
+                    <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+                    <span class="menu-label">Log Out</span>
+                </a>
+            </div>
+        </aside>
 
-            <div class="card-body">
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
 
-                <?php if (isset($_SESSION['success'])): ?>
+            <div class="reservation-card">
+                <div class="page-header">
+                    Create Account
+                </div>
+
+                <div class="card-body">
+
+                    <?php if (isset($_SESSION['success'])): ?>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <?php 
                         echo htmlspecialchars($_SESSION['success']); 
@@ -356,9 +356,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                <?php endif; ?>
+                    <?php endif; ?>
 
-                <?php if (isset($_SESSION['error'])): ?>
+                    <?php if (isset($_SESSION['error'])): ?>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <?php 
                         echo htmlspecialchars($_SESSION['error']); 
@@ -366,162 +366,169 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                <?php endif; ?>
+                    <?php endif; ?>
 
-                <form method="POST" enctype="multipart/form-data" id="createAccountForm">
-                    
-                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                    <form method="POST" enctype="multipart/form-data" id="createAccountForm">
 
-                    <!-- PERSONAL INFORMATION SECTION -->
-                    <div class="p-4 mb-4 border rounded bg-light" style="width: 100%;">
-                        <h5 class="fw-bold mb-3" style="font-size: 1.2rem;">Personal Information</h5>
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">First Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="first_name" 
-                                       placeholder="e.g., John" required maxlength="75">
+                        <!-- PERSONAL INFORMATION SECTION -->
+                        <div class="p-4 mb-4 border rounded bg-light" style="width: 100%;">
+                            <h5 class="fw-bold mb-3" style="font-size: 1.2rem;">Personal Information</h5>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="first_name" placeholder="e.g., John"
+                                        required maxlength="75">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="last_name"
+                                        placeholder="e.g., De La Cruz" required maxlength="75">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Birthday <span
+                                            class="text-muted">(Optional)</span></label>
+                                    <input type="date" class="form-control" name="birthday" max="<?= date('Y-m-d') ?>"
+                                        id="birthdayInput">
+                                    <small class="text-muted">Leave blank if unknown</small>
+                                </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="last_name" 
-                                       placeholder="e.g., De La Cruz" required maxlength="75">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" name="email"
+                                        placeholder="Enter email address" required maxlength="64">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" name="password"
+                                        placeholder="Minimum 6 characters" required minlength="6" maxlength="64">
+                                </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">Birthday <span class="text-muted">(Optional)</span></label>
-                                <input type="date" class="form-control" name="birthday" 
-                                       max="<?= date('Y-m-d') ?>" id="birthdayInput">
-                                <small class="text-muted">Leave blank if unknown</small>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Role <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="role" required>
+                                        <option value="" disabled selected>Select Role</option>
+                                        <option value="resident">Resident</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Profile Picture <span
+                                            class="text-muted">(Optional)</span></label>
+                                    <input type="file" class="form-control" name="profile_picture"
+                                        accept="image/jpeg,image/jpg,image/png,image/gif" id="profilePicInput">
+                                    <small class="text-muted">Max 5MB. Allowed: JPG, PNG, GIF</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ADDRESS INFORMATION SECTION -->
+                        <div class="p-4 mb-4 border rounded bg-light" style="width: 100%;">
+                            <h5 class="fw-bold mb-3" style="font-size: 1.2rem;">Address Information</h5>
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Block <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="block" placeholder="e.g., 5" required
+                                        maxlength="64">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Lot <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="lot" placeholder="e.g., 12" required
+                                        maxlength="64">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Street Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="street_name"
+                                        placeholder="e.g., Acacia Street" required maxlength="64">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email" 
-                                       placeholder="Enter email address" required maxlength="64">
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Password <span class="text-danger">*</span></label>
-                                <input type="password" class="form-control" name="password" 
-                                       placeholder="Minimum 6 characters" required minlength="6" maxlength="64">
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Role <span class="text-danger">*</span></label>
-                                <select class="form-select" name="role" required>
-                                    <option value="" disabled selected>Select Role</option>
-                                    <option value="resident">Resident</option>
-                                    <option value="admin">Admin</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Profile Picture <span class="text-muted">(Optional)</span></label>
-                                <input type="file" class="form-control" name="profile_picture" 
-                                       accept="image/jpeg,image/jpg,image/png,image/gif" id="profilePicInput">
-                                <small class="text-muted">Max 5MB. Allowed: JPG, PNG, GIF</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ADDRESS INFORMATION SECTION -->
-                    <div class="p-4 mb-4 border rounded bg-light" style="width: 100%;">
-                        <h5 class="fw-bold mb-3" style="font-size: 1.2rem;">Address Information</h5>
-
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Block <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="block" 
-                                       placeholder="e.g., 5" required maxlength="64">
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Lot <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="lot" 
-                                       placeholder="e.g., 12" required maxlength="64">
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Street Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="street_name" 
-                                       placeholder="e.g., Acacia Street" required maxlength="64">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-grid mt-4 p-4">
-                        <button type="submit" class="btn btn-primary" 
+                        <div class="d-grid mt-4 p-4">
+                            <button type="submit" class="btn btn-primary"
                                 style="padding: 12px; font-size: 1.1rem; font-weight: 500;">
-                            Create Account
-                        </button>
-                    </div>
+                                Create Account
+                            </button>
+                        </div>
 
-                </form>
+                    </form>
 
+                </div>
             </div>
+
         </div>
 
     </div>
 
-</div>
+    <script src="../../resident-side/javascript/sidebar.js"></script>
 
-<script src="../../resident-side/javascript/sidebar.js"></script>
+    <script>
+        // Client-side validation for profile picture
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
 
-<script>
-// Client-side validation for profile picture
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        document.getElementById('profilePicInput')?.addEventListener('change', function (e) {
+            const file = e.target.files[0];
 
-document.getElementById('profilePicInput')?.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    
-    if (file) {
-        // Check file size
-        if (file.size > MAX_FILE_SIZE) {
-            alert('File is too large. Maximum size is 5MB.');
-            e.target.value = '';
-            return;
-        }
-        
-        // Check file type
-        if (!ALLOWED_TYPES.includes(file.type)) {
-            alert('Invalid file type. Please select a JPG, PNG, or GIF image.');
-            e.target.value = '';
-            return;
-        }
-    }
-});
+            if (file) {
+                // Check file size
+                if (file.size > MAX_FILE_SIZE) {
+                    alert('File is too large. Maximum size is 5MB.');
+                    e.target.value = '';
+                    return;
+                }
 
-// Birthday validation
-document.getElementById('birthdayInput')?.addEventListener('change', function(e) {
-    const selectedDate = new Date(e.target.value);
-    const today = new Date();
-    
-    if (selectedDate > today) {
-        alert('Birthday cannot be in the future.');
-        e.target.value = '';
-    }
-});
+                // Check file type
+                if (!ALLOWED_TYPES.includes(file.type)) {
+                    alert('Invalid file type. Please select a JPG, PNG, or GIF image.');
+                    e.target.value = '';
+                    return;
+                }
+            }
+        });
 
-// Form submission validation
-document.getElementById('createAccountForm')?.addEventListener('submit', function(e) {
-    const password = document.querySelector('input[name="password"]').value;
-    
-    if (password.length < 6) {
-        e.preventDefault();
-        alert('Password must be at least 6 characters long.');
-        return false;
-    }
-});
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
-<script src="../resident-side/javascript/sidebar.js"></script>
+        // Birthday validation
+        document.getElementById('birthdayInput')?.addEventListener('change', function (e) {
+            const selectedDate = new Date(e.target.value);
+            const today = new Date();
+
+            if (selectedDate > today) {
+                alert('Birthday cannot be in the future.');
+                e.target.value = '';
+            }
+        });
+
+        // Form submission validation
+        document.getElementById('createAccountForm')?.addEventListener('submit', function (e) {
+            const password = document.querySelector('input[name="password"]').value;
+
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters long.');
+                return false;
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+        integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+        crossorigin="anonymous"></script>
+    <script src="../resident-side/javascript/sidebar.js"></script>
 </body>
+
 </html>
