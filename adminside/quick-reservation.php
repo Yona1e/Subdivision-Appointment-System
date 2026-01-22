@@ -1,18 +1,15 @@
 <?php
 session_start();
-// Prevent page caching
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 
-// Check if user is logged in
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     header("Location: ../login/login.php");
     exit();
 }
 
-// Database connection
 $host = 'localhost';
 $dbname = 'facilityreservationsystem';
 $username = 'root';
@@ -25,8 +22,10 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Handle AJAX request for bookings data
+// Handle AJAX request for fetching bookings by facility
 if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
+    header('Content-Type: application/json');
+    
     $facility = isset($_GET['facility']) ? trim($_GET['facility']) : null;
     
     if (!$facility || empty($facility)) {
@@ -35,24 +34,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
     }
     
     try {
-        // Fetch bookings with resident information for the selected facility
+        // First, let's check what columns exist in your reservations table
         $sql = "SELECT 
-                    r.reservation_id,
-                    r.facility_name,
-                    r.event_start_date as date,
-                    r.time_start,
-                    r.time_end,
-                    r.status,
-                    r.phone,
-                    r.note,
-                    CONCAT(u.FirstName, ' ', u.LastName) as resident_name,
+                    r.*,
+                    CONCAT(u.FirstName, ' ', u.LastName) as title,
                     u.Email as resident_email
                 FROM reservations r
                 INNER JOIN users u ON r.user_id = u.user_id
                 WHERE r.facility_name = :facility
                 AND r.status IN ('confirmed', 'approved', 'pending')
-                ORDER BY r.event_start_date DESC, r.time_start DESC
-                LIMIT 50";
+                ORDER BY r.event_start_date DESC, r.time_start DESC";
         
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':facility', $facility, PDO::PARAM_STR);
@@ -60,23 +51,27 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
         
         $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Format the data
         $formattedBookings = [];
         foreach ($bookings as $booking) {
-            // Format time from 24h to 12h
-            $timeStart = date('g:i A', strtotime($booking['time_start']));
-            $timeEnd = date('g:i A', strtotime($booking['time_end']));
+            // Handle different possible ID column names
+            $reservationId = null;
+            if (isset($booking['id'])) {
+                $reservationId = $booking['id'];
+            } elseif (isset($booking['reservation_id'])) {
+                $reservationId = $booking['reservation_id'];
+            } elseif (isset($booking['reservationID'])) {
+                $reservationId = $booking['reservationID'];
+            }
             
             $formattedBookings[] = [
-                'reservation_id' => $booking['reservation_id'],
-                'resident_name' => $booking['resident_name'],
-                'resident_email' => $booking['resident_email'],
-                'date' => $booking['date'],
-                'time_start' => $timeStart,
-                'time_end' => $timeEnd,
-                'status' => ucfirst($booking['status']),
-                'phone' => $booking['phone'],
-                'note' => $booking['note']
+                'id' => $reservationId,
+                'title' => $booking['title'],
+                'start' => $booking['event_start_date'] . 'T' . $booking['time_start'],
+                'end' => $booking['event_end_date'] . 'T' . $booking['time_end'],
+                'status' => $booking['status'],
+                'phone' => isset($booking['phone']) ? $booking['phone'] : '',
+                'note' => isset($booking['note']) ? $booking['note'] : '',
+                'email' => $booking['resident_email']
             ];
         }
         
@@ -97,20 +92,116 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
     }
 }
 
-// Fetch current user data
+// Handle AJAX request for creating quick reservation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_reservation') {
+    header('Content-Type: application/json');
+    
+    // Get and validate input
+    $facility = isset($_POST['facility']) ? trim($_POST['facility']) : '';
+    $date = isset($_POST['date']) ? trim($_POST['date']) : '';
+    $timeStart = isset($_POST['time_start']) ? trim($_POST['time_start']) : '';
+    $timeEnd = isset($_POST['time_end']) ? trim($_POST['time_end']) : '';
+    $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+    $note = isset($_POST['note']) ? trim($_POST['note']) : '';
+
+    // Validation
+    if (empty($facility) || empty($date) || empty($timeStart) || empty($timeEnd) || empty($phone)) {
+        echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
+        exit();
+    }
+
+    // Validate phone number format
+    if (!preg_match('/^09\d{9}$/', $phone)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid phone number format']);
+        exit();
+    }
+
+    // Validate date is not in the past
+    $selectedDate = new DateTime($date);
+    $today = new DateTime();
+    $today->setTime(0, 0, 0);
+
+    if ($selectedDate < $today) {
+        echo json_encode(['success' => false, 'message' => 'Cannot book past dates']);
+        exit();
+    }
+
+    // Check for conflicts
+    try {
+        $checkSql = "SELECT COUNT(*) as count 
+                     FROM reservations 
+                     WHERE facility_name = :facility 
+                     AND event_start_date = :date 
+                     AND status IN ('confirmed', 'approved', 'pending')
+                     AND (
+                         (time_start < :time_end AND time_end > :time_start)
+                     )";
+        
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bindParam(':facility', $facility);
+        $checkStmt->bindParam(':date', $date);
+        $checkStmt->bindParam(':time_start', $timeStart);
+        $checkStmt->bindParam(':time_end', $timeEnd);
+        $checkStmt->execute();
+        
+        $result = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result['count'] > 0) {
+            echo json_encode(['success' => false, 'message' => 'This time slot is already booked']);
+            exit();
+        }
+        
+    } catch(PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error checking availability']);
+        exit();
+    }
+
+    // Get admin user_id from session
+    $user_id = $_SESSION['user_id'];
+
+    // Insert reservation
+    try {
+        $insertSql = "INSERT INTO reservations 
+                      (user_id, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, status, created_at) 
+                      VALUES 
+                      (:user_id, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'confirmed', NOW())";
+        
+        $insertStmt = $conn->prepare($insertSql);
+        $insertStmt->bindParam(':user_id', $user_id);
+        $insertStmt->bindParam(':facility', $facility);
+        $insertStmt->bindParam(':start_date', $date);
+        $insertStmt->bindParam(':end_date', $date);
+        $insertStmt->bindParam(':time_start', $timeStart);
+        $insertStmt->bindParam(':time_end', $timeEnd);
+        $insertStmt->bindParam(':phone', $phone);
+        $insertStmt->bindParam(':note', $note);
+        
+        $insertStmt->execute();
+        
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Reservation created successfully',
+            'reservation_id' => $conn->lastInsertId()
+        ]);
+        exit();
+        
+    } catch(PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error creating reservation: ' . $e->getMessage()]);
+        exit();
+    }
+}
+
 $user_id = $_SESSION['user_id'];
 $userStmt = $conn->prepare("SELECT FirstName, LastName, ProfilePictureURL FROM users WHERE user_id = ?");
 $userStmt->execute([$user_id]);
 $user = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-// Check if user exists
 if (!$user) {
     session_destroy();
     header("Location: ../login/login.php");
     exit();
 }
 
-// Profile picture fallback
 $profilePic = !empty($user['ProfilePictureURL'])
     ? '../' . $user['ProfilePictureURL']
     : '../asset/default-profile.png';
@@ -120,8 +211,6 @@ if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePic
 }
 
 $userName = htmlspecialchars(trim($user['FirstName'] . ' ' . $user['LastName']));
-
-// Define variables for sidebar
 $loggedInUserName = $userName;
 $loggedInUserProfilePic = $profilePic;
 ?>
@@ -138,11 +227,8 @@ $loggedInUserProfilePic = $profilePic;
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
     
-    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Moment.js -->
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    <!-- FullCalendar v3 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     
@@ -152,601 +238,301 @@ $loggedInUserProfilePic = $profilePic;
             padding: 0;
             box-sizing: border-box;
         }
-        
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
-            --accent: #f59e0b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --dark: #0f172a;
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
-            --gray-900: #0f172a;
-        }
-        
+
         body {
             font-family: 'DM Sans', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-attachment: fixed;
-            color: var(--gray-900);
-            overflow-x: hidden;
+            background-color: #f5f7fa;
         }
-        
+
         .app-layout {
             display: flex;
             min-height: 100vh;
         }
-        
+
         .main-content {
             flex: 1;
+            padding: 2rem;
             margin-left: 280px;
-            padding: 40px;
-            transition: margin-left 0.3s ease;
         }
-        
+
         .page-header {
-            font-family: 'Syne', sans-serif;
-            font-size: 48px;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 16px;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            letter-spacing: -0.02em;
-            animation: slideDown 0.6s ease-out;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
         }
-        
+
         .page-subtitle {
-            font-size: 18px;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 40px;
-            font-weight: 400;
-            animation: slideDown 0.6s ease-out 0.1s backwards;
+            color: #6b7280;
+            margin-bottom: 2rem;
         }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes scaleIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        /* Facility Selector */
+
         .facility-selector {
             background: white;
-            border-radius: 24px;
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
-        
+
         .facility-selector h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 30px;
-            color: var(--gray-900);
-            position: relative;
-            display: inline-block;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
         }
-        
-        .facility-selector h3::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 0;
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            border-radius: 2px;
-        }
-        
+
         .facility-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
         }
-        
+
         .facility-card {
-            background: var(--gray-50);
-            border: 3px solid transparent;
-            border-radius: 20px;
-            padding: 30px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
         }
-        
-        .facility-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: 0;
-        }
-        
-        .facility-card > * {
-            position: relative;
-            z-index: 1;
-        }
-        
+
         .facility-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
         }
-        
+
         .facility-card.selected {
-            border-color: var(--primary);
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.4);
+            border-color: #3b82f6;
+            background: #eff6ff;
         }
-        
-        .facility-card.selected::before {
-            opacity: 0.1;
-        }
-        
+
         .facility-card img {
-            width: 70px;
-            height: 70px;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
-            transition: transform 0.4s ease;
+            width: 60px;
+            height: 60px;
+            margin-bottom: 0.75rem;
         }
-        
-        .facility-card:hover img {
-            transform: scale(1.1) rotate(5deg);
-        }
-        
+
         .facility-card h5 {
-            font-family: 'Syne', sans-serif;
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a1a1a;
             margin: 0;
-            color: var(--gray-900);
-            transition: color 0.3s ease;
         }
-        
-        .facility-card.selected h5 {
-            color: var(--primary);
-        }
-        
-        /* Content Grid */
+
         .content-grid {
             display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 30px;
-            animation: fadeInUp 0.6s ease-out 0.3s backwards;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
         }
-        
-        /* Bookings Table Section */
-        .bookings-section {
-            background: white;
-            border-radius: 24px;
-            padding: 0;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            overflow: hidden;
-            display: none;
-        }
-        
-        .bookings-section.active {
-            display: block;
-            animation: scaleIn 0.4s ease-out;
-        }
-        
-        .bookings-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            padding: 30px 35px;
-            color: white;
-        }
-        
-        .bookings-header h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .facility-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            backdrop-filter: blur(10px);
-        }
-        
-        .bookings-body {
-            padding: 0;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-        
-        .bookings-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        
-        .bookings-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: var(--gray-50);
-        }
-        
-        .bookings-table th {
-            padding: 20px 25px;
-            text-align: left;
-            font-family: 'Syne', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--gray-600);
-            border-bottom: 2px solid var(--gray-200);
-        }
-        
-        .bookings-table td {
-            padding: 20px 25px;
-            border-bottom: 1px solid var(--gray-100);
-            font-size: 14px;
-            color: var(--gray-700);
-            transition: background 0.2s ease;
-        }
-        
-        .bookings-table tbody tr {
-            transition: all 0.2s ease;
-        }
-        
-        .bookings-table tbody tr:hover {
-            background: var(--gray-50);
-        }
-        
-        .resident-name {
-            font-weight: 600;
-            color: var(--gray-900);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .resident-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-light), var(--primary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: capitalize;
-        }
-        
-        .status-badge.approved {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-        
-        .status-badge.confirmed {
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--primary);
-        }
-        
-        .status-badge.pending {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
-        }
-        
-        .empty-state {
-            padding: 60px 40px;
-            text-align: center;
-            color: var(--gray-400);
-        }
-        
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-        
-        .empty-state p {
-            font-size: 16px;
-            margin: 0;
-        }
-        
-        /* Calendar Section */
+
         .calendar-section {
             background: white;
-            border-radius: 24px;
-            padding: 35px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
+
         .calendar-section h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 25px;
-            color: var(--gray-900);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
         }
-        
+
+        .summary-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .summary-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-info {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-info h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-info p {
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .bookings-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .booking-item {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .booking-item h6 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.25rem;
+        }
+
+        .booking-item p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #9ca3af;
+        }
+
+        .empty-state .material-symbols-outlined {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* FullCalendar Customization */
         #calendar {
             max-width: 100%;
         }
-        
-        /* FullCalendar Customization */
-        .fc-toolbar h2 {
-            font-family: 'Syne', sans-serif !important;
-            font-size: 24px !important;
-            font-weight: 700 !important;
-            color: var(--gray-900) !important;
+
+        .fc-toolbar {
+            margin-bottom: 1.5rem !important;
         }
-        
-        .fc-button {
-            background: var(--primary) !important;
-            border: none !important;
-            border-radius: 10px !important;
-            padding: 8px 16px !important;
+
+        .fc-toolbar-title {
+            font-size: 1.25rem !important;
             font-weight: 600 !important;
-            transition: all 0.3s ease !important;
         }
-        
+
+        .fc-button {
+            background-color: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+            text-transform: capitalize !important;
+        }
+
         .fc-button:hover {
-            background: var(--primary-dark) !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+            background-color: #2563eb !important;
+            border-color: #2563eb !important;
         }
-        
+
         .fc-day-grid-event {
-            padding: 4px 6px;
-            font-size: 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            border: none !important;
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            padding: 2px 4px;
+            font-size: 0.85rem;
         }
-        
+
         .fc-event {
-            border-radius: 6px !important;
+            cursor: pointer;
         }
-        
-        /* Modal Styling */
-        .modal-content {
-            border-radius: 24px;
-            border: none;
-            overflow: hidden;
-        }
-        
+
+        /* Modal Styles */
         .modal-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            padding: 30px 35px;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
         }
-        
+
         .modal-title {
-            font-family: 'Syne', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-        }
-        
-        .btn-close {
-            filter: brightness(0) invert(1);
-            opacity: 0.8;
-        }
-        
-        .modal-body {
-            padding: 35px;
-        }
-        
-        .form-label {
             font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 10px;
-            font-size: 14px;
         }
-        
-        .form-control, .form-select {
-            border: 2px solid var(--gray-200);
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
-        
-        .alert-info {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(245, 158, 11, 0.1));
-            border: 2px solid var(--primary-light);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        
+
         .time-slot-container {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
         }
-        
+
         .slot-btn {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid var(--gray-200);
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
             background: white;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--gray-700);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
         }
-        
-        .slot-btn:hover:not(:disabled) {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-            transform: translateY(-2px);
+
+        .slot-btn:hover:not(.disabled) {
+            border-color: #3b82f6;
+            background: #eff6ff;
         }
-        
+
         .slot-btn.selected {
-            background: var(--primary);
+            border-color: #3b82f6;
+            background: #3b82f6;
             color: white;
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
-        
-        .slot-btn:disabled {
-            background: var(--gray-100);
-            color: var(--gray-400);
-            cursor: not-allowed;
+
+        .slot-btn.disabled {
             opacity: 0.5;
+            cursor: not-allowed;
+            background: #f3f4f6;
         }
-        
-        .modal-footer {
-            border: none;
-            padding: 25px 35px;
-            background: var(--gray-50);
+
+        .facility-badge {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border: none;
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
-        }
-        
-        .btn-secondary {
-            background: var(--gray-200);
-            border: none;
-            color: var(--gray-700);
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-        
-        /* Scrollbar Styling */
-        .bookings-body::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .bookings-body::-webkit-scrollbar-track {
-            background: var(--gray-100);
-        }
-        
-        .bookings-body::-webkit-scrollbar-thumb {
-            background: var(--gray-300);
-            border-radius: 4px;
-        }
-        
-        .bookings-body::-webkit-scrollbar-thumb:hover {
-            background: var(--gray-400);
-        }
-        
-        /* Responsive */
+
         @media (max-width: 1200px) {
             .content-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         @media (max-width: 768px) {
             .main-content {
                 margin-left: 0;
-                padding: 20px;
+                padding: 1rem;
             }
-            
-            .page-header {
-                font-size: 32px;
-            }
-            
+
             .facility-grid {
                 grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .time-slot-container {
-                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
     <div class="app-layout">
-         <!-- SIDEBAR -->
         <aside class="sidebar">
             <header class="sidebar-header">
                 <div class="profile-section">
                     <img src="<?= htmlspecialchars($loggedInUserProfilePic) ?>" alt="Profile" class="profile-photo"
                         onerror="this.src='../asset/profile.jpg'">
                     <div class="profile-info">
-                        <p class="profile-name">
-                            <?= htmlspecialchars($loggedInUserName) ?>
-                        </p>
+                        <p class="profile-name"><?= htmlspecialchars($loggedInUserName) ?></p>
                         <p class="profile-role">Admin</p>
                     </div>
                 </div>
@@ -782,7 +568,7 @@ $loggedInUserProfilePic = $profilePic;
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="create-account.php" class="menu-link ">
+                        <a href="create-account.php" class="menu-link">
                             <img src="../asset/profile.png" class="menu-icon">
                             <span class="menu-label">Create Account</span>
                         </a>
@@ -797,12 +583,10 @@ $loggedInUserProfilePic = $profilePic;
             </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <div class="main-content">
             <div class="page-header">Quick Reservation</div>
             <div class="page-subtitle">Create instant bookings for residents</div>
             
-            <!-- Facility Selector -->
             <div class="facility-selector">
                 <h3>Select a Facility</h3>
                 <div class="facility-grid">
@@ -825,47 +609,32 @@ $loggedInUserProfilePic = $profilePic;
                 </div>
             </div>
             
-            <!-- Content Grid -->
             <div class="content-grid">
-                <!-- Bookings Table -->
-                <div class="bookings-section" id="bookingsSection">
-                    <div class="bookings-header">
-                        <h3>
-                            <span class="material-symbols-outlined">event_note</span>
-                            Current Bookings
-                            <span class="facility-badge" id="facilityBadge"></span>
-                        </h3>
-                    </div>
-                    <div class="bookings-body">
-                        <table class="bookings-table">
-                            <thead>
-                                <tr>
-                                    <th>Resident</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bookingsTableBody">
-                                <!-- Data will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Calendar Section -->
                 <div class="calendar-section">
                     <h3>
                         <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">calendar_month</span>
-                        Select Date
+                        Calendar View
+                        <span class="facility-badge" id="facilityBadge" style="display: none;">No facility selected</span>
                     </h3>
                     <div id="calendar"></div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>
+                        <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">event_note</span>
+                        Current Bookings
+                    </h3>
+                    <div class="bookings-list" id="bookingsList">
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">event_busy</span>
+                            <p>Select a facility to view bookings</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Booking Modal -->
     <div class="modal fade" id="bookingModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -913,41 +682,36 @@ $loggedInUserProfilePic = $profilePic;
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="submitReservation" disabled>Submit Reservation</button>
                 </div>
-            </div>
+            </div>  
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="javascript/sidebar.js"></script>
     
     <script>
-        var selectedFacility = null;
-        var allEvents = [];
-        var selectedTimeSlot = null;
-        
+        let selectedFacility = null;
+        let selectedTimeSlot = null;
+        let currentBookings = [];
+
         $(document).ready(function() {
-            loadCalendar();
-            
-            // Facility selection
+            // Initialize calendar
+            initializeCalendar();
+
+            // Facility card click
             $('.facility-card').on('click', function() {
                 $('.facility-card').removeClass('selected');
                 $(this).addClass('selected');
                 selectedFacility = $(this).data('facility');
                 
-                // Show bookings section
-                $('#bookingsSection').addClass('active');
-                $('#facilityBadge').text(selectedFacility);
+                $('#facilityBadge').text(selectedFacility).show();
                 
-                // Load bookings data and calendar
-                loadBookingsData(selectedFacility);
-                loadCalendar();
+                // Fetch bookings for selected facility
+                fetchBookings(selectedFacility);
             });
-            
+
             // Time slot selection
-            $(document).on('click', '.slot-btn', function() {
-                if ($(this).prop('disabled')) return;
-                
+            $(document).on('click', '.slot-btn:not(.disabled)', function() {
                 $('.slot-btn').removeClass('selected');
                 $(this).addClass('selected');
                 
@@ -956,318 +720,362 @@ $loggedInUserProfilePic = $profilePic;
                     end: $(this).data('end')
                 };
                 
-                checkFormCompletion();
+                validateForm();
             });
-            
-            // Phone validation
+
+            // Phone input validation
             $('#phone').on('input', function() {
-                var value = $(this).val().replace(/\D/g, '');
-                $(this).val(value);
-                validatePhone(value);
-                checkFormCompletion();
+                let phone = $(this).val();
+                // Remove non-numeric characters
+                phone = phone.replace(/\D/g, '');
+                // Limit to 11 digits
+                if (phone.length > 11) {
+                    phone = phone.substr(0, 11);
+                }
+                $(this).val(phone);
+                validateForm();
             });
-            
-            // Submit reservation
-            $('#submitReservation').on('click', function() {
-                submitReservation();
-            });
+
+            // Form validation
+            function validateForm() {
+                const phone = $('#phone').val();
+                const phoneValid = /^09\d{9}$/.test(phone);
+                const timeSlotSelected = selectedTimeSlot !== null;
+                
+                if (!phoneValid && phone.length > 0) {
+                    $('#phone').addClass('is-invalid');
+                } else {
+                    $('#phone').removeClass('is-invalid');
+                }
+                
+                $('#submitReservation').prop('disabled', !(phoneValid && timeSlotSelected));
+            }
         });
-        
-        function loadBookingsData(facility) {
+
+        function initializeCalendar() {
+            $('#calendar').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                editable: false,
+                eventLimit: true,
+                events: [],
+                validRange: {
+                    start: moment().format('YYYY-MM-DD')
+                },
+                dayClick: function(date) {
+                    if (!selectedFacility) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'No Facility Selected',
+                            text: 'Please select a facility first',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        return;
+                    }
+
+                    const today = moment().startOf('day');
+                    if (date.isBefore(today)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid Date',
+                            text: 'Cannot book past dates',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        return;
+                    }
+
+                    openBookingModal(date);
+                },
+                eventClick: function(event) {
+                    const statusColor = {
+                        'confirmed': '#10b981',
+                        'approved': '#3b82f6',
+                        'pending': '#f59e0b'
+                    };
+                    
+                    Swal.fire({
+                        title: event.title,
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <p><strong>Date:</strong> ${moment(event.start).format('MMMM D, YYYY')}</p>
+                                <p><strong>Time:</strong> ${moment(event.start).format('h:mm A')} - ${moment(event.end).format('h:mm A')}</p>
+                                <p><strong>Status:</strong> <span style="color: ${statusColor[event.status] || '#6b7280'}; font-weight: 600;">${event.status.toUpperCase()}</span></p>
+                                ${event.email ? `<p><strong>Email:</strong> ${event.email}</p>` : ''}
+                                ${event.phone ? `<p><strong>Phone:</strong> ${event.phone}</p>` : ''}
+                                ${event.note ? `<p><strong>Note:</strong> ${event.note}</p>` : ''}
+                            </div>
+                        `,
+                        icon: 'info',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                },
+                eventRender: function(event, element) {
+                    const statusColors = {
+                        'confirmed': '#10b981',
+                        'approved': '#3b82f6',
+                        'pending': '#f59e0b'
+                    };
+                    
+                    element.css('background-color', statusColors[event.status] || '#3b82f6');
+                    element.css('border-color', statusColors[event.status] || '#3b82f6');
+                }
+            });
+        }
+
+        function fetchBookings(facility) {
+            $('#calendar').fullCalendar('removeEvents');
+            $('#bookingsList').html(`
+                <div class="empty-state">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading bookings...</p>
+                </div>
+            `);
+            
             $.ajax({
                 url: 'quick-reservation.php',
-                method: 'GET',
-                data: { 
+                type: 'GET',
+                data: {
                     action: 'fetch_bookings',
-                    facility: facility 
+                    facility: facility
                 },
                 dataType: 'json',
                 success: function(response) {
-                    console.log('Bookings data:', response); // Debug log
-                    
-                    var tbody = $('#bookingsTableBody');
-                    tbody.empty();
-                    
-                    if (response.status && response.data.length > 0) {
-                        response.data.forEach(function(booking) {
-                            var initials = getInitials(booking.resident_name);
-                            var statusClass = booking.status.toLowerCase();
-                            
-                            var row = `
-                                <tr>
-                                    <td>
-                                        <div class="resident-name">
-                                            <div class="resident-avatar">${initials}</div>
-                                            ${booking.resident_name}
-                                        </div>
-                                    </td>
-                                    <td>${moment(booking.date).format('MMM DD, YYYY')}</td>
-                                    <td>${booking.time_start} - ${booking.time_end}</td>
-                                    <td><span class="status-badge ${statusClass}">${booking.status}</span></td>
-                                </tr>
-                            `;
-                            tbody.append(row);
-                        });
+                    if (response.status) {
+                        currentBookings = response.data;
+                        
+                        $('#calendar').fullCalendar('removeEvents');
+                        if (response.data.length > 0) {
+                            $('#calendar').fullCalendar('addEventSource', response.data);
+                        }
+                        
+                        updateBookingsList(response.data);
                     } else {
-                        tbody.html(`
-                            <tr>
-                                <td colspan="4">
-                                    <div class="empty-state">
-                                        <div class="empty-state-icon">📋</div>
-                                        <p>No bookings found for this facility</p>
-                                    </div>
-                                </td>
-                            </tr>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.msg || 'Failed to fetch bookings',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        
+                        $('#bookingsList').html(`
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined">error</span>
+                                <p>Failed to load bookings</p>
+                            </div>
                         `);
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Bookings loading error:', error);
-                    console.error('Response:', xhr.responseText);
+                    console.error('Error fetching bookings:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Connection Error',
+                        text: 'Unable to fetch bookings. Please try again.',
+                        confirmButtonColor: '#3b82f6'
+                    });
                     
-                    $('#bookingsTableBody').html(`
-                        <tr>
-                            <td colspan="4">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">⚠️</div>
-                                    <p>Error loading bookings data</p>
-                                </div>
-                            </td>
-                        </tr>
+                    $('#bookingsList').html(`
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">cloud_off</span>
+                            <p>Connection error. Please refresh.</p>
+                        </div>
                     `);
                 }
             });
         }
-        
-        function getInitials(name) {
-            return name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
-        }
-        
-        function loadCalendar() {
-            $.ajax({
-                url: 'fetch_reservations.php',
-                method: 'GET',
-                data: { facility: selectedFacility },
-                dataType: 'json',
-                success: function(response) {
-                    console.log('Calendar data received:', response); // Debug log
-                    
-                    allEvents = response.data || [];
-                    
-                    console.log('Total events:', allEvents.length); // Debug log
-                    
-                    $('#calendar').fullCalendar('destroy');
-                    $('#calendar').fullCalendar({
-                        header: {
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: 'month'
-                        },
-                        selectable: true,
-                        selectHelper: true,
-                        events: allEvents,
-                        eventRender: function(event, element) {
-                            // Add tooltip with more info
-                            element.attr('title', event.resident + ' - ' + event.status);
-                        },
-                        select: function(start, end) {
-                            if (!selectedFacility) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Select a Facility',
-                                    text: 'Please select a facility first',
-                                    confirmButtonColor: '#6366f1'
-                                });
-                                $('#calendar').fullCalendar('unselect');
-                                return;
-                            }
-                            
-                            var selectedDate = moment(start).format('YYYY-MM-DD');
-                            var today = moment().format('YYYY-MM-DD');
-                            
-                            if (selectedDate < today) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Invalid Date',
-                                    text: 'Cannot book past dates',
-                                    confirmButtonColor: '#6366f1'
-                                });
-                                $('#calendar').fullCalendar('unselect');
-                                return;
-                            }
-                            
-                            openBookingModal(start);
-                        },
-                        eventClick: function(event) {
-                            var status = event.status || 'confirmed';
-                            Swal.fire({
-                                title: event.title,
-                                html: `<strong>Resident:</strong> ${event.resident}<br>
-                                       <strong>Date:</strong> ${moment(event.start).format('MMMM DD, YYYY')}<br>
-                                       <strong>Time:</strong> ${moment(event.start).format('h:mm A')} - ${moment(event.end).format('h:mm A')}<br>
-                                       <strong>Status:</strong> ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                                icon: 'info',
-                                confirmButtonColor: '#6366f1'
-                            });
-                        }
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error('Calendar loading error:', error);
-                    console.error('Response:', xhr.responseText);
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error Loading Calendar',
-                        text: 'Failed to load reservation data',
-                        confirmButtonColor: '#6366f1'
-                    });
-                }
-            });
-        }
-        
-        function openBookingModal(start) {
-            var date = moment(start).format('YYYY-MM-DD');
+
+        function updateBookingsList(bookings) {
+            const $list = $('#bookingsList');
             
-            $('#selected_date').val(date);
+            if (bookings.length === 0) {
+                $list.html(`
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">event_available</span>
+                        <p>No bookings found for this facility</p>
+                    </div>
+                `);
+                return;
+            }
+
+            bookings.sort((a, b) => new Date(b.start) - new Date(a.start));
+
+            let html = '';
+            bookings.forEach(booking => {
+                const startTime = moment(booking.start).format('h:mm A');
+                const endTime = moment(booking.end).format('h:mm A');
+                const date = moment(booking.start).format('MMM D, YYYY');
+                
+                const statusColors = {
+                    'confirmed': '#10b981',
+                    'approved': '#3b82f6',
+                    'pending': '#f59e0b'
+                };
+                
+                const borderColor = statusColors[booking.status] || '#3b82f6';
+                
+                html += `
+                    <div class="booking-item" style="border-left-color: ${borderColor};">
+                        <h6>${booking.title}</h6>
+                        <p><strong>Date:</strong> ${date}</p>
+                        <p><strong>Time:</strong> ${startTime} - ${endTime}</p>
+                        <p><strong>Status:</strong> <span style="color: ${borderColor}; font-weight: 600;">${booking.status.toUpperCase()}</span></p>
+                        ${booking.phone ? `<p><strong>Phone:</strong> ${booking.phone}</p>` : ''}
+                    </div>
+                `;
+            });
+            
+            $list.html(html);
+        }
+
+        function openBookingModal(date) {
+            const formattedDate = date.format('YYYY-MM-DD');
+            const displayDate = date.format('MMMM D, YYYY');
+            
+            $('#selected_date').val(formattedDate);
             $('#selected_facility').val(selectedFacility);
             $('#display_facility').text(selectedFacility);
-            $('#display_date').text(moment(start).format('MMMM DD, YYYY'));
+            $('#display_date').text(displayDate);
             
-            // Reset form
-            $('#phone').val('').removeClass('is-valid is-invalid');
+            $('#phone').val('').removeClass('is-invalid');
             $('#note').val('');
-            $('.slot-btn').removeClass('selected').prop('disabled', false).css('opacity', '1');
+            $('.slot-btn').removeClass('selected disabled').prop('disabled', false);
             selectedTimeSlot = null;
             $('#submitReservation').prop('disabled', true);
             
-            // Check booked slots
-            checkBookedSlots(date, selectedFacility);
+            checkAvailableSlots(formattedDate);
             
             $('#bookingModal').modal('show');
         }
-        
-        function checkBookedSlots(date, facility) {
-            var bookedSlots = allEvents.filter(function(event) {
-                var eventDate = moment(event.start).format('YYYY-MM-DD');
-                return event.title === facility && eventDate === date;
-            });
-            
-            console.log('Booked slots for ' + date + ':', bookedSlots); // Debug log
-            
-            var now = moment();
-            var isToday = date === now.format('YYYY-MM-DD');
-            
+
+        function checkAvailableSlots(date) {
+            const bookedSlots = currentBookings
+                .filter(b => moment(b.start).format('YYYY-MM-DD') === date)
+                .map(b => ({
+                    start: moment(b.start).format('HH:mm'),
+                    end: moment(b.end).format('HH:mm')
+                }));
+
             $('.slot-btn').each(function() {
-                var slotStart = $(this).data('start');
-                var slotEnd = $(this).data('end');
-                var slotTime = moment(date + ' ' + slotStart, 'YYYY-MM-DD HH:mm');
+                const slotStart = $(this).data('start');
+                const slotEnd = $(this).data('end');
                 
-                // Check if past time
-                if (isToday && slotTime.isBefore(now)) {
-                    $(this).prop('disabled', true).css('opacity', '0.5');
-                    return;
-                }
-                
-                // Check if booked
-                var isBooked = bookedSlots.some(function(event) {
-                    var eventStart = moment(event.start);
-                    var eventEnd = moment(event.end);
-                    var checkStart = moment(date + ' ' + slotStart, 'YYYY-MM-DD HH:mm');
-                    var checkEnd = moment(date + ' ' + slotEnd, 'YYYY-MM-DD HH:mm');
-                    
-                    return checkStart.isBefore(eventEnd) && checkEnd.isAfter(eventStart);
+                const isBooked = bookedSlots.some(booked => {
+                    return (slotStart >= booked.start && slotStart < booked.end) ||
+                           (slotEnd > booked.start && slotEnd <= booked.end) ||
+                           (slotStart <= booked.start && slotEnd >= booked.end);
                 });
                 
                 if (isBooked) {
-                    $(this).prop('disabled', true).css('opacity', '0.5');
+                    $(this).addClass('disabled').prop('disabled', true);
                 }
             });
         }
-        
-        function validatePhone(phone) {
-            var $input = $('#phone');
+
+        $('#submitReservation').on('click', function() {
+            const phone = $('#phone').val();
+            const note = $('#note').val();
+            const date = $('#selected_date').val();
+            const facility = $('#selected_facility').val();
             
-            if (phone.length === 0) {
-                $input.removeClass('is-valid is-invalid');
-                return false;
+            if (!selectedTimeSlot) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please select a time slot',
+                    confirmButtonColor: '#3b82f6'
+                });
+                return;
             }
             
-            if (phone.length !== 11 || !phone.startsWith('09') || /^(\d)\1{10}$/.test(phone)) {
-                $input.addClass('is-invalid').removeClass('is-valid');
-                return false;
+            if (!/^09\d{9}$/.test(phone)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Phone Number',
+                    text: 'Please enter a valid Philippine mobile number (e.g., 09123456789)',
+                    confirmButtonColor: '#3b82f6'
+                });
+                return;
             }
             
-            $input.removeClass('is-invalid').addClass('is-valid');
-            return true;
-        }
-        
-        function checkFormCompletion() {
-            var phone = $('#phone').val();
-            var isValid = validatePhone(phone) && selectedTimeSlot !== null;
-            
-            $('#submitReservation').prop('disabled', !isValid);
-        }
-        
-        function submitReservation() {
-            var facility = $('#selected_facility').val();
-            var date = $('#selected_date').val();
-            var phone = $('#phone').val();
-            var note = $('#note').val();
-            var timeStart = selectedTimeSlot.start;
-            var timeEnd = selectedTimeSlot.end;
-            
-            var $btn = $('#submitReservation');
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Submitting...');
+            Swal.fire({
+                title: 'Confirm Reservation',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p><strong>Facility:</strong> ${facility}</p>
+                        <p><strong>Date:</strong> ${moment(date).format('MMMM D, YYYY')}</p>
+                        <p><strong>Time:</strong> ${selectedTimeSlot.start} - ${selectedTimeSlot.end}</p>
+                        <p><strong>Phone:</strong> ${phone}</p>
+                        ${note ? `<p><strong>Note:</strong> ${note}</p>` : ''}
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Confirm Booking',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitReservation(facility, date, selectedTimeSlot.start, selectedTimeSlot.end, phone, note);
+                }
+            });
+        });
+
+        function submitReservation(facility, date, timeStart, timeEnd, phone, note) {
+            $('#submitReservation').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Submitting...');
             
             $.ajax({
-                url: 'save_quick_reservation.php',
-                method: 'POST',
+                url: 'quick-reservation.php',
+                type: 'POST',
                 data: {
-                    facility_name: facility,
-                    phone: phone,
-                    event_start_date: date,
-                    event_end_date: date,
+                    action: 'create_reservation',
+                    facility: facility,
+                    date: date,
                     time_start: timeStart,
                     time_end: timeEnd,
+                    phone: phone,
                     note: note
                 },
                 dataType: 'json',
                 success: function(response) {
-                    $btn.prop('disabled', false).html('Submit Reservation');
-                    
-                    if (response.status) {
+                    if (response.success) {
                         Swal.fire({
                             icon: 'success',
-                            title: 'Reservation Confirmed!',
-                            text: 'Your reservation has been automatically approved.',
-                            confirmButtonColor: '#6366f1'
+                            title: 'Success!',
+                            text: 'Reservation created successfully',
+                            confirmButtonColor: '#3b82f6'
                         }).then(() => {
                             $('#bookingModal').modal('hide');
-                            loadCalendar();
-                            loadBookingsData(selectedFacility);
+                            fetchBookings(selectedFacility);
                         });
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: response.msg || 'Failed to save reservation',
-                            confirmButtonColor: '#6366f1'
+                            text: response.message || 'Failed to create reservation',
+                            confirmButtonColor: '#3b82f6'
                         });
                     }
                 },
-                error: function() {
-                    $btn.prop('disabled', false).html('Submit Reservation');
+                error: function(xhr, status, error) {
+                    console.error('Error submitting reservation:', error);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'An error occurred. Please try again.',
-                        confirmButtonColor: '#6366f1'
+                        text: 'Failed to submit reservation. Please try again.',
+                        confirmButtonColor: '#3b82f6'
                     });
+                },
+                complete: function() {
+                    $('#submitReservation').prop('disabled', false).html('Submit Reservation');
                 }
             });
         }
     </script>
-    <script src="../resident-side/javascript/sidebar.js"></script>
 </body>
 </html>
