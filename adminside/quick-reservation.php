@@ -34,11 +34,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
     }
     
     try {
-        // First, let's check what columns exist in your reservations table
+        // Fetch reservations from ALL users (both regular users and admins)
         $sql = "SELECT 
                     r.*,
                     CONCAT(u.FirstName, ' ', u.LastName) as title,
-                    u.Email as resident_email
+                    u.Email as resident_email,
+                    u.Role as user_role
                 FROM reservations r
                 INNER JOIN users u ON r.user_id = u.user_id
                 WHERE r.facility_name = :facility
@@ -71,7 +72,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
                 'status' => $booking['status'],
                 'phone' => isset($booking['phone']) ? $booking['phone'] : '',
                 'note' => isset($booking['note']) ? $booking['note'] : '',
-                'email' => $booking['resident_email']
+                'email' => $booking['resident_email'],
+                'user_role' => isset($booking['user_role']) ? $booking['user_role'] : 'Unknown'
             ];
         }
         
@@ -92,7 +94,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
     }
 }
 
-// Handle AJAX request for creating quick reservation
+// Handle AJAX request for creating admin reservation (directly approved)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_reservation') {
     header('Content-Type: application/json');
     
@@ -159,12 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // Get admin user_id from session
     $user_id = $_SESSION['user_id'];
 
-    // Insert reservation
+    // Insert reservation with 'approved' status (admin bypass - no payment required)
     try {
         $insertSql = "INSERT INTO reservations 
                       (user_id, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, status, created_at) 
                       VALUES 
-                      (:user_id, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'confirmed', NOW())";
+                      (:user_id, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'approved', NOW())";
         
         $insertStmt = $conn->prepare($insertSql);
         $insertStmt->bindParam(':user_id', $user_id);
@@ -180,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         echo json_encode([
             'success' => true, 
-            'message' => 'Reservation created successfully',
+            'message' => 'Reservation created and approved successfully',
             'reservation_id' => $conn->lastInsertId()
         ]);
         exit();
@@ -327,55 +329,38 @@ $loggedInUserProfilePic = $profilePic;
             gap: 2rem;
         }
 
-        .calendar-section {
+        .calendar-wrapper {
             background: white;
             padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .calendar-section h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .summary-section {
+        .summary-card {
             background: white;
             padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .summary-section h3 {
+        .summary-header {
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-title {
             font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
-
-        .summary-info {
-            background: #f9fafb;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .summary-info h4 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
-        }
-
-        .summary-info p {
-            color: #6b7280;
             margin: 0;
         }
 
+        .summary-body {
+            /* Styles for summary content */
+        }
+
         .bookings-list {
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
         }
 
@@ -448,7 +433,16 @@ $loggedInUserProfilePic = $profilePic;
             cursor: pointer;
         }
 
-        /* Modal Styles */
+        /* Disable past dates visually */
+        .fc-past {
+            background-color: #f9fafb !important;
+        }
+
+        .fc-day.fc-past {
+            opacity: 0.6;
+        }
+
+        /* Modal Styles - Matching Reference Code */
         .modal-header {
             background-color: #f9fafb;
             border-bottom: 1px solid #e5e7eb;
@@ -458,15 +452,28 @@ $loggedInUserProfilePic = $profilePic;
             font-weight: 600;
         }
 
-        .time-slot-container {
+        /* Time Slot Card - Matching Reference Style */
+        .time-slot-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .time-slot-card .card-header {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+        }
+
+        .time-slot-card .card-body {
+            padding: 1rem;
+        }
+
+        .slots-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 0.75rem;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 1rem;
-            background: #f9fafb;
-            border-radius: 8px;
         }
 
         .slot-btn {
@@ -476,11 +483,13 @@ $loggedInUserProfilePic = $profilePic;
             border-radius: 6px;
             font-size: 0.875rem;
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
-        .slot-btn:hover:not(.disabled) {
+        .slot-btn:hover:not(.disabled):not(:disabled) {
             border-color: #3b82f6;
             background: #eff6ff;
+            color: #3b82f6;
         }
 
         .slot-btn.selected {
@@ -489,10 +498,12 @@ $loggedInUserProfilePic = $profilePic;
             color: white;
         }
 
-        .slot-btn.disabled {
+        .slot-btn.disabled,
+        .slot-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             background: #f3f4f6;
+            border-color: #d1d5db;
         }
 
         .facility-badge {
@@ -504,6 +515,12 @@ $loggedInUserProfilePic = $profilePic;
             font-size: 0.875rem;
             font-weight: 500;
             margin-left: 0.5rem;
+        }
+
+        .alert-info {
+            background-color: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
         }
 
         @media (max-width: 1200px) {
@@ -520,6 +537,10 @@ $loggedInUserProfilePic = $profilePic;
 
             .facility-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .slots-container {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -585,10 +606,10 @@ $loggedInUserProfilePic = $profilePic;
 
         <div class="main-content">
             <div class="page-header">Quick Reservation</div>
-            <div class="page-subtitle">Create instant bookings for residents</div>
+            <div class="page-subtitle">Create instant approved bookings for residents</div>
             
             <div class="facility-selector">
-                <h3>Select a Facility</h3>
+                <h3>Step 1: Select a Facility</h3>
                 <div class="facility-grid">
                     <div class="facility-card" data-facility="Chapel">
                         <img src="../asset/chapel.png" alt="Chapel">
@@ -609,25 +630,30 @@ $loggedInUserProfilePic = $profilePic;
                 </div>
             </div>
             
-            <div class="content-grid">
-                <div class="calendar-section">
-                    <h3>
-                        <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">calendar_month</span>
-                        Calendar View
-                        <span class="facility-badge" id="facilityBadge" style="display: none;">No facility selected</span>
-                    </h3>
-                    <div id="calendar"></div>
-                </div>
+            <div class="container py-5" style="display: block;padding-top: 30px !important;">
+                <div class="row g-4">
+                    <!-- Left Side - Calendar -->
+                    <div class="col-lg-7">
+                        <div class="calendar-wrapper">
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
 
-                <div class="summary-section">
-                    <h3>
-                        <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">event_note</span>
-                        Current Bookings
-                    </h3>
-                    <div class="bookings-list" id="bookingsList">
-                        <div class="empty-state">
-                            <span class="material-symbols-outlined">event_busy</span>
-                            <p>Select a facility to view bookings</p>
+                    <!-- Right Side - Summary Section -->
+                    <div class="col-lg-5">
+                        <div class="summary-card">
+                            <div class="summary-header">
+                                <h3 class="summary-title">Current Bookings</h3>
+                            </div>
+
+                            <div class="summary-body">
+                                <div class="bookings-list" id="bookingsList">
+                                    <div class="empty-state">
+                                        <span class="material-symbols-outlined">event_busy</span>
+                                        <p>Select a facility to view bookings</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -635,54 +661,153 @@ $loggedInUserProfilePic = $profilePic;
         </div>
     </div>
 
-    <div class="modal fade" id="bookingModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <!-- Booking Modal - Matching Reference Code Style -->
+    <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create Reservation</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="modalLabel">Book a Facility</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="selected_date">
+                    <!-- Hidden Date Fields -->
+                    <input type="hidden" id="event_start_date">
+                    <input type="hidden" id="event_end_date">
+                    <input type="hidden" id="selected_time_start">
+                    <input type="hidden" id="selected_time_end">
                     <input type="hidden" id="selected_facility">
-                    
-                    <div class="alert alert-info">
-                        <strong>Facility:</strong> <span id="display_facility"></span><br>
-                        <strong>Selected Date:</strong> <span id="display_date"></span>
+
+                    <!-- Selected Date Display -->
+                    <div class="alert alert-info" role="alert">
+                        <strong>Selected Date:</strong> <span id="display_selected_date"></span>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="phone" placeholder="09123456789" maxlength="11" required>
-                        <div class="invalid-feedback">Please enter a valid Philippine mobile number (09XXXXXXXXX)</div>
+
+                    <!-- Facility Name (Read-only display) -->
+                    <div class="form-group mb-3">
+                        <label for="facility_name">Facility Name: <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="facility_name" readonly
+                            style="background-color: #e9ecef; cursor: not-allowed;">
+                        <small class="form-text text-muted">
+                            Please select a facility from the cards above before choosing a date.
+                        </small>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Select Time Slot <span class="text-danger">*</span></label>
-                        <div class="time-slot-container">
-                            <button type="button" class="btn slot-btn" data-start="08:00" data-end="09:00">8:00 AM - 9:00 AM</button>
-                            <button type="button" class="btn slot-btn" data-start="09:00" data-end="10:00">9:00 AM - 10:00 AM</button>
-                            <button type="button" class="btn slot-btn" data-start="10:00" data-end="11:00">10:00 AM - 11:00 AM</button>
-                            <button type="button" class="btn slot-btn" data-start="11:00" data-end="12:00">11:00 AM - 12:00 PM</button>
-                            <button type="button" class="btn slot-btn" data-start="12:00" data-end="13:00">12:00 PM - 1:00 PM</button>
-                            <button type="button" class="btn slot-btn" data-start="13:00" data-end="14:00">1:00 PM - 2:00 PM</button>
-                            <button type="button" class="btn slot-btn" data-start="14:00" data-end="15:00">2:00 PM - 3:00 PM</button>
-                            <button type="button" class="btn slot-btn" data-start="15:00" data-end="16:00">3:00 PM - 4:00 PM</button>
-                            <button type="button" class="btn slot-btn" data-start="16:00" data-end="17:00">4:00 PM - 5:00 PM</button>
-                            <button type="button" class="btn slot-btn" data-start="17:00" data-end="18:00">5:00 PM - 6:00 PM</button>
+
+                    <!-- Phone Number -->
+                    <div class="form-group mb-3">
+                        <label for="phone">Phone Number: <span class="text-danger">*</span></label>
+                        <input type="text" 
+                            class="form-control" 
+                            id="phone" 
+                            name="phone"
+                            placeholder="09123456789"
+                            maxlength="11"
+                            pattern="^09\d{9}$"
+                            required>
+                        <div class="invalid-feedback" id="phoneFeedback">
+                            Please enter a valid Philippine mobile number (e.g., 09123456789)
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="note" class="form-label">Additional Notes (Optional)</label>
-                        <textarea class="form-control" id="note" rows="3" placeholder="Purpose of reservation..."></textarea>
+
+                    <!-- Time Slots -->
+                    <div class="form-group mb-3">
+                        <label>Select Time Slot: <span class="text-danger">*</span></label>
+                        <div class="card time-slot-card">
+                            <div class="card-header fw-bold">
+                                Available Time Slots
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">
+                                    ⓘ Each slot: 1 hour | Click to select
+                                </p>
+
+                                <div class="slots-container">
+                                    <button type="button" class="btn slot-btn" data-start="08:00"
+                                        data-end="09:00">
+                                        8:00 AM - 9:00 AM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="09:00"
+                                        data-end="10:00">
+                                        9:00 AM - 10:00 AM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="10:00"
+                                        data-end="11:00">
+                                        10:00 AM - 11:00 AM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="11:00"
+                                        data-end="12:00">
+                                        11:00 AM - 12:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="12:00"
+                                        data-end="13:00">
+                                        12:00 PM - 1:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="13:00"
+                                        data-end="14:00">
+                                        1:00 PM - 2:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="14:00"
+                                        data-end="15:00">
+                                        2:00 PM - 3:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="15:00"
+                                        data-end="16:00">
+                                        3:00 PM - 4:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="16:00"
+                                        data-end="17:00">
+                                        4:00 PM - 5:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="17:00"
+                                        data-end="18:00">
+                                        5:00 PM - 6:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="18:00"
+                                        data-end="19:00">
+                                        6:00 PM - 7:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="19:00"
+                                        data-end="20:00">
+                                        7:00 PM - 8:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="20:00"
+                                        data-end="21:00">
+                                        8:00 PM - 9:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="21:00"
+                                        data-end="22:00">
+                                        9:00 PM - 10:00 PM
+                                    </button>
+                                    <button type="button" class="btn slot-btn" data-start="22:00"
+                                        data-end="23:00">
+                                        10:00 PM - 11:00 PM
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NOTE -->
+                    <div class="form-group mb-3">
+                        <label for="event_note">Additional Notes (Optional)</label>
+                        <textarea class="form-control"
+                            placeholder="Leave a note here (e.g., purpose of reservation, special requests)"
+                            id="event_note" rows="3"></textarea>
                     </div>
                 </div>
+
+                <!-- Button -->
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitReservation" disabled>Submit Reservation</button>
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveReservationBtn">
+                        <span class="spinner-border spinner-border-sm d-none" role="status"
+                            aria-hidden="true"></span>
+                        Submit
+                    </button>
                 </div>
-            </div>  
+            </div>
         </div>
     </div>
 
@@ -698,20 +823,21 @@ $loggedInUserProfilePic = $profilePic;
             // Initialize calendar
             initializeCalendar();
 
-            // Facility card click
+            // Facility card click - REQUIRED BEFORE CALENDAR INTERACTION
             $('.facility-card').on('click', function() {
                 $('.facility-card').removeClass('selected');
                 $(this).addClass('selected');
                 selectedFacility = $(this).data('facility');
                 
-                $('#facilityBadge').text(selectedFacility).show();
+                // Update facility name in modal
+                $('#facility_name').val(selectedFacility);
                 
-                // Fetch bookings for selected facility
+                // Fetch bookings for selected facility (from ALL users)
                 fetchBookings(selectedFacility);
             });
 
             // Time slot selection
-            $(document).on('click', '.slot-btn:not(.disabled)', function() {
+            $(document).on('click', '.slot-btn:not(.disabled):not(:disabled)', function() {
                 $('.slot-btn').removeClass('selected');
                 $(this).addClass('selected');
                 
@@ -720,10 +846,14 @@ $loggedInUserProfilePic = $profilePic;
                     end: $(this).data('end')
                 };
                 
+                // Update hidden fields
+                $('#selected_time_start').val(selectedTimeSlot.start);
+                $('#selected_time_end').val(selectedTimeSlot.end);
+                
                 validateForm();
             });
 
-            // Phone input validation
+            // Phone input validation - numeric only
             $('#phone').on('input', function() {
                 let phone = $(this).val();
                 // Remove non-numeric characters
@@ -748,8 +878,62 @@ $loggedInUserProfilePic = $profilePic;
                     $('#phone').removeClass('is-invalid');
                 }
                 
-                $('#submitReservation').prop('disabled', !(phoneValid && timeSlotSelected));
+                $('#saveReservationBtn').prop('disabled', !(phoneValid && timeSlotSelected));
             }
+
+            // Submit reservation
+            $('#saveReservationBtn').on('click', function() {
+                const phone = $('#phone').val();
+                const note = $('#event_note').val();
+                const date = $('#event_start_date').val();
+                const facility = $('#selected_facility').val();
+                
+                if (!selectedTimeSlot) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: 'Please select a time slot',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                    return;
+                }
+                
+                if (!/^09\d{9}$/.test(phone)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Phone Number',
+                        text: 'Please enter a valid Philippine mobile number (e.g., 09123456789)',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                    return;
+                }
+                
+                // Confirmation dialog
+                Swal.fire({
+                    title: 'Confirm Reservation',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <p><strong>Facility:</strong> ${facility}</p>
+                            <p><strong>Date:</strong> ${moment(date).format('MMMM D, YYYY')}</p>
+                            <p><strong>Time:</strong> ${selectedTimeSlot.start} - ${selectedTimeSlot.end}</p>
+                            <p><strong>Phone:</strong> ${phone}</p>
+                            ${note ? `<p><strong>Note:</strong> ${note}</p>` : ''}
+                            <hr>
+                            <p class="text-success"><strong>✓ This reservation will be automatically approved</strong></p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3b82f6',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Confirm Booking',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        submitReservation(facility, date, selectedTimeSlot.start, selectedTimeSlot.end, phone, note);
+                    }
+                });
+            });
         });
 
         function initializeCalendar() {
@@ -763,19 +947,21 @@ $loggedInUserProfilePic = $profilePic;
                 eventLimit: true,
                 events: [],
                 validRange: {
-                    start: moment().format('YYYY-MM-DD')
+                    start: moment().format('YYYY-MM-DD') // Prevent past date selection
                 },
                 dayClick: function(date) {
+                    // CRITICAL: Prevent modal opening if no facility selected
                     if (!selectedFacility) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'No Facility Selected',
-                            text: 'Please select a facility first',
+                            text: 'Please select a facility first before choosing a date',
                             confirmButtonColor: '#3b82f6'
                         });
                         return;
                     }
 
+                    // Prevent booking past dates
                     const today = moment().startOf('day');
                     if (date.isBefore(today)) {
                         Swal.fire({
@@ -803,6 +989,7 @@ $loggedInUserProfilePic = $profilePic;
                                 <p><strong>Date:</strong> ${moment(event.start).format('MMMM D, YYYY')}</p>
                                 <p><strong>Time:</strong> ${moment(event.start).format('h:mm A')} - ${moment(event.end).format('h:mm A')}</p>
                                 <p><strong>Status:</strong> <span style="color: ${statusColor[event.status] || '#6b7280'}; font-weight: 600;">${event.status.toUpperCase()}</span></p>
+                                <p><strong>User Type:</strong> ${event.user_role || 'Unknown'}</p>
                                 ${event.email ? `<p><strong>Email:</strong> ${event.email}</p>` : ''}
                                 ${event.phone ? `<p><strong>Phone:</strong> ${event.phone}</p>` : ''}
                                 ${event.note ? `<p><strong>Note:</strong> ${event.note}</p>` : ''}
@@ -825,6 +1012,7 @@ $loggedInUserProfilePic = $profilePic;
             });
         }
 
+        // Fetch bookings from ALL users (regular users and admins)
         function fetchBookings(facility) {
             $('#calendar').fullCalendar('removeEvents');
             $('#bookingsList').html(`
@@ -848,6 +1036,7 @@ $loggedInUserProfilePic = $profilePic;
                     if (response.status) {
                         currentBookings = response.data;
                         
+                        // Update calendar with all bookings
                         $('#calendar').fullCalendar('removeEvents');
                         if (response.data.length > 0) {
                             $('#calendar').fullCalendar('addEventSource', response.data);
@@ -902,6 +1091,7 @@ $loggedInUserProfilePic = $profilePic;
                 return;
             }
 
+            // Sort by date descending
             bookings.sort((a, b) => new Date(b.start) - new Date(a.start));
 
             let html = '';
@@ -924,6 +1114,7 @@ $loggedInUserProfilePic = $profilePic;
                         <p><strong>Date:</strong> ${date}</p>
                         <p><strong>Time:</strong> ${startTime} - ${endTime}</p>
                         <p><strong>Status:</strong> <span style="color: ${borderColor}; font-weight: 600;">${booking.status.toUpperCase()}</span></p>
+                        <p><strong>User Type:</strong> ${booking.user_role || 'Unknown'}</p>
                         ${booking.phone ? `<p><strong>Phone:</strong> ${booking.phone}</p>` : ''}
                     </div>
                 `;
@@ -936,22 +1127,28 @@ $loggedInUserProfilePic = $profilePic;
             const formattedDate = date.format('YYYY-MM-DD');
             const displayDate = date.format('MMMM D, YYYY');
             
-            $('#selected_date').val(formattedDate);
+            $('#event_start_date').val(formattedDate);
+            $('#event_end_date').val(formattedDate);
             $('#selected_facility').val(selectedFacility);
-            $('#display_facility').text(selectedFacility);
-            $('#display_date').text(displayDate);
+            $('#display_selected_date').text(displayDate);
+            $('#facility_name').val(selectedFacility);
             
+            // Reset form
             $('#phone').val('').removeClass('is-invalid');
-            $('#note').val('');
+            $('#event_note').val('');
             $('.slot-btn').removeClass('selected disabled').prop('disabled', false);
             selectedTimeSlot = null;
-            $('#submitReservation').prop('disabled', true);
+            $('#selected_time_start').val('');
+            $('#selected_time_end').val('');
+            $('#saveReservationBtn').prop('disabled', true);
             
+            // Check and disable already booked slots
             checkAvailableSlots(formattedDate);
             
-            $('#bookingModal').modal('show');
+            $('#myModal').modal('show');
         }
 
+        // Check available slots and disable booked ones (8:00 AM - 11:00 PM only)
         function checkAvailableSlots(date) {
             const bookedSlots = currentBookings
                 .filter(b => moment(b.start).format('YYYY-MM-DD') === date)
@@ -964,6 +1161,7 @@ $loggedInUserProfilePic = $profilePic;
                 const slotStart = $(this).data('start');
                 const slotEnd = $(this).data('end');
                 
+                // Check if this slot conflicts with any booked slot
                 const isBooked = bookedSlots.some(booked => {
                     return (slotStart >= booked.start && slotStart < booked.end) ||
                            (slotEnd > booked.start && slotEnd <= booked.end) ||
@@ -976,58 +1174,13 @@ $loggedInUserProfilePic = $profilePic;
             });
         }
 
-        $('#submitReservation').on('click', function() {
-            const phone = $('#phone').val();
-            const note = $('#note').val();
-            const date = $('#selected_date').val();
-            const facility = $('#selected_facility').val();
-            
-            if (!selectedTimeSlot) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing Information',
-                    text: 'Please select a time slot',
-                    confirmButtonColor: '#3b82f6'
-                });
-                return;
-            }
-            
-            if (!/^09\d{9}$/.test(phone)) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Invalid Phone Number',
-                    text: 'Please enter a valid Philippine mobile number (e.g., 09123456789)',
-                    confirmButtonColor: '#3b82f6'
-                });
-                return;
-            }
-            
-            Swal.fire({
-                title: 'Confirm Reservation',
-                html: `
-                    <div style="text-align: left; padding: 10px;">
-                        <p><strong>Facility:</strong> ${facility}</p>
-                        <p><strong>Date:</strong> ${moment(date).format('MMMM D, YYYY')}</p>
-                        <p><strong>Time:</strong> ${selectedTimeSlot.start} - ${selectedTimeSlot.end}</p>
-                        <p><strong>Phone:</strong> ${phone}</p>
-                        ${note ? `<p><strong>Note:</strong> ${note}</p>` : ''}
-                    </div>
-                `,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#3b82f6',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Confirm Booking',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    submitReservation(facility, date, selectedTimeSlot.start, selectedTimeSlot.end, phone, note);
-                }
-            });
-        });
-
+        // Submit reservation - Creates APPROVED reservation directly (admin bypass)
         function submitReservation(facility, date, timeStart, timeEnd, phone, note) {
-            $('#submitReservation').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Submitting...');
+            const $btn = $('#saveReservationBtn');
+            const $spinner = $btn.find('.spinner-border');
+            
+            $btn.prop('disabled', true);
+            $spinner.removeClass('d-none');
             
             $.ajax({
                 url: 'quick-reservation.php',
@@ -1047,10 +1200,11 @@ $loggedInUserProfilePic = $profilePic;
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
-                            text: 'Reservation created successfully',
+                            text: 'Reservation created and approved successfully',
                             confirmButtonColor: '#3b82f6'
                         }).then(() => {
-                            $('#bookingModal').modal('hide');
+                            $('#myModal').modal('hide');
+                            // Refresh bookings to show new approved reservation
                             fetchBookings(selectedFacility);
                         });
                     } else {
@@ -1072,7 +1226,8 @@ $loggedInUserProfilePic = $profilePic;
                     });
                 },
                 complete: function() {
-                    $('#submitReservation').prop('disabled', false).html('Submit Reservation');
+                    $btn.prop('disabled', false);
+                    $spinner.addClass('d-none');
                 }
             });
         }
