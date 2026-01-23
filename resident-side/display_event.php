@@ -2,6 +2,7 @@
 /**
  * display_event.php
  * Retrieves all reservations from database and formats them for FullCalendar
+ * FIXED: Excludes rejected reservations so those time slots become available
  */
 
 session_start();
@@ -37,7 +38,9 @@ try {
 }
 
 try {
-    // Fetch all active reservations
+    // Fetch only ACTIVE reservations (pending, approved, completed)
+    // Exclude 'cancelled', 'rejected', and NULL/empty status reservations
+    // This ensures cancelled and rejected time slots become available for new bookings
     $sql = "SELECT 
                 id as event_id,
                 facility_name as title,
@@ -50,7 +53,9 @@ try {
                 note,
                 user_id
             FROM reservations 
-            WHERE status != 'cancelled'
+            WHERE status IN ('pending', 'approved', 'completed')
+               OR status IS NULL
+               OR status = ''
             ORDER BY event_start_date ASC, time_start ASC";
     
     $stmt = $conn->prepare($sql);
@@ -76,7 +81,7 @@ try {
                 $color = '#28a745'; // Green
                 break;
             case 'rejected':
-                $color = '#dc3545'; // Red
+                $color = '#dc3545'; // Red (shouldn't appear due to WHERE clause)
                 break;
             case 'completed':
                 $color = '#6c757d'; // Gray

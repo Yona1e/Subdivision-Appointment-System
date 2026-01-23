@@ -354,11 +354,22 @@ function load_events() {
         url: "display_event.php",
         dataType: "json",
         success: function (response) {
+            console.log("Raw response from server:", response);
+            
             // Store all events globally, but EXCLUDE rejected ones
             // This allows rejected time slots to be available for booking again
-            allEvents = (response.data || []).filter(function(event) {
-                return event.status !== 'rejected';
+            var rawEvents = response.data || [];
+            console.log("Total events from database:", rawEvents.length);
+            
+            allEvents = rawEvents.filter(function(event) {
+                var isRejected = event.status === 'rejected';
+                if (isRejected) {
+                    console.log("Filtering out rejected event:", event);
+                }
+                return !isRejected;
             });
+            
+            console.log("Events after filtering rejected:", allEvents.length);
 
             // Destroy existing calendar instance
             $('#calendar').fullCalendar('destroy');
@@ -721,6 +732,9 @@ function checkModalFormCompletion() {
  * FIXED: Only considers non-rejected bookings when checking for conflicts
  */
 function checkAndDisableBookedSlots(selectedDate, facilityName) {
+    console.log("Checking slots for date:", selectedDate, "facility:", facilityName);
+    console.log("Total allEvents:", allEvents.length);
+    
     // Get current date and time
     var now = moment();
     var currentDate = now.format("YYYY-MM-DD");
@@ -728,13 +742,25 @@ function checkAndDisableBookedSlots(selectedDate, facilityName) {
 
     // Get list of booked events, EXCLUDING rejected ones
     // This ensures rejected bookings don't block time slots
+    // Filter allEvents to only include non-rejected bookings for this date and facility
     var bookedSlots = allEvents.filter(function(event) {
+        // Skip if event has rejected status
+        if (event.status === 'rejected') {
+            console.log("Skipping rejected event in checkAndDisableBookedSlots:", event);
+            return false;
+        }
+        
         var eventDate = moment(event.start).format("YYYY-MM-DD");
-        var isMatch = event.title === facilityName && eventDate === selectedDate;
-        // Only include if status is NOT rejected (or status doesn't exist)
-        var isNotRejected = !event.status || event.status !== 'rejected';
-        return isMatch && isNotRejected;
+        var matches = event.title === facilityName && eventDate === selectedDate;
+        
+        if (matches) {
+            console.log("Found matching booked slot:", event);
+        }
+        
+        return matches;
     });
+    
+    console.log("Booked slots for this date/facility:", bookedSlots.length);
 
     // Also check if temp event matches
     if (tempCalendarEvent) {
@@ -743,6 +769,19 @@ function checkAndDisableBookedSlots(selectedDate, facilityName) {
             bookedSlots.push(tempCalendarEvent);
         }
     }
+
+    console.log("=== TIME SLOT CHECK DEBUG ===");
+    console.log("Selected Date:", selectedDate);
+    console.log("Facility:", facilityName);
+    console.log("Total booked slots:", bookedSlots.length);
+    bookedSlots.forEach(function(slot, index) {
+        console.log("Booked Slot " + (index + 1) + ":", {
+            title: slot.title,
+            start: slot.start,
+            end: slot.end,
+            status: slot.status
+        });
+    });
 
     // Process each time slot button
     $('.slot-btn').each(function() {

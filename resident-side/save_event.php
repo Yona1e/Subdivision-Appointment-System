@@ -2,6 +2,7 @@
 /**
  * save_event.php
  * Handles saving facility reservations to the database with payment proof upload
+ * FIXED: Only checks conflicts with pending/approved reservations, not rejected ones
  */
 
 session_start();
@@ -181,13 +182,13 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
 }
 
 try {
-    // Check for conflicting reservations (only check visible reservations)
-    $checkQuery = "SELECT id, time_start, time_end 
+    // FIXED: Check for conflicting reservations - ONLY check pending and approved
+    // Rejected and cancelled reservations should NOT block time slots
+    $checkQuery = "SELECT id, time_start, time_end, status
                    FROM reservations 
                    WHERE facility_name = :facility_name 
                    AND event_start_date = :event_start_date 
-                   AND status != 'cancelled'
-                   AND admin_visible = TRUE
+                   AND status IN ('pending', 'approved')
                    AND (
                        (time_start < :time_end AND time_end > :time_start)
                    )";
@@ -207,6 +208,9 @@ try {
         if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
             unlink('../' . $payment_proof_path);
         }
+        
+        // Log the conflict for debugging
+        error_log("Booking conflict detected: " . print_r($conflict, true));
         
         echo json_encode([
             'status' => false,

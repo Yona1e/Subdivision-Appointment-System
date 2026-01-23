@@ -190,6 +190,7 @@ function initializeCalendar() {
 }
 
 // Fetch bookings from ALL users (regular users and admins)
+// FIXED: Filter out rejected and cancelled reservations
 function fetchBookings(facility) {
     $('#calendar').fullCalendar('removeEvents');
     $('#bookingsList').html(`
@@ -211,18 +212,28 @@ function fetchBookings(facility) {
         dataType: 'json',
         success: function (response) {
             if (response.status) {
-                currentBookings = response.data;
+                // FIXED: Filter out rejected and cancelled reservations
+                // Only show and check conflicts with pending and approved bookings
+                const activeBookings = response.data.filter(booking => {
+                    return booking.status === 'pending' || booking.status === 'approved' || booking.status === 'confirmed';
+                });
 
-                // Update calendar with all bookings with color coding
+                console.log("Total bookings from server:", response.data.length);
+                console.log("Active bookings (pending/approved):", activeBookings.length);
+                console.log("Filtered out:", response.data.length - activeBookings.length);
+
+                currentBookings = activeBookings;
+
+                // Update calendar with active bookings only
                 $('#calendar').fullCalendar('removeEvents');
-                if (response.data.length > 0) {
+                if (activeBookings.length > 0) {
                     // Add color to each event based on status
-                    const coloredEvents = response.data.map(event => {
+                    const coloredEvents = activeBookings.map(event => {
                         const statusColors = {
                             'approved': '#10b981',    // Green
                             'confirmed': '#10b981',   // Green (same as approved)
                             'pending': '#f59e0b',     // Yellow/Orange
-                            'rejected': '#ef4444'     // Red
+                            'rejected': '#ef4444'     // Red (won't appear due to filter)
                         };
 
                         return {
@@ -235,6 +246,7 @@ function fetchBookings(facility) {
                     $('#calendar').fullCalendar('addEventSource', coloredEvents);
                 }
 
+                // Update bookings list with ALL bookings (including rejected for display)
                 updateBookingsList(response.data);
             } else {
                 Swal.fire({
@@ -342,14 +354,23 @@ function openBookingModal(date) {
     $('#myModal').modal('show');
 }
 
-// Check available slots and disable booked ones (8:00 AM - 11:00 PM only)
+// FIXED: Check available slots and disable booked ones (only checks pending/approved)
+// Rejected and cancelled reservations don't block time slots
 function checkAvailableSlots(date) {
+    // Only use currentBookings which already has rejected/cancelled filtered out
     const bookedSlots = currentBookings
-        .filter(b => moment(b.start).format('YYYY-MM-DD') === date)
+        .filter(b => {
+            const bookingDate = moment(b.start).format('YYYY-MM-DD');
+            const isActiveStatus = b.status === 'pending' || b.status === 'approved' || b.status === 'confirmed';
+            return bookingDate === date && isActiveStatus;
+        })
         .map(b => ({
             start: moment(b.start).format('HH:mm'),
             end: moment(b.end).format('HH:mm')
         }));
+
+    console.log("Checking slots for date:", date);
+    console.log("Booked slots found:", bookedSlots.length);
 
     $('.slot-btn').each(function () {
         const slotStart = $(this).data('start');
@@ -364,6 +385,7 @@ function checkAvailableSlots(date) {
 
         if (isBooked) {
             $(this).addClass('disabled').prop('disabled', true);
+            console.log("Disabling slot:", slotStart, "-", slotEnd);
         }
     });
 }
