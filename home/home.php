@@ -81,28 +81,31 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Resident Home</title>
 
-<link rel="stylesheet" href="home.css">
-<link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <title>Resident Home</title>
+
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 </head>
 
 <body>
 
-<div class="app-layout">
+    <div class="app-layout">
 
-<!-- SIDEBAR -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <header class="sidebar-header">
                 <div class="profile-section">
                     <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
                     <div class="profile-info">
-                        <p class="profile-name"><?= $userName ?></p>
+                        <p class="profile-name">
+                            <?= $userName ?>
+                        </p>
                         <p class="profile-role">Resident</p>
                     </div>
                 </div>
@@ -147,109 +150,121 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </aside>
 
-<!-- MAIN CONTENT -->
-<div class="main-content">
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
 
-<h1 class="mb-4 mt-3">Welcome Back, <?= htmlspecialchars($user['FirstName']) ?></h1>
+            <h1 class="mb-4 mt-3">Welcome Back,
+                <?= htmlspecialchars($user['FirstName']) ?>
+            </h1>
 
-<!-- STATS CARD -->
-<div class="row g-4 mb-4">
+            <!-- STATS CARD -->
+            <div class="row g-4 mb-4">
 
-    <div class="col-lg-4 col-md-6 col-12">
-        <div class="reservation-card p-4 h-100 w-100 text-center">
-            <span class="d-block fs-2 fw-bold"><?= $totalReservations ?></span>
-            <p class="mb-0 text-muted">Total Reservations</p>
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="reservation-card p-4 h-100 w-100 text-center">
+                        <span class="d-block fs-2 fw-bold">
+                            <?= $totalReservations ?>
+                        </span>
+                        <p class="mb-0 text-muted">Total Reservations</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="reservation-card p-4 h-100 w-100 text-center">
+                        <span class="d-block fs-2 fw-bold">
+                            <?= $upcomingReservations ?>
+                        </span>
+                        <p class="mb-0 text-muted">Upcoming Reservations</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="reservation-card p-4 h-100 w-100 text-center">
+                        <span class="d-block fs-2 fw-bold">
+                            <?= $facilitiesToday ?>
+                        </span>
+                        <p class="mb-0 text-muted">Facilities In Use Today</p>
+                    </div>
+                </div>
+
+            </div>
+
+
+
+
+            <!-- NOTIFICATIONS -->
+            <div class="reservation-card mb-4" style="padding:10px 20px;">
+                <div class="card-body">
+                    <h4 class="section-title" style="padding-top: 6px; padding-left: 6px;">Your Notifications For Today
+                    </h4>
+
+                    <?php if ($todayNotifications): ?>
+                    <ul class="time-list">
+                        <?php foreach ($todayNotifications as $n): ?>
+                        <li style="
+                            background: <?= $n['status'] === 'approved'
+                            ? 'rgb(40, 167, 69)'         /* solid green outline */
+                                : 'rgb(220, 53, 69)' ?>;     /* solid red outline */
+                            color: White;
+                            text-align: left;
+                            padding: 14px 16px;
+                            border-radius: 10px;
+                        ">
+                            <strong>
+                                <?= htmlspecialchars($n['facility_name']) ?>
+                            </strong><br>
+                            <?= date('g:i A', strtotime($n['time_start'])) ?> –
+                            <?= date('g:i A', strtotime($n['time_end'])) ?><br>
+                            <span style="font-weight:600;">
+                                <?= ucfirst($n['status']) ?>
+                            </span>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php else: ?>
+                    <p class="no-data">No approval or rejection updates today.</p>
+                    <?php endif; ?>
+
+                </div>
+            </div>
+
+            <!-- FACILITY SCHEDULE -->
+            <div class="reservation-card mb-4" style="padding:10px 20px;">
+                <div class="card-body">
+                    <h4 class="section-title">Today's Facility Schedule (All Residents)</h4>
+                    <div class="facility-grid" id="facilityContainer"></div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="col-lg-4 col-md-6 col-12">
-        <div class="reservation-card p-4 h-100 w-100 text-center">
-            <span class="d-block fs-2 fw-bold"><?= $upcomingReservations ?></span>
-            <p class="mb-0 text-muted">Upcoming Reservations</p>
-        </div>
-    </div>
+    <script src="../resident-side/javascript/sidebar.js"></script>
 
-    <div class="col-lg-4 col-md-6 col-12">
-        <div class="reservation-card p-4 h-100 w-100 text-center">
-            <span class="d-block fs-2 fw-bold"><?= $facilitiesToday ?></span>
-            <p class="mb-0 text-muted">Facilities In Use Today</p>
-        </div>
-    </div>
+    <script>
+        $(function () {
+            const now = new Date();
+            const today = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0');
 
-</div>
+            $.getJSON('display_event.php', res => {
+                if (!res.status) return;
 
+                const grouped = {};
+                res.data.forEach(e => {
+                    if (e.start.startsWith(today)) {
+                        grouped[e.title] ??= [];
+                        grouped[e.title].push(e);
+                    }
+                });
 
+                Object.keys(grouped).slice(0, 4).forEach(facility => {
+                    let slots = grouped[facility].map(e =>
+                        `<li>${format(e.start)} – ${format(e.end)}</li>`
+                    ).join('');
 
-
-<!-- NOTIFICATIONS -->
-<div class="reservation-card mb-4" style="padding:10px 20px;">
-<div class="card-body">
-<h4 class="section-title" style="padding-top: 6px; padding-left: 6px;">Your Notifications For Today</h4>
-
-<?php if ($todayNotifications): ?>
-    <ul class="time-list">
-        <?php foreach ($todayNotifications as $n): ?>
-            <li style="
-    background: <?= $n['status'] === 'approved'
-       ? 'rgb(40, 167, 69)'         /* solid green outline */
-        : 'rgb(220, 53, 69)' ?>;     /* solid red outline */
-    color: White;
-    text-align: left;
-    padding: 14px 16px;
-    border-radius: 10px;
-">
-                <strong><?= htmlspecialchars($n['facility_name']) ?></strong><br>
-                <?= date('g:i A', strtotime($n['time_start'])) ?> – <?= date('g:i A', strtotime($n['time_end'])) ?><br>
-                <span style="font-weight:600;">
-                    <?= ucfirst($n['status']) ?>
-                </span>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-<?php else: ?>
-    <p class="no-data">No approval or rejection updates today.</p>
-<?php endif; ?>
-
-</div>
-</div>
-
-<!-- FACILITY SCHEDULE -->
-<div class="reservation-card mb-4" style="padding:10px 20px;">
-<div class="card-body">
-<h4 class="section-title">Today's Facility Schedule (All Residents)</h4>
-<div class="facility-grid" id="facilityContainer"></div>
-</div>
-</div>
-
-</div>
-</div>
-
-<script src="../resident-side/javascript/sidebar.js"></script>
-
-<script>
-$(function () {
-    const now = new Date();
-const today = now.getFullYear() + '-' +
-    String(now.getMonth() + 1).padStart(2, '0') + '-' +
-    String(now.getDate()).padStart(2, '0');
-
-    $.getJSON('display_event.php', res => {
-        if (!res.status) return;
-
-        const grouped = {};
-        res.data.forEach(e => {
-            if (e.start.startsWith(today)) {
-                grouped[e.title] ??= [];
-                grouped[e.title].push(e);
-            }
-        });
-
-        Object.keys(grouped).slice(0,4).forEach(facility => {
-            let slots = grouped[facility].map(e =>
-                `<li>${format(e.start)} – ${format(e.end)}</li>`
-            ).join('');
-
-            $('#facilityContainer').append(`
+                    $('#facilityContainer').append(`
                 <div class="facility-card">
                     <h5>${facility}</h5>
                     <ul class="time-list">
@@ -257,17 +272,18 @@ const today = now.getFullYear() + '-' +
                     </ul>
                 </div>
             `);
-        });
-    });
+                });
+            });
 
-    function format(dt) {
-        return new Date(dt).toLocaleTimeString([], {
-            hour: 'numeric',
-            minute: '2-digit'
+            function format(dt) {
+                return new Date(dt).toLocaleTimeString([], {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+            }
         });
-    }
-});
-</script>
+    </script>
 
 </body>
+
 </html>

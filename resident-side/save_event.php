@@ -30,7 +30,7 @@ try {
 } catch(PDOException $e) {
     echo json_encode([
         'status' => false,
-        'msg' => 'Database connection failed. Please try again later.'
+        'msg' => 'Database connection failed. Please try again later.' 
     ]);
     exit();
 }

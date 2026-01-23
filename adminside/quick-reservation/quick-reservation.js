@@ -93,16 +93,16 @@ $(document).ready(function () {
         Swal.fire({
             title: 'Confirm Reservation',
             html: `
-                        <div style="text-align: left; padding: 10px;">
-                            <p><strong>Facility:</strong> ${facility}</p>
-                            <p><strong>Date:</strong> ${moment(date).format('MMMM D, YYYY')}</p>
-                            <p><strong>Time:</strong> ${selectedTimeSlot.start} - ${selectedTimeSlot.end}</p>
-                            <p><strong>Phone:</strong> ${phone}</p>
-                            ${note ? `<p><strong>Note:</strong> ${note}</p>` : ''}
-                            <hr>
-                            <p class="text-success"><strong>✓ This reservation will be automatically approved</strong></p>
-                        </div>
-                    `,
+                <div style="text-align: left; padding: 10px;">
+                    <p><strong>Facility:</strong> ${facility}</p>
+                    <p><strong>Date:</strong> ${moment(date).format('MMMM D, YYYY')}</p>
+                    <p><strong>Time:</strong> ${selectedTimeSlot.start} - ${selectedTimeSlot.end}</p>
+                    <p><strong>Phone:</strong> ${phone}</p>
+                    ${note ? `<p><strong>Note:</strong> ${note}</p>` : ''}
+                    <hr>
+                    <p class="text-success"><strong>✓ This reservation will be automatically approved</strong></p>
+                </div>
+            `,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#3b82f6',
@@ -118,18 +118,60 @@ $(document).ready(function () {
 });
 
 function initializeCalendar() {
+    // Determine header buttons based on screen size
+    let rightButtons = 'month,agendaWeek,agendaDay';
+    if (window.innerWidth < 576) {
+        rightButtons = 'month';
+    }
+    
+    // Determine aspect ratio based on screen size
+    let aspectRatio = 1.8;
+    if (window.innerWidth < 576) {
+        aspectRatio = 1.0;
+    } else if (window.innerWidth < 768) {
+        aspectRatio = 1.3;
+    } else if (window.innerWidth < 1024) {
+        aspectRatio = 1.5;
+    }
+    
     $('#calendar').fullCalendar({
         header: {
             left: 'prev,next today',
             center: 'title',
-            right: 'month,agendaWeek,agendaDay'
+            right: rightButtons
         },
         editable: false,
         eventLimit: true,
         events: [],
+        height: 'auto',
+        contentHeight: 'auto',
+        aspectRatio: aspectRatio,
         validRange: {
-            start: moment().format('YYYY-MM-DD') // Prevent past date selection
+            start: moment().format('YYYY-MM-DD')
         },
+        
+        // Handle window resize for responsive behavior
+        windowResize: function(view) {
+            let newAspectRatio = 1.8;
+            let newButtons = 'month,agendaWeek,agendaDay';
+            
+            if (window.innerWidth < 576) {
+                newAspectRatio = 1.0;
+                newButtons = 'month';
+            } else if (window.innerWidth < 768) {
+                newAspectRatio = 1.3;
+            } else if (window.innerWidth < 1024) {
+                newAspectRatio = 1.5;
+            }
+            
+            $('#calendar').fullCalendar('option', 'aspectRatio', newAspectRatio);
+            $('#calendar').fullCalendar('option', 'header', {
+                left: 'prev,next today',
+                center: 'title',
+                right: newButtons
+            });
+        },
+        
         dayClick: function (date) {
             // CRITICAL: Prevent modal opening if no facility selected
             if (!selectedFacility) {
@@ -156,51 +198,42 @@ function initializeCalendar() {
 
             openBookingModal(date);
         },
+        
         eventClick: function (event) {
             const statusColors = {
-                'approved': '#10b981',    // Green
-                'confirmed': '#10b981',   // Green
-                'pending': '#f59e0b',     // Yellow/Orange
-                'rejected': '#ef4444'     // Red
+                'approved': '#10b981',
+                'confirmed': '#10b981',
+                'pending': '#f59e0b',
+                'rejected': '#ef4444'
             };
-
+// --------------- gagayahin ------------
             Swal.fire({
                 title: event.title,
                 html: `
-                            <div style="text-align: left; padding: 10px;">
-                                <p><strong>Date:</strong> ${moment(event.start).format('MMMM D, YYYY')}</p>
-                                <p><strong>Time:</strong> ${moment(event.start).format('h:mm A')} - ${moment(event.end).format('h:mm A')}</p>
-                                <p><strong>Status:</strong> <span style="color: ${statusColors[event.status] || '#6b7280'}; font-weight: 600;">${event.status.toUpperCase()}</span></p>
-                                <p><strong>User Type:</strong> ${event.user_role || 'Unknown'}</p>
-                                ${event.email ? `<p><strong>Email:</strong> ${event.email}</p>` : ''}
-                                ${event.phone ? `<p><strong>Phone:</strong> ${event.phone}</p>` : ''}
-                                ${event.note ? `<p><strong>Note:</strong> ${event.note}</p>` : ''}
-                            </div>
-                        `,
+                    <div style="text-align: left; padding: 10px;">
+                        <p><strong>Date:</strong> ${moment(event.start).format('MMMM D, YYYY')}</p>
+                        <p><strong>Time:</strong> ${moment(event.start).format('h:mm A')} - ${moment(event.end).format('h:mm A')}</p>
+                        <p><strong>Status:</strong> <span style="color: ${statusColors[event.status] || '#6b7280'}; font-weight: 600;">${event.status.toUpperCase()}</span></p>
+                        <p><strong>User Type:</strong> ${event.user_role || 'Unknown'}</p>
+                        ${event.email ? `<p><strong>Email:</strong> ${event.email}</p>` : ''}
+                        ${event.phone ? `<p><strong>Phone:</strong> ${event.phone}</p>` : ''}
+                        ${event.note ? `<p><strong>Note:</strong> ${event.note}</p>` : ''}
+                    </div>
+                `,
                 icon: 'info',
                 confirmButtonColor: '#3b82f6'
             });
         },
+        
         eventRender: function (event, element) {
-            // Colors are already set in the event object from fetchBookings
-            // This function just ensures proper rendering
             element.css('cursor', 'pointer');
         }
     });
 }
 
 // Fetch bookings from ALL users (regular users and admins)
-// FIXED: Filter out rejected and cancelled reservations
 function fetchBookings(facility) {
     $('#calendar').fullCalendar('removeEvents');
-    $('#bookingsList').html(`
-                <div class="empty-state">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Loading bookings...</p>
-                </div>
-            `);
 
     $.ajax({
         url: 'quick-reservation.php',
@@ -212,8 +245,7 @@ function fetchBookings(facility) {
         dataType: 'json',
         success: function (response) {
             if (response.status) {
-                // FIXED: Filter out rejected and cancelled reservations
-                // Only show and check conflicts with pending and approved bookings
+                // Filter out rejected and cancelled reservations
                 const activeBookings = response.data.filter(booking => {
                     return booking.status === 'pending' || booking.status === 'approved' || booking.status === 'confirmed';
                 });
@@ -230,10 +262,10 @@ function fetchBookings(facility) {
                     // Add color to each event based on status
                     const coloredEvents = activeBookings.map(event => {
                         const statusColors = {
-                            'approved': '#10b981',    // Green
-                            'confirmed': '#10b981',   // Green (same as approved)
-                            'pending': '#f59e0b',     // Yellow/Orange
-                            'rejected': '#ef4444'     // Red (won't appear due to filter)
+                            'approved': '#10b981',
+                            'confirmed': '#10b981',
+                            'pending': '#f59e0b',
+                            'rejected': '#ef4444'
                         };
 
                         return {
@@ -245,9 +277,6 @@ function fetchBookings(facility) {
 
                     $('#calendar').fullCalendar('addEventSource', coloredEvents);
                 }
-
-                // Update bookings list with ALL bookings (including rejected for display)
-                updateBookingsList(response.data);
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -255,13 +284,6 @@ function fetchBookings(facility) {
                     text: response.msg || 'Failed to fetch bookings',
                     confirmButtonColor: '#3b82f6'
                 });
-
-                $('#bookingsList').html(`
-                            <div class="empty-state">
-                                <span class="material-symbols-outlined">error</span>
-                                <p>Failed to load bookings</p>
-                            </div>
-                        `);
             }
         },
         error: function (xhr, status, error) {
@@ -272,61 +294,8 @@ function fetchBookings(facility) {
                 text: 'Unable to fetch bookings. Please try again.',
                 confirmButtonColor: '#3b82f6'
             });
-
-            $('#bookingsList').html(`
-                        <div class="empty-state">
-                            <span class="material-symbols-outlined">cloud_off</span>
-                            <p>Connection error. Please refresh.</p>
-                        </div>
-                    `);
         }
     });
-}
-
-function updateBookingsList(bookings) {
-    const $list = $('#bookingsList');
-
-    if (bookings.length === 0) {
-        $list.html(`
-                    <div class="empty-state">
-                        <span class="material-symbols-outlined">event_available</span>
-                        <p>No bookings found for this facility</p>
-                    </div>
-                `);
-        return;
-    }
-
-    // Sort by date descending
-    bookings.sort((a, b) => new Date(b.start) - new Date(a.start));
-
-    let html = '';
-    bookings.forEach(booking => {
-        const startTime = moment(booking.start).format('h:mm A');
-        const endTime = moment(booking.end).format('h:mm A');
-        const date = moment(booking.start).format('MMM D, YYYY');
-
-        const statusColors = {
-            'approved': '#10b981',    // Green
-            'confirmed': '#10b981',   // Green
-            'pending': '#f59e0b',     // Yellow/Orange
-            'rejected': '#ef4444'     // Red
-        };
-
-        const borderColor = statusColors[booking.status] || '#3b82f6';
-
-        html += `
-                    <div class="booking-item" style="border-left-color: ${borderColor};">
-                        <h6>${booking.title}</h6>
-                        <p><strong>Date:</strong> ${date}</p>
-                        <p><strong>Time:</strong> ${startTime} - ${endTime}</p>
-                        <p><strong>Status:</strong> <span style="color: ${borderColor}; font-weight: 600;">${booking.status.toUpperCase()}</span></p>
-                        <p><strong>User Type:</strong> ${booking.user_role || 'Unknown'}</p>
-                        ${booking.phone ? `<p><strong>Phone:</strong> ${booking.phone}</p>` : ''}
-                    </div>
-                `;
-    });
-
-    $list.html(html);
 }
 
 function openBookingModal(date) {
@@ -354,10 +323,8 @@ function openBookingModal(date) {
     $('#myModal').modal('show');
 }
 
-// FIXED: Check available slots and disable booked ones (only checks pending/approved)
-// Rejected and cancelled reservations don't block time slots
+// Check available slots and disable booked ones
 function checkAvailableSlots(date) {
-    // Only use currentBookings which already has rejected/cancelled filtered out
     const bookedSlots = currentBookings
         .filter(b => {
             const bookingDate = moment(b.start).format('YYYY-MM-DD');

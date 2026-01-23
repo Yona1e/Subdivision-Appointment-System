@@ -244,6 +244,237 @@ $loggedInUserProfilePic = $profilePic;
     <!-- FullCalendar v3 CSS and JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    
+    <style>
+    /* Responsive Calendar Styles */
+    .container.py-5 {
+        padding-top: 30px !important;
+        padding-bottom: 30px !important;
+        max-width: 100%;
+    }
+
+    .calendar-wrapper {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 100%;
+        overflow: hidden;
+    }
+
+    #calendar {
+        max-width: 100%;
+        font-size: 14px;
+    }
+
+    .fc-toolbar {
+        margin-bottom: 20px;
+    }
+
+    .fc-toolbar h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .fc-day {
+        min-height: 100px;
+    }
+
+    /* Tablets (1024px and below) */
+    @media (max-width: 1024px) {
+        .calendar-wrapper {
+            padding: 15px;
+        }
+        
+        .fc-toolbar h2 {
+            font-size: 1.3rem;
+        }
+        
+        .fc-day {
+            min-height: 85px;
+        }
+    }
+
+    /* Tablets (768px and below) */
+    @media (max-width: 768px) {
+        .main-content {
+            padding: 15px;
+        }
+        
+        .reservation-card {
+            padding: 20px 15px;
+        }
+        
+        .page-header {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .container.py-5 {
+            padding-top: 20px !important;
+            padding-bottom: 20px !important;
+        }
+        
+        .calendar-wrapper {
+            padding: 12px;
+        }
+        
+        .fc-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .fc-toolbar .fc-left,
+        .fc-toolbar .fc-center,
+        .fc-toolbar .fc-right {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .fc-toolbar h2 {
+            font-size: 1.2rem;
+        }
+        
+        .fc-day {
+            min-height: 70px;
+        }
+        
+        .fc-day-header {
+            font-size: 0.85rem;
+            padding: 8px 3px;
+        }
+        
+        .fc-event {
+            font-size: 0.75rem;
+        }
+        
+        .fc-button {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+        }
+        
+        #facility_select {
+            max-width: 100%;
+        }
+    }
+
+    /* Mobile (576px and below) */
+    @media (max-width: 576px) {
+        .main-content {
+            padding: 10px;
+        }
+        
+        .reservation-card {
+            padding: 15px 10px;
+        }
+        
+        .page-header {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+        
+        .container.py-5 {
+            padding-top: 15px !important;
+            padding-bottom: 15px !important;
+        }
+        
+        .calendar-wrapper {
+            padding: 10px;
+        }
+        
+        .fc-toolbar h2 {
+            font-size: 1.1rem;
+        }
+        
+        .fc-day {
+            min-height: 60px;
+        }
+        
+        .fc-day-header {
+            font-size: 0.75rem;
+            padding: 6px 2px;
+        }
+        
+        .fc-day-number {
+            font-size: 0.8rem;
+            padding: 4px;
+        }
+        
+        .fc-event {
+            font-size: 0.7rem;
+            padding: 1px 3px;
+        }
+        
+        .fc-button {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+        
+        .fc-agendaWeek-button,
+        .fc-agendaDay-button {
+            display: none !important;
+        }
+        
+        #facility_select {
+            font-size: 0.9rem;
+            padding: 8px 12px;
+        }
+        
+        .modal-dialog {
+            margin: 10px;
+            max-width: calc(100% - 20px);
+        }
+        
+        .modal-body {
+            padding: 12px;
+        }
+        
+        .slots-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+        
+        .slot-btn {
+            font-size: 0.8rem;
+            padding: 8px 6px;
+        }
+    }
+
+    /* Very Small Mobile (400px and below) */
+    @media (max-width: 400px) {
+        .page-header {
+            font-size: 1.1rem;
+        }
+        
+        .calendar-wrapper {
+            padding: 8px;
+        }
+        
+        .fc-toolbar h2 {
+            font-size: 1rem;
+        }
+        
+        .fc-day {
+            min-height: 50px;
+        }
+        
+        .fc-day-header {
+            font-size: 0.7rem;
+            padding: 5px 1px;
+        }
+        
+        .fc-day-number {
+            font-size: 0.75rem;
+            padding: 3px;
+        }
+        
+        .fc-event {
+            font-size: 0.65rem;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="app-layout">
@@ -328,31 +559,13 @@ $loggedInUserProfilePic = $profilePic;
                         </select>
                     </div>
                     
-                    <!-- CALENDAR AND SUMMARY SECTION -->
+                    <!-- CALENDAR SECTION -->
                     <div class="container py-5" style="display: block;padding-top: 30px !important;">
                         <div class="row g-4">
-                            <!-- Left Side - Calendar -->
-                            <div class="col-lg-7">
+                            <!-- Calendar (Full Width) -->
+                            <div class="col-lg-12">
                                 <div class="calendar-wrapper">
                                     <div id="calendar"></div>
-                                </div>
-                            </div>
-
-                            <!-- Right Side - Summary Section -->
-                            <div class="col-lg-5">
-                                <div class="summary-card">
-                                    <div class="summary-header">
-                                        <h3 class="summary-title">Current Bookings</h3>
-                                    </div>
-
-                                    <div class="summary-body">
-                                        <div class="bookings-list" id="bookingsList">
-                                            <div class="empty-state">
-                                                <span class="material-symbols-outlined">event_busy</span>
-                                                <p>Select a facility to view bookings</p>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>

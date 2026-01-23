@@ -463,25 +463,29 @@ function load_events() {
 
                     openBookingModal(start, end);
                 },
-
+                // eto yung babaguhin
                 eventClick: function (event) {
-                    var eventDetails = "<strong>Facility:</strong> " + event.title + "<br>";
-                    eventDetails += "<strong>Date:</strong> " + moment(event.start).format("MMMM DD, YYYY") + "<br>";
-                    eventDetails += "<strong>Time:</strong> " + moment(event.start).format("h:mm A") + " - " + moment(event.end).format("h:mm A") + "<br>";
-                    
-                    if (event.status) {
-                        eventDetails += "<strong>Status:</strong> " + event.status.charAt(0).toUpperCase() + event.status.slice(1);
-                    } else if (event.isPending) {
-                        eventDetails += "<strong>Status:</strong> Pending (Not yet submitted)";
-                    }
+    Swal.fire({
+        title: "Event Details",
+        icon: "info",
+        confirmButtonText: "OK",
+        html: `
+            <strong>Facility:</strong> ${event.title}<br>
+            <strong>Date:</strong> ${moment(event.start).format("MMMM DD, YYYY")}<br>
+            <strong>Time:</strong> ${moment(event.start).format("h:mm A")} - ${moment(event.end).format("h:mm A")}<br>
+            <strong>Status:</strong> ${
+                event.status
+                    ? event.status.charAt(0).toUpperCase() + event.status.slice(1)
+                    : event.isPending
+                        ? "Pending (Not yet submitted)"
+                        : "N/A"
+            }<br>
+            <strong>User Type:</strong> ${event.user_role || "Unknown"}
+        `
+    });
+}
 
-                    Swal.fire({
-                        title: "Event Details",
-                        html: eventDetails,
-                        icon: "info",
-                        confirmButtonText: "OK"
-                    });
-                },
+,
 
                 selectConstraint: {
                     start: moment().format('YYYY-MM-DD'),
