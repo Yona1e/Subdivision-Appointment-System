@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Handle profile picture upload
-    $profilePictureURL = null;
+    $profilePictureURL = 'uploads/profile_pictures/default.png'; // Default picture path
     if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
         
         $maxFileSize = 5 * 1024 * 1024; // 5MB
