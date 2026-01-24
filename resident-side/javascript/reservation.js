@@ -400,9 +400,16 @@ function load_events() {
                     openBookingModal(start, end);
                 },
 
+                // FIXED: eventClick now properly accesses user_role
                 eventClick: function (event) {
                     var statusText = event.status ? event.status.charAt(0).toUpperCase() + event.status.slice(1) : 
                                     (event.isPending ? "Pending (Not yet submitted)" : "N/A");
+                    
+                    // FIXED: Access user_role from event object
+                    var userRole = event.user_role || "Unknown";
+                    
+                    console.log("Event clicked:", event); // Debug
+                    console.log("User role:", userRole); // Debug
                     
                     Swal.fire({
                         title: "Event Details",
@@ -413,7 +420,7 @@ function load_events() {
                             <strong>Date:</strong> ${moment(event.start).format("MMMM DD, YYYY")}<br>
                             <strong>Time:</strong> ${moment(event.start).format("h:mm A")} - ${moment(event.end).format("h:mm A")}<br>
                             <strong>Status:</strong> ${statusText}<br>
-                            <strong>User Type:</strong> ${event.user_role || "Unknown"}
+                            <strong>User Type:</strong> ${userRole}
                         `
                     });
                 },

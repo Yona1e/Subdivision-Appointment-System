@@ -259,13 +259,13 @@ function fetchBookings(facility) {
                 // Update calendar with active bookings only
                 $('#calendar').fullCalendar('removeEvents');
                 if (activeBookings.length > 0) {
-                    // Add color to each event based on status
+                    // COLOR IN THE CALENDAR
                     const coloredEvents = activeBookings.map(event => {
                         const statusColors = {
-                            'approved': '#10b981',
-                            'confirmed': '#10b981',
-                            'pending': '#f59e0b',
-                            'rejected': '#ef4444'
+                            'approved': '#28a745',
+                            'confirmed': '#28a745',
+                            'pending': '#ffc107',
+                            'rejected': '#dc3545'
                         };
 
                         return {

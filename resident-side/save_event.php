@@ -1,9 +1,7 @@
 <?php
 /**
- * save_event.php
- * Handles saving facility reservations to the database with payment proof upload
- * FIXED: Only checks conflicts with pending/approved reservations, not rejected ones
- * UPDATED: Now calculates and saves cost based on facility and time duration
+ * save_event.php - FINAL FIXED VERSION
+ * Now includes user_role support
  */
 
 session_start();
@@ -46,8 +44,9 @@ $time_end = isset($_POST['time_end']) ? $_POST['time_end'] : '';
 $note = isset($_POST['note']) ? trim($_POST['note']) : '';
 $cost = isset($_POST['cost']) ? floatval($_POST['cost']) : 0;
 
-// Get user ID from session
+// Get user ID and role from session
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+$user_role = isset($_SESSION['role']) ? $_SESSION['role'] : 'Resident';
 
 // Validate required fields
 if (empty($facility_name)) {
@@ -123,7 +122,6 @@ if (!in_array($facility_name, $allowed_facilities)) {
 }
 
 // Calculate cost based on facility and time duration
-// Define facility prices per hour
 $facilityPrices = [
     'Chapel' => 500,
     'Basketball Court' => 100,
@@ -131,30 +129,22 @@ $facilityPrices = [
     'Tennis Court' => 400
 ];
 
-// Get the hourly rate for the selected facility
 $costPerHour = isset($facilityPrices[$facility_name]) ? $facilityPrices[$facility_name] : 350;
 
-// Calculate duration in hours
 $startTime = new DateTime($time_start);
 $endTime = new DateTime($time_end);
 $interval = $startTime->diff($endTime);
-$hours = $interval->h + ($interval->i / 60); // Convert minutes to decimal hours
+$hours = $interval->h + ($interval->i / 60);
 
-// Calculate total cost
 $calculatedCost = $costPerHour * $hours;
 
-// Use the calculated cost (server-side calculation is more secure)
-// But validate against the submitted cost to detect tampering
 if ($cost > 0 && abs($cost - $calculatedCost) > 0.01) {
-    // Cost mismatch - use server-calculated cost
     error_log("Cost mismatch detected. Submitted: $cost, Calculated: $calculatedCost");
     $cost = $calculatedCost;
 } else if ($cost == 0) {
-    // No cost submitted, use calculated
     $cost = $calculatedCost;
 }
 
-// Validate that cost is reasonable
 if ($cost < 0) {
     echo json_encode([
         'status' => false,
@@ -169,8 +159,7 @@ $payment_proof_path = null;
 if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['payment_proof'];
     
-    // Validate file size (max 5MB)
-    $maxFileSize = 5 * 1024 * 1024; // 5MB in bytes
+    $maxFileSize = 5 * 1024 * 1024;
     if ($file['size'] > $maxFileSize) {
         echo json_encode([
             'status' => false,
@@ -179,7 +168,6 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
         exit();
     }
     
-    // Validate file type (only images)
     $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
@@ -193,20 +181,16 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
         exit();
     }
     
-    // Create uploads directory if it doesn't exist
     $uploadDir = '../uploads/payment_proofs/';
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
     
-    // Generate unique filename
     $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $uniqueFileName = 'payment_' . $user_id . '_' . time() . '_' . uniqid() . '.' . $fileExtension;
     $targetPath = $uploadDir . $uniqueFileName;
     
-    // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        // Store relative path for database
         $payment_proof_path = 'uploads/payment_proofs/' . $uniqueFileName;
     } else {
         echo json_encode([
@@ -216,7 +200,6 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
         exit();
     }
 } else {
-    // Payment proof is required
     echo json_encode([
         'status' => false,
         'msg' => 'Payment proof is required. Please upload a screenshot of your payment.'
@@ -225,8 +208,7 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
 }
 
 try {
-    // FIXED: Check for conflicting reservations - ONLY check pending and approved
-    // Rejected and cancelled reservations should NOT block time slots
+    // Check for conflicting reservations
     $checkQuery = "SELECT id, time_start, time_end, status
                    FROM reservations 
                    WHERE facility_name = :facility_name 
@@ -247,12 +229,10 @@ try {
     $conflict = $checkStmt->fetch(PDO::FETCH_ASSOC);
     
     if ($conflict) {
-        // Delete uploaded file if there's a conflict
         if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
             unlink('../' . $payment_proof_path);
         }
         
-        // Log the conflict for debugging
         error_log("Booking conflict detected: " . print_r($conflict, true));
         
         echo json_encode([
@@ -262,27 +242,57 @@ try {
         exit();
     }
     
-    // Insert new reservation with payment proof, cost, and visibility defaults
-    $sql = "INSERT INTO reservations 
-            (user_id, facility_name, phone, event_start_date, event_end_date, 
-             time_start, time_end, note, cost, payment_proof, status, admin_visible, resident_visible, created_at) 
-            VALUES 
-            (:user_id, :facility_name, :phone, :event_start_date, :event_end_date, 
-             :time_start, :time_end, :note, :cost, :payment_proof, 'pending', TRUE, TRUE, NOW())";
+    // Check if user_role column exists
+    $checkColumnQuery = "SHOW COLUMNS FROM reservations LIKE 'user_role'";
+    $columnStmt = $conn->prepare($checkColumnQuery);
+    $columnStmt->execute();
+    $columnExists = $columnStmt->fetch();
     
-    $stmt = $conn->prepare($sql);
-    $result = $stmt->execute([
-        ':user_id' => $user_id,
-        ':facility_name' => $facility_name,
-        ':phone' => $phone,
-        ':event_start_date' => $event_start_date,
-        ':event_end_date' => $event_end_date,
-        ':time_start' => $time_start,
-        ':time_end' => $time_end,
-        ':note' => $note,
-        ':cost' => $cost,
-        ':payment_proof' => $payment_proof_path
-    ]);
+    // Insert with or without user_role based on column existence
+    if ($columnExists) {
+        $sql = "INSERT INTO reservations 
+                (user_id, user_role, facility_name, phone, event_start_date, event_end_date, 
+                 time_start, time_end, note, cost, payment_proof, status, admin_visible, resident_visible, created_at) 
+                VALUES 
+                (:user_id, :user_role, :facility_name, :phone, :event_start_date, :event_end_date, 
+                 :time_start, :time_end, :note, :cost, :payment_proof, 'pending', TRUE, TRUE, NOW())";
+        
+        $stmt = $conn->prepare($sql);
+        $result = $stmt->execute([
+            ':user_id' => $user_id,
+            ':user_role' => $user_role,
+            ':facility_name' => $facility_name,
+            ':phone' => $phone,
+            ':event_start_date' => $event_start_date,
+            ':event_end_date' => $event_end_date,
+            ':time_start' => $time_start,
+            ':time_end' => $time_end,
+            ':note' => $note,
+            ':cost' => $cost,
+            ':payment_proof' => $payment_proof_path
+        ]);
+    } else {
+        $sql = "INSERT INTO reservations 
+                (user_id, facility_name, phone, event_start_date, event_end_date, 
+                 time_start, time_end, note, cost, payment_proof, status, admin_visible, resident_visible, created_at) 
+                VALUES 
+                (:user_id, :facility_name, :phone, :event_start_date, :event_end_date, 
+                 :time_start, :time_end, :note, :cost, :payment_proof, 'pending', TRUE, TRUE, NOW())";
+        
+        $stmt = $conn->prepare($sql);
+        $result = $stmt->execute([
+            ':user_id' => $user_id,
+            ':facility_name' => $facility_name,
+            ':phone' => $phone,
+            ':event_start_date' => $event_start_date,
+            ':event_end_date' => $event_end_date,
+            ':time_start' => $time_start,
+            ':time_end' => $time_end,
+            ':note' => $note,
+            ':cost' => $cost,
+            ':payment_proof' => $payment_proof_path
+        ]);
+    }
     
     if ($result) {
         $reservation_id = $conn->lastInsertId();
@@ -294,7 +304,6 @@ try {
             'cost' => $cost
         ]);
     } else {
-        // Delete uploaded file if database insert fails
         if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
             unlink('../' . $payment_proof_path);
         }
@@ -308,7 +317,6 @@ try {
 } catch(PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
     
-    // Delete uploaded file if there's a database error
     if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
         unlink('../' . $payment_proof_path);
     }

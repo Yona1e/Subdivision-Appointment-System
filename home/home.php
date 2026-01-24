@@ -100,6 +100,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <header class="sidebar-header">
+                <a href="../my-account/my-account.php" class="profile-link">
                 <div class="profile-section">
                     <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
                     <div class="profile-info">
@@ -109,6 +110,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                         <p class="profile-role">Resident</p>
                     </div>
                 </div>
+                </a>
                 <button class="sidebar-toggle">
                     <span class="material-symbols-outlined">chevron_left</span>
                 </button>

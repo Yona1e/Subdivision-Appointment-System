@@ -2,7 +2,7 @@
 /**
  * display_event.php
  * Retrieves all reservations from database and formats them for FullCalendar
- * FIXED: Excludes rejected reservations so those time slots become available
+ * FIXED: Now includes user_role in the response
  */
 
 session_start();
@@ -38,25 +38,51 @@ try {
 }
 
 try {
-    // Fetch only ACTIVE reservations (pending, approved, completed)
-    // Exclude 'cancelled', 'rejected', and NULL/empty status reservations
-    // This ensures cancelled and rejected time slots become available for new bookings
-    $sql = "SELECT 
-                id as event_id,
-                facility_name as title,
-                event_start_date,
-                event_end_date,
-                time_start,
-                time_end,
-                status,
-                phone,
-                note,
-                user_id
-            FROM reservations 
-            WHERE status IN ('pending', 'approved', 'completed')
-               OR status IS NULL
-               OR status = ''
-            ORDER BY event_start_date ASC, time_start ASC";
+    // Check if user_role column exists
+    $checkColumnQuery = "SHOW COLUMNS FROM reservations LIKE 'user_role'";
+    $columnStmt = $conn->prepare($checkColumnQuery);
+    $columnStmt->execute();
+    $columnExists = $columnStmt->fetch();
+    
+    // Build query based on whether user_role column exists
+    if ($columnExists) {
+        $sql = "SELECT 
+                    id as event_id,
+                    facility_name as title,
+                    event_start_date,
+                    event_end_date,
+                    time_start,
+                    time_end,
+                    status,
+                    phone,
+                    note,
+                    user_id,
+                    user_role
+                FROM reservations 
+                WHERE status IN ('pending', 'approved', 'completed')
+                   OR status IS NULL
+                   OR status = ''
+                ORDER BY event_start_date ASC, time_start ASC";
+    } else {
+        // If column doesn't exist, use NULL as default
+        $sql = "SELECT 
+                    id as event_id,
+                    facility_name as title,
+                    event_start_date,
+                    event_end_date,
+                    time_start,
+                    time_end,
+                    status,
+                    phone,
+                    note,
+                    user_id,
+                    NULL as user_role
+                FROM reservations 
+                WHERE status IN ('pending', 'approved', 'completed')
+                   OR status IS NULL
+                   OR status = ''
+                ORDER BY event_start_date ASC, time_start ASC";
+    }
     
     $stmt = $conn->prepare($sql);
     $stmt->execute();
@@ -88,6 +114,9 @@ try {
                 break;
         }
         
+        // Get user_role, default to 'Resident' if NULL or empty
+        $userRole = !empty($reservation['user_role']) ? $reservation['user_role'] : 'Resident';
+        
         // Build event object
         $event = [
             'id' => $reservation['event_id'],
@@ -99,6 +128,7 @@ try {
             'status' => $reservation['status'],
             'phone' => $reservation['phone'],
             'note' => $reservation['note'],
+            'user_role' => $userRole,  // NOW INCLUDED
             'allDay' => false
         ];
         

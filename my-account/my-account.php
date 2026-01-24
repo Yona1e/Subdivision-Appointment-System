@@ -98,13 +98,15 @@ $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <header class="sidebar-header">
-                <div class="profile-section">
-                    <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
-                    <div class="profile-info">
-                        <p class="profile-name"><?= $userName ?></p>
-                        <p class="profile-role">Resident</p>
+                <a href="../my-account/my-account.php" class="profile-link">
+                    <div class="profile-section">
+                        <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
+                        <div class="profile-info">
+                            <p class="profile-name"><?= $userName ?></p>
+                            <p class="profile-role">Resident</p>
+                        </div>
                     </div>
-                </div>
+                </a>
                 <button class="sidebar-toggle">
                     <span class="material-symbols-outlined">chevron_left</span>
                 </button>

@@ -56,6 +56,11 @@ body {
     justify-content: center;
 }
 
+.profile-link{
+    text-decoration: none;
+     color: inherit;
+}
+
 .profile-section {
     display: flex;
     align-items: center;
