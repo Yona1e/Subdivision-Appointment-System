@@ -151,8 +151,8 @@ $completed_week_result = $conn->query($completed_week_sql);
                     </li>
                     <li class="menu-item">
                         <a href="quick-reservation/quick-reservation.php" class="menu-link">
-                            <img src="../asset/profile.png" alt="My Account Icon" class="menu-icon">
-                            <span class="menu-label">Manage Accounts</span>
+                            <img src="../asset/Vector.png" class="menu-icon">
+                            <span class="menu-label">Quick Reservation</span>
                         </a>
                     </li>
                     <li class="menu-item">

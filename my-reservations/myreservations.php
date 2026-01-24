@@ -196,10 +196,9 @@ $statusClass = match($reservation['status']) {
                                             <div class="btn-group-actions">
 
                                                 <?php if ($reservation['status'] === 'pending'): ?>
-                                                <button class="btn btn-sm btn-outline-secondary" disabled>View
-                                                    Reason</button>
-                                                <button class="btn btn-sm btn-outline-secondary"
-                                                    disabled>Delete</button>
+                                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
 
                                                 <?php else: ?>
 

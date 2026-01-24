@@ -156,21 +156,21 @@ $userName = htmlspecialchars(trim($user['FirstName'] . ' ' . $user['LastName']))
                     <div class="steps">
                         <div class="step-wrapper">
                             <span class="circle active">
-                                <img src="../asset/facility.png" alt="Facility">
+                                <img src="../asset/facility1.png" alt="Facility">
                             </span>
                             <span class="step-label">Select Facility</span>
                         </div>
 
                         <div class="step-wrapper">
                             <span class="circle">
-                                <img src="../asset/date-time.png" alt="Date Time">
+                                <img src="../asset/date-time1.png" alt="Date Time">
                             </span>
                             <span class="step-label">Date & Time</span>
                         </div>
 
                         <div class="step-wrapper">
                             <span class="circle">
-                                <img src="../asset/payment.png" alt="Payment">
+                                <img src="../asset/payment1.png" alt="Payment">
                             </span>
                             <span class="step-label">Payment</span>
                         </div>

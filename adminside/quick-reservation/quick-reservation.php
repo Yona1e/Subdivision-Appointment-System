@@ -253,6 +253,21 @@ $loggedInUserProfilePic = $profilePic;
         max-width: 100%;
     }
 
+    /* ===== Make container a bit smaller (scoped) ===== */
+.reservation-card > .container {
+    max-width: 1000px;   /* adjust: 900px / 950px / 1000px */
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+@media (max-width: 992px) {
+    .reservation-card > .container {
+        max-width: 100%;
+        padding-left: 10px;
+        padding-right: 10px;|
+    }
+}
+
     .calendar-wrapper {
         background: #fff;
         border-radius: 8px;
@@ -517,7 +532,7 @@ $loggedInUserProfilePic = $profilePic;
                     </li>
                     <li class="menu-item">
                         <a href="quick-reservation.php" class="menu-link active">
-                            <img src="../../asset/quick.png" alt="Quick Reservation Icon" class="menu-icon">
+                            <img src="../../asset/Vector.png" alt="Quick Reservation Icon" class="menu-icon">
                             <span class="menu-label">Quick Reservation</span>
                         </a>
                     </li>

@@ -93,237 +93,254 @@ $reservations = $conn->query($res_sql);
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Pending Reservations</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="adminside.css">
-<link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
-<link rel="stylesheet"
-href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+    <meta charset="UTF-8">
+    <title>Pending Reservations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="adminside.css">
+    <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
 </head>
+
 <body>
 
-<div class="app-layout">
+    <div class="app-layout">
 
-<!-- ================== SIDEBAR (FULL, RESTORED) ================== -->
-<aside class="sidebar">
-<header class="sidebar-header">
-<div class="profile-section">
-<img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
-<div class="profile-info">
-<p class="profile-name"><?= $userName ?></p>
-<p class="profile-role">Admin</p>
-</div>
-</div>
-<button class="sidebar-toggle">
-<span class="material-symbols-outlined">chevron_left</span>
-</button>
-</header>
+        <!-- ================== SIDEBAR (FULL, RESTORED) ================== -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="profile-section">
+                    <img src="<?= htmlspecialchars($profilePic) ?>" alt="Profile" class="profile-photo">
+                    <div class="profile-info">
+                        <p class="profile-name">
+                            <?= $userName ?>
+                        </p>
+                        <p class="profile-role">Admin</p>
+                    </div>
+                </div>
+                <button class="sidebar-toggle">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+            </header>
 
-<div class="sidebar-content">
-<ul class="menu-list">
-<li class="menu-item">
-<a href="overview.php" class="menu-link">
-<img src="../asset/home.png" class="menu-icon">
-<span class="menu-label">Overview</span>
-</a>
-</li>
-<li class="menu-item">
-<a href="reserverequests.php" class="menu-link active">
-<img src="../asset/makeareservation.png" class="menu-icon">
-<span class="menu-label">Requests</span>
-</a>
-</li>
-<li class="menu-item">
-<a href="reservations.php" class="menu-link">
-<img src="../asset/reservations.png" class="menu-icon">
-<span class="menu-label">Reservations</span>
-</a>
-</li>
-<li class="menu-item">
-<a href="quick-reservation/quick-reservation.php" class="menu-link">
-<img src="../asset/profile.png" class="menu-icon">
-<span class="menu-label">Manage Accounts</span>
-</a>
-</li>
-<li class="menu-item">
-<a href="create-account.php" class="menu-link">
-<img src="../asset/profile.png" class="menu-icon">
-<span class="menu-label">Create Account</span>
-</a>
-</li>
-</ul>
-</div>
+            <div class="sidebar-content">
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="overview.php" class="menu-link">
+                            <img src="../asset/home.png" class="menu-icon">
+                            <span class="menu-label">Overview</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="reserverequests.php" class="menu-link active">
+                            <img src="../asset/makeareservation.png" class="menu-icon">
+                            <span class="menu-label">Requests</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="reservations.php" class="menu-link">
+                            <img src="../asset/reservations.png" class="menu-icon">
+                            <span class="menu-label">Reservations</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="quick-reservation/quick-reservation.php" class="menu-link">
+                            <img src="../asset/Vector.png" class="menu-icon">
+                            <span class="menu-label">Quick Reservation</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="create-account.php" class="menu-link">
+                            <img src="../asset/profile.png" class="menu-icon">
+                            <span class="menu-label">Create Account</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
-<div class="logout-section">
-<a href="log-out.php" class="logout-link menu-link">
-<img src="https://api.iconify.design/mdi/logout.svg" class="menu-icon">
-<span class="menu-label">Log Out</span>
-</a>
-</div>
-</aside>
-<!-- ============================================================= -->
+            <div class="logout-section">
+                <a href="log-out.php" class="logout-link menu-link">
+                    <img src="https://api.iconify.design/mdi/logout.svg" class="menu-icon">
+                    <span class="menu-label">Log Out</span>
+                </a>
+            </div>
+        </aside>
+        <!-- ============================================================= -->
 
-<div class="main-content">
-<div class="reservation-card">
-<div class="page-header">Pending Reservations</div>
+        <div class="main-content">
+            <div class="reservation-card">
+                <div class="page-header">Pending Reservations</div>
 
-<div class="card-body">
+                <div class="card-body">
 
-<?php if ($message): ?>
-<div class="alert alert-success alert-dismissible fade show">
-<?= $message ?>
-<button class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-<?php endif; ?>
+                    <?php if ($message): ?>
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <?= $message ?>
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <?php endif; ?>
 
-<div class="table-responsive mt-3">
-<table class="table table-bordered table-hover align-middle">
-<thead class="table-dark">
-<tr>
-<th>ID</th>
-<th>Facility</th>
-<th>Phone</th>
-<th>Event Date</th>
-<th>Time</th>
-<th>User</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Facility</th>
+                                    <th>Phone</th>
+                                    <th>Event Date</th>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-<?php while ($row = $reservations->fetch_assoc()): ?>
-<tr class="reservation-row"
-data-facility="<?= htmlspecialchars($row['facility_name']) ?>"
-data-user="<?= htmlspecialchars($row['FirstName'].' '.$row['LastName']) ?>"
-data-phone="<?= htmlspecialchars($row['phone']) ?>"
-data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?>"
-data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
-data-status="<?= ucfirst($row['status']) ?>"
-data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
-data-created="<?= date('M d, Y g:i A', strtotime($row['created_at'])) ?>"
-data-payment="<?= htmlspecialchars($row['payment_proof']) ?>"
->
-<td><?= $row['id'] ?></td>
-<td><?= htmlspecialchars($row['facility_name']) ?></td>
-<td><?= htmlspecialchars($row['phone']) ?></td>
-<td><?= date('M d, Y', strtotime($row['event_start_date'])) ?></td>
-<td><?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?></td>
-<td><?= $row['FirstName'].' '.$row['LastName'] ?></td>
-<td><span class="badge bg-warning text-white">Pending</span></td>
-<td>
-<form method="POST" class="d-inline">
-<input type="hidden" name="reservation_id" value="<?= $row['id'] ?>">
-<button type="submit" name="approve_reservation" class="btn btn-success btn-sm mb-1">
-Approve
-</button>
-</form>
+                                <?php while ($row = $reservations->fetch_assoc()): ?>
+                                <tr class="reservation-row"
+                                    data-facility="<?= htmlspecialchars($row['facility_name']) ?>"
+                                    data-user="<?= htmlspecialchars($row['FirstName'].' '.$row['LastName']) ?>"
+                                    data-phone="<?= htmlspecialchars($row['phone']) ?>"
+                                    data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?>"
+                                    data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
+                                    data-status="<?= ucfirst($row['status']) ?>"
+                                    data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
+                                    data-created="<?= date('M d, Y g:i A', strtotime($row['created_at'])) ?>"
+                                    data-payment="<?= htmlspecialchars($row['payment_proof']) ?>">
+                                    <td>
+                                        <?= $row['id'] ?>
+                                    </td>
+                                    <td>
+                                        <?= htmlspecialchars($row['facility_name']) ?>
+                                    </td>
+                                    <td>
+                                        <?= htmlspecialchars($row['phone']) ?>
+                                    </td>
+                                    <td>
+                                        <?= date('M d, Y', strtotime($row['event_start_date'])) ?>
+                                    </td>
+                                    <td>
+                                        <?= date('g:i A', strtotime($row['time_start'])) ?> -
+                                        <?= date('g:i A', strtotime($row['time_end'])) ?>
+                                    </td>
+                                    <td>
+                                        <?= $row['FirstName'].' '.$row['LastName'] ?>
+                                    </td>
+                                    <td><span class="badge bg-warning text-white">Pending</span></td>
+                                    <td>
+                                        <form method="POST" class="d-inline">
+                                            <input type="hidden" name="reservation_id" value="<?= $row['id'] ?>">
+                                            <button type="submit" name="approve_reservation"
+                                                class="btn btn-success btn-sm mb-1">
+                                                Approve
+                                            </button>
+                                        </form>
 
-<button type="button"
-class="btn btn-danger btn-sm mb-1 reject-btn"
-data-id="<?= $row['id'] ?>">
-Reject
-</button>
-</td>
-</tr>
-<?php endwhile; ?>
+                                        <button type="button" class="btn btn-danger btn-sm mb-1 reject-btn"
+                                            data-id="<?= $row['id'] ?>">
+                                            Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
 
-</tbody>
-</table>
-</div>
+                            </tbody>
+                        </table>
+                    </div>
 
-</div>
-</div>
-</div>
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- ================= EXISTING DETAILS MODAL (UNCHANGED) ================= -->
-<div class="modal fade" id="reservationModal">
-<div class="modal-dialog modal-lg">
-<div class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title">Reservation Details</h5>
-<button class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-<p><strong>Facility:</strong> <span id="mFacility"></span></p>
-<p><strong>User:</strong> <span id="mUser"></span></p>
-<p><strong>Phone:</strong> <span id="mPhone"></span></p>
-<p><strong>Date:</strong> <span id="mDate"></span></p>
-<p><strong>Time:</strong> <span id="mTime"></span></p>
-<p><strong>Status:</strong> <span id="mStatus"></span></p>
-<p><strong>Created:</strong> <span id="mCreated"></span></p>
-<hr>
-<p><strong>Resident Note:</strong></p>
-<p id="mNote" class="text-muted"></p>
-<hr>
-<p><strong>Payment Proof:</strong></p>
-<div id="paymentContainer" class="text-center text-muted">No payment proof uploaded</div>
-</div>
-</div>
-</div>
-</div>
+    <!-- ================= EXISTING DETAILS MODAL (UNCHANGED) ================= -->
+    <div class="modal fade" id="reservationModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reservation Details</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Facility:</strong> <span id="mFacility"></span></p>
+                    <p><strong>User:</strong> <span id="mUser"></span></p>
+                    <p><strong>Phone:</strong> <span id="mPhone"></span></p>
+                    <p><strong>Date:</strong> <span id="mDate"></span></p>
+                    <p><strong>Time:</strong> <span id="mTime"></span></p>
+                    <p><strong>Status:</strong> <span id="mStatus"></span></p>
+                    <p><strong>Created:</strong> <span id="mCreated"></span></p>
+                    <hr>
+                    <p><strong>Resident Note:</strong></p>
+                    <p id="mNote" class="text-muted"></p>
+                    <hr>
+                    <p><strong>Payment Proof:</strong></p>
+                    <div id="paymentContainer" class="text-center text-muted">No payment proof uploaded</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- ================= NEW REJECT MODAL ================= -->
-<div class="modal fade" id="rejectModal">
-<div class="modal-dialog">
-<form method="POST" class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title">Reject Reservation</h5>
-<button class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-<input type="hidden" name="reservation_id" id="rejectReservationId">
-<label class="form-label">Reason for rejection</label>
-<textarea name="reason" class="form-control" rows="4" required></textarea>
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-<button name="confirm_reject" class="btn btn-danger">Reject</button>
-</div>
-</form>
-</div>
-</div>
+    <!-- ================= NEW REJECT MODAL ================= -->
+    <div class="modal fade" id="rejectModal">
+        <div class="modal-dialog">
+            <form method="POST" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Reservation</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="reservation_id" id="rejectReservationId">
+                    <label class="form-label">Reason for rejection</label>
+                    <textarea name="reason" class="form-control" rows="4" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button name="confirm_reject" class="btn btn-danger">Reject</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-document.querySelectorAll('.reservation-row').forEach(row => {
-    row.addEventListener('click', e => {
-        if (e.target.closest('form') || e.target.classList.contains('reject-btn')) return;
+    <script>
+        document.querySelectorAll('.reservation-row').forEach(row => {
+            row.addEventListener('click', e => {
+                if (e.target.closest('form') || e.target.classList.contains('reject-btn')) return;
 
-        mFacility.textContent = row.dataset.facility;
-        mUser.textContent = row.dataset.user;
-        mPhone.textContent = row.dataset.phone;
-        mDate.textContent = row.dataset.date;
-        mTime.textContent = row.dataset.time;
-        mStatus.textContent = row.dataset.status;
-        mCreated.textContent = row.dataset.created;
-        mNote.textContent = row.dataset.note;
+                mFacility.textContent = row.dataset.facility;
+                mUser.textContent = row.dataset.user;
+                mPhone.textContent = row.dataset.phone;
+                mDate.textContent = row.dataset.date;
+                mTime.textContent = row.dataset.time;
+                mStatus.textContent = row.dataset.status;
+                mCreated.textContent = row.dataset.created;
+                mNote.textContent = row.dataset.note;
 
-        const payment = row.dataset.payment;
-        const container = document.getElementById('paymentContainer');
-        container.innerHTML = payment
-            ? `<img src="../${payment}" class="payment-proof-img">`
-            : "No payment proof uploaded";
+                const payment = row.dataset.payment;
+                const container = document.getElementById('paymentContainer');
+                container.innerHTML = payment
+                    ? `<img src="../${payment}" class="payment-proof-img">`
+                    : "No payment proof uploaded";
 
-        new bootstrap.Modal(document.getElementById('reservationModal')).show();
-    });
-});
+                new bootstrap.Modal(document.getElementById('reservationModal')).show();
+            });
+        });
 
-document.querySelectorAll('.reject-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-        e.stopPropagation();
-        document.getElementById('rejectReservationId').value = btn.dataset.id;
-        new bootstrap.Modal(document.getElementById('rejectModal')).show();
-    });
-});
-</script>
+        document.querySelectorAll('.reject-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                document.getElementById('rejectReservationId').value = btn.dataset.id;
+                new bootstrap.Modal(document.getElementById('rejectModal')).show();
+            });
+        });
+    </script>
 
-<script src="../resident-side/javascript/sidebar.js"></script>
+    <script src="../resident-side/javascript/sidebar.js"></script>
 </body>
+
 </html>
 
 <?php $conn->close(); ?>

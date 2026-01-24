@@ -318,8 +318,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </li>
                     <li class="menu-item">
                         <a href="quick-reservation/quick-reservation.php" class="menu-link">
-                            <img src="../asset/profile.png" class="menu-icon">
-                            <span class="menu-label">Manage Accounts</span>
+                            <img src="../asset/Vector.png" class="menu-icon">
+                            <span class="menu-label">Quick Reservation</span>
                         </a>
                     </li>
                     <li class="menu-item">
