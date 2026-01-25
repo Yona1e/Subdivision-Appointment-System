@@ -7,7 +7,7 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
     header("Location: ../login/login.php");
     exit();
 }
@@ -203,60 +203,58 @@ $completed_week_result = $conn->query($completed_week_sql);
             </div>
 
             <!-- CHART SECTION -->
-    <div class="card-header">
-                </div>
-                <div class="card-body p-3">
-                    
-                    <div class="row g-4">
-                        <!-- Left Column: Chart -->
-                        <div class="col-lg-8">
-                            <div class="card shadow-sm border h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center"> 
-                    <h5 class="mb-0">Reservation Status Overview</h5>
-                                </div>
-                                <div class="card-body"><canvas id="myChart" style="max-height: 400px;"></canvas> </div>
-                               
-                                
+            <div class="card-header">
+            </div>
+            <div class="card-body p-3">
+                
+                <div class="row g-4">
+                    <!-- Left Column: Chart -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm border h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center"> 
+                                <h5 class="mb-0">Reservation Status Overview</h5>
                             </div>
+                            <div class="card-body"><canvas id="myChart" style="max-height: 400px;"></canvas> </div>
                         </div>
+                    </div>
 
-                        <!-- Right Column: Quick Actions -->
-                        <div class="col-lg-4">
-    <div class="card shadow-sm border h-100 d-flex flex-column">
-        <div class="card-header d-flex justify-content-between align-items-center"> 
-                    <h5 class="mb-0">Pending Requests</h5>
-                                </div>
-        <div class="card-body p-3 flex-grow-1 d-flex flex-column">
-            <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
-                <div class="flex-grow-1" style="max-height: 320px; overflow-y: auto;">
-                    <?php while($req = $pending_requests_result->fetch_assoc()): ?>
-                        <div class="request-item mb-3 p-2 border-bottom">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <strong><?= htmlspecialchars($req['facility_name']) ?></strong>
-                                    <div class="text-muted small">
-                                        <?= htmlspecialchars($req['FirstName'] . ' ' . $req['LastName']) ?>
+                    <!-- Right Column: Quick Actions -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm border h-100 d-flex flex-column">
+                            <div class="card-header d-flex justify-content-between align-items-center"> 
+                                <h5 class="mb-0">Pending Requests</h5>
+                            </div>
+                            <div class="card-body p-3 flex-grow-1 d-flex flex-column">
+                                <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
+                                    <div class="flex-grow-1" style="max-height: 320px; overflow-y: auto;">
+                                        <?php while($req = $pending_requests_result->fetch_assoc()): ?>
+                                            <div class="request-item mb-3 p-2 border-bottom">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <strong><?= htmlspecialchars($req['facility_name']) ?></strong>
+                                                        <div class="text-muted small">
+                                                            <?= htmlspecialchars($req['FirstName'] . ' ' . $req['LastName']) ?>
+                                                        </div>
+                                                    </div>
+                                                    <span class="badge bg-warning text-white">Pending</span>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <?= date('M d, Y', strtotime($req['event_start_date'])) ?>
+                                                </div>
+                                            </div>
+                                        <?php endwhile; ?>
                                     </div>
-                                </div>
-                                <span class="badge bg-warning text-white">Pending</span>
+                                    <a href="reserverequests.php" class="btn btn-warning w-100 mt-3">View All</a>
+                                <?php else: ?>
+                                    <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                                        <p class="text-muted mb-0">No Pending Requests</p>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <div class="small text-muted">
-                                <?= date('M d, Y', strtotime($req['event_start_date'])) ?>
-                            </div>
-                        </div>
-                    <?php endwhile; ?>
-                </div>
-                <a href="reserverequests.php" class="btn btn-warning w-100 mt-3">View All</a>
-            <?php else: ?>
-                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
-                    <p class="text-muted mb-0">No Pending Requests</p>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
             <!-- RECENT ACTIVITY LOG -->
             <?php if ($recent_audit_result && $recent_audit_result->num_rows > 0): ?>

@@ -1,6 +1,72 @@
-/* Add this to your home.css file or in a <style> tag */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
-/* Make the facility grid scroll horizontally */
+/* =========================
+   GLOBAL RESET & VARIABLES
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+:root {
+    --color-text-primary: #1F2936;
+    --color-text-placeholder: #798EAE;
+    --color-bg-primary: #f9fafb;
+    --color-bg-secondary: #ECECFD;
+    --color-bg-sidebar: #FFFFFF;
+    --color-border-hr: #E2E8F0;
+    --color-hover-primary: #695CFE;
+    --color-hover-secondary: #e2e2fb;
+    --color-shadow: rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background: var(--color-bg-primary);
+}
+
+/* =========================
+   APP LAYOUT
+========================= */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* FIXED: Main content full width */
+.main-content {
+    flex: 1;
+    width: 100%;
+    padding: 30px;
+    overflow-x: hidden;
+}
+
+/* =========================
+   RESERVATION CARD
+========================= */
+.reservation-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    padding-left: 0 !important;
+}
+
+/* Header */
+.page-header {
+    background: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%);
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* =========================
+   FACILITY HORIZONTAL GRID
+========================= */
 .facility-grid {
     display: flex;
     gap: 20px;
@@ -10,7 +76,6 @@
     scroll-behavior: smooth;
 }
 
-/* Optional: Hide scrollbar for cleaner look (works in WebKit browsers) */
 .facility-grid::-webkit-scrollbar {
     height: 8px;
 }
@@ -29,7 +94,7 @@
     background: #555;
 }
 
-/* Make facility cards have a fixed width */
+/* Facility Card */
 .facility-card {
     min-width: 280px;
     flex-shrink: 0;
@@ -46,6 +111,7 @@
     color: #333;
 }
 
+/* Time List */
 .time-list {
     list-style: none;
     padding: 0;
@@ -68,12 +134,13 @@
     font-style: italic;
 }
 
-/* Optional: Add scroll indicators */
+/* Scroll fade indicator */
 .card-body {
     position: relative;
+    padding: 10px;
+    overflow-x: auto;
 }
 
-/* Gradient fade effect on the right edge */
 .card-body::after {
     content: '';
     position: absolute;
@@ -83,4 +150,102 @@
     width: 30px;
     background: linear-gradient(to right, transparent, white);
     pointer-events: none;
+}
+
+/* =========================
+   TABLE STYLES
+========================= */
+.reservation-card .table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.reservation-card .table-dark th {
+    background-color: #2c3e50;
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem;
+    border: none;
+}
+
+.reservation-card .table tbody td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-color: #dee2e6;
+}
+
+.reservation-card .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+}
+
+/* Fancy hover */
+.table.table-hover tbody tr {
+    transition: all 0.3s ease;
+    height: 60px;
+}
+
+.table.table-hover tbody tr:hover {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* =========================
+   BUTTONS & BADGES
+========================= */
+.reservation-card .btn {
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.reservation-card .btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.reservation-card .badge {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+}
+
+/* =========================
+   SCROLLABLE CARDS
+========================= */
+.recent-activity-card,
+.pending-requests-card {
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.audit-entry {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 15px;
+    }
+
+    .reservation-card {
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .facility-card {
+        min-width: 240px;
+    }
+
+    .reservation-card h1 {
+        font-size: 1.5rem;
+    }
 }

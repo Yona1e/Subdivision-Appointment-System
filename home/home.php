@@ -70,7 +70,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Resident Home</title>
 
-    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="../adminside/adminside.css">
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
@@ -241,7 +241,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- MAIN CONTENT -->
         <div class="main-content">
 
-            <h1 class="mb-4 mt-3">Welcome Back,
+            <h1 class="mb-0">Welcome Back,
                 <?= htmlspecialchars($user['FirstName']) ?>
             </h1>
 
@@ -281,7 +281,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                 <h4 class="section-title" style="margin: 0;">Your Notifications For Today</h4>
                 </div>
                 <?php if ($todayNotifications): ?>
-                    <div class="card-body p-3">
+                    <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;" >
                 <div class="d-flex flex-column gap-3 mt-2">
 
                     <?php foreach ($todayNotifications as $n): ?>
