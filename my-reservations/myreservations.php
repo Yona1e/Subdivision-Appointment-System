@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'hide_
     exit();
 }
 
-// Fetch reservations
+// Fetch reservations with reason column
 $query = "SELECT id, facility_name, event_start_date, time_start, time_end, status, reason, created_at
           FROM reservations
           WHERE user_id = :user_id
@@ -194,27 +194,36 @@ $statusClass = match($reservation['status']) {
 
                                         <td>
                                             <div class="btn-group-actions">
-
                                                 <?php if ($reservation['status'] === 'pending'): ?>
-                                                <button class="btn btn-sm btn-outline-secondary" disabled>
-                                                    <i class="bi bi-trash"></i> Delete
-                                                </button>
-
+                                                    <!-- Pending status - disabled buttons -->
+                                                    <button class="btn btn-sm btn-outline-secondary" disabled
+                                                        title="Cannot generate PDF for pending reservations">
+                                                        <i class="bi bi-file-pdf"></i> PDF
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-secondary" disabled
+                                                        title="Cannot delete pending reservations">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
                                                 <?php else: ?>
-
-                                                <?php if ($reservation['status'] === 'rejected'): ?>
-                                                <button type="button" class="btn btn-sm btn-warning view-reason-btn"
-                                                    data-reason="<?= htmlspecialchars($reservation['reason'] ?? 'No reason provided.') ?>">
-                                                    <i class="bi bi-eye"></i> View Reason
-                                                </button>
+                                                    <!-- Approved/Rejected status - Show buttons -->
+                                                    <?php if ($reservation['status'] === 'rejected'): ?>
+                                                        <button type="button" class="btn btn-sm btn-warning view-reason-btn"
+                                                            data-reason="<?= htmlspecialchars($reservation['reason'] ?? 'No reason provided.') ?>"
+                                                            title="View rejection reason">
+                                                            <i class="bi bi-eye"></i> View Reason
+                                                        </button>
+                                                    <?php endif; ?>
+                                                    
+                                                    <a href="invoice.php?id=<?= $reservation['id'] ?>" 
+                                                        class="btn btn-sm btn-primary" 
+                                                        title="Download PDF Invoice">
+                                                        <i class="bi bi-file-pdf"></i> PDF
+                                                    </a>
+                                                    <button class="btn btn-sm btn-outline-danger delete-btn"
+                                                        title="Remove from view">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
                                                 <?php endif; ?>
-
-                                                <button class="btn btn-sm btn-outline-danger delete-btn">
-                                                    <i class="bi bi-trash"></i> Delete
-                                                </button>
-
-                                                <?php endif; ?>
-
                                             </div>
                                         </td>
                                     </tr>
@@ -229,7 +238,7 @@ $statusClass = match($reservation['status']) {
             </div>
         </div>
 
-        <!-- REJECTION MODAL -->
+        <!-- REJECTION REASON MODAL -->
         <div class="modal fade" id="rejectionReasonModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -251,6 +260,7 @@ $statusClass = match($reservation['status']) {
         <script>
             document.addEventListener('DOMContentLoaded', () => {
 
+                // View Reason button handler
                 document.querySelectorAll('.view-reason-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         document.getElementById('rejectionReasonText').textContent = btn.dataset.reason;
@@ -258,6 +268,7 @@ $statusClass = match($reservation['status']) {
                     });
                 });
 
+                // Delete button handler
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const row = btn.closest('tr');

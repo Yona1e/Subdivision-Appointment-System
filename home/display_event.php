@@ -23,7 +23,9 @@ try {
     exit;
 }
 
-// Fetch ALL approved reservations (ALL facilities)
+$today = date('Y-m-d');
+
+// Fetch ONLY approved reservations (ALL facilities, TODAY)
 $stmt = $conn->prepare("
     SELECT 
         facility_name,
@@ -32,8 +34,9 @@ $stmt = $conn->prepare("
         time_end
     FROM reservations
     WHERE status = 'approved'
+      AND event_start_date = ?
 ");
-$stmt->execute();
+$stmt->execute([$today]);
 
 $events = [];
 $facilities = [];
@@ -46,12 +49,12 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         'status' => 'approved'
     ];
 
-    // Track unique facilities
     $facilities[$row['facility_name']] = true;
 }
 
 echo json_encode([
     'status' => true,
+    'hasTodayEvents' => !empty($events),
     'data' => $events,
     'facilities' => array_keys($facilities)
 ]);

@@ -1,0 +1,355 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ===== CSS VARIABLES - COLOR PALETTE ===== */
+:root {
+    --color-navy: #292F36;
+    --color-turquoise: #4ECDC4;
+    --color-cream: #F7F7F7;
+    --color-coral: #FF6B6B;
+    --color-navy-dark: #1a252f;
+    --color-turquoise-light: #6ee7de;
+    --color-coral-light: #ff8787;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-navy);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Wrapper - Login Card Container */
+.wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 480px;
+    padding: 20px;
+    animation: slideInUp 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Form Card */
+.wrapper form {
+    background: rgba(247, 247, 247, 0.98);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    padding: 60px 45px;
+    border-radius: 28px;
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+        0 10px 40px rgba(78, 205, 196, 0.2);
+    position: relative;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Decorative Top Bar */
+.wrapper form::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--color-turquoise);
+}
+
+/* Heading */
+.wrapper form h1 {
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 12px;
+    color: var(--color-navy);
+    animation: fadeInDown 0.8s ease-out 0.2s backwards;
+    letter-spacing: -0.5px;
+}
+
+/* Input Box Container */
+.wrapper .input-box {
+    margin-bottom: 24px;
+    animation: fadeInUp 0.8s ease-out 0.4s backwards;
+}
+
+/* Input Icons */
+.wrapper .input-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: var(--color-turquoise);
+    z-index: 1;
+    transition: all 0.3s;
+}
+
+/* Toggle Password Icon */
+.wrapper .toggle-password {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: rgba(44, 62, 80, 0.5);
+    cursor: pointer;
+    z-index: 1;
+}
+
+.wrapper .toggle-password:hover {
+    color: var(--color-turquoise);
+}
+
+/* Bootstrap Form Control Override */
+.wrapper .form-control {
+    height: 58px;
+    padding: 18px 22px;
+    font-size: 15px;
+    border: 2px solid rgba(78, 205, 196, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Poppins', sans-serif;
+    color: var(--color-navy);
+    font-weight: 500;
+}
+
+.wrapper .form-control.ps-5 {
+    padding-left: 52px;
+}
+
+
+.wrapper .form-control:focus {
+    background: white;
+    border-color: var(--color-turquoise);
+    box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.15);
+    outline: none;
+}
+
+.wrapper .form-control::placeholder {
+    color: rgba(44, 62, 80, 0.5);
+    font-weight: 400;
+}
+
+/* Remember Me Checkbox */
+.wrapper .form-check {
+    margin-bottom: 32px;
+    padding-left: 0;
+    display: flex;
+    align-items: center;
+    animation: fadeInUp 0.8s ease-out 0.5s backwards;
+}
+
+.wrapper .form-check-input {
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+    border: 2px solid var(--color-turquoise);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background-color: white;
+}
+
+.wrapper .form-check-input:checked {
+    background-color: var(--color-turquoise);
+    border-color: var(--color-turquoise);
+}
+
+.wrapper .form-check-input:focus {
+    box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.15);
+    border-color: var(--color-turquoise);
+}
+
+.wrapper .form-check-label {
+    color: var(--color-navy);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Submit Button */
+.wrapper .btn-primary {
+    height: 58px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: var(--color-turquoise);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 12px 35px rgba(78, 205, 196, 0.35);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.8s ease-out 0.6s backwards;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Button Icon */
+.wrapper .btn-primary .btn-icon {
+    font-size: 22px;
+}
+
+.wrapper .btn-primary:hover {
+    opacity: 0.9;
+}
+
+.wrapper .btn-primary:active {
+    opacity: 0.8;
+}
+
+/* Error Message Styling */
+.alert {
+    border-radius: 14px;
+    margin-bottom: 24px;
+    border: none;
+    animation: shake 0.5s, fadeInUp 0.6s ease-out;
+    background: rgba(255, 107, 107, 0.1);
+    border-left: 4px solid var(--color-coral);
+    color: var(--color-navy);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    transition: opacity 0.3s;
+}
+
+.alert i {
+    font-size: 20px;
+    color: var(--color-coral);
+}
+
+
+/* Loading State for Button */
+.wrapper .btn-primary.loading {
+    pointer-events: none;
+    position: relative;
+    opacity: 0.8;
+}
+
+.wrapper .btn-primary.loading::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    top: 50%;
+    left: 50%;
+    margin-left: -11px;
+    margin-top: -11px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(60px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+    .wrapper {
+        max-width: 100%;
+        padding: 16px;
+    }
+
+    .wrapper form {
+        padding: 45px 32px;
+        border-radius: 24px;
+    }
+
+    .wrapper form h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .wrapper .form-control {
+        height: 54px;
+        padding: 16px 20px;
+        font-size: 14px;
+    }
+
+    .wrapper .btn-primary {
+        height: 54px;
+        font-size: 15px;
+    }
+}

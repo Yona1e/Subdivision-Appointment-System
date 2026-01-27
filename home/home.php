@@ -241,7 +241,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- MAIN CONTENT -->
         <div class="main-content">
 
-            <h1 class="mb-0">Welcome Back,
+            <h1 class="mb-4 mt-3">Welcome Back,
                 <?= htmlspecialchars($user['FirstName']) ?>
             </h1>
 
@@ -275,49 +275,63 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-            <!-- NOTIFICATIONS -->
-            <div class="card recent-activity-card mt-4" style="margin-bottom: 10px;">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="section-title" style="margin: 0;">Your Notifications For Today</h4>
+                        <!-- NOTIFICATIONS -->
+            <div class="card recent-activity-card mt-4">
+                <div class="card-header">
+                    <h4 class="section-title mb-0">Your Notifications For Today</h4>
                 </div>
+
                 <?php if ($todayNotifications): ?>
-                    <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;" >
-                <div class="d-flex flex-column gap-3 mt-2">
+                <div class="card-body p-3" style="max-height:500px;overflow-y:auto;">
+                    <div class="d-flex flex-column gap-3 mt-2">
 
-                    <?php foreach ($todayNotifications as $n): ?>
-                    <div class="notify-card <?= $n['status']==='approved' ? 'notify-approved' : 'notify-rejected' ?>">
-
-                        <svg class="wave" viewBox="0 0 1440 320">
-                            <path d="M0,256L1440,64L1440,320L0,320Z" />
-                        </svg>
-
-                        <div class="icon-container">
-                            <?= $n['status']==='approved' ? '✔' : '✖' ?>
+                        <?php foreach ($todayNotifications as $n): ?>
+                        <div class="notify-card <?= $n['status']==='approved'?'notify-approved':'notify-rejected' ?>">
+                            <svg class="wave" viewBox="0 0 1440 320">
+                                <path d="M0,256L1440,64L1440,320L0,320Z" />
+                            </svg>
+                            <div class="icon-container">
+                                <?= $n['status']==='approved'?'✔':'✖' ?>
+                            </div>
+                            <div>
+                                <p class="message-text">
+                                    <?= ucfirst($n['status']) ?>
+                                </p>
+                                <p class="sub-text">
+                                    <?= htmlspecialchars($n['facility_name']) ?><br>
+                                    <?= date('g:i A', strtotime($n['time_start'])) ?> –
+                                    <?= date('g:i A', strtotime($n['time_end'])) ?>
+                                    <?php if ($n['status']==='rejected' && $n['reason']): ?>
+                                    <br>Reason:
+                                    <?= htmlspecialchars($n['reason']) ?>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
                         </div>
-
-                        <div>
-                            <p class="message-text">
-                                <?= ucfirst($n['status']) ?>
-                            </p>
-                            <p class="sub-text">
-                                <?= htmlspecialchars($n['facility_name']) ?><br>
-                                <?= date('g:i A', strtotime($n['time_start'])) ?> –
-                                <?= date('g:i A', strtotime($n['time_end'])) ?>
-                                <?php if ($n['status']==='rejected' && $n['reason']): ?>
-                                <br>Reason:
-                                <?= htmlspecialchars($n['reason']) ?>
-                                <?php endif; ?>
-                            </p>
-                        </div>
+                        <?php endforeach; ?>
 
                     </div>
-                    <?php endforeach; ?>
-
                 </div>
 
-            </div>
                 <?php else: ?>
-                <p class="no-data">No approval or rejection updates today.</p>
+                <div class="card-body p-3">
+                    <div style="
+    height:180px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    color:#9aa0a6;
+    text-align:center;
+">
+
+                        <span style="font-size:18px;max-width:260px;">
+                            There are no approval or rejection activities recorded for today.
+                            Check back later for updates.
+                        </span>
+                    </div>
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -326,7 +340,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="section-title" style="margin: 0;">Today's Facility Schedule (All Residents)</h4>
                 </div>
-            <div class="card-body p-3">
+            <div class="card-body p-3" style="height: 200px; align-items: center; display: flex; ">
                 <div class="facility-grid" id="facilityContainer"></div>
             </div>
         </div>
@@ -349,6 +363,30 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                     }
                 });
 
+                if (!res.hasTodayEvents) {
+    $('#facilityContainer').html(`
+        <div style="
+            height:180px;
+            width:100%;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            gap:10px;
+            color:#9aa0a6;
+            text-align:center;
+        ">
+                    
+            <span style="font-size:18px;max-width:260px;">
+                No facilities are scheduled for today.<br>
+                Please check again later.
+            </span>
+        </div>
+    `);
+    return;
+}
+
+
                 // Remove the slice(0, 4) to show all facilities with scrolling
                 Object.keys(grouped).forEach(facility => {
                     let slots = grouped[facility].map(e =>
@@ -356,7 +394,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                     ).join('');
 
                     $('#facilityContainer').append(`
-<div class="facility-card">
+<div class="reservation-card facility-card p-3" style="min-width: 250px;">
 <h5>${facility}</h5>
 <ul class="time-list">
 ${slots || '<li class="no-data">No bookings today</li>'}
