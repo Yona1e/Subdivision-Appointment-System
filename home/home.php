@@ -340,7 +340,7 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="section-title" style="margin: 0;">Today's Facility Schedule (All Residents)</h4>
                 </div>
-            <div class="card-body p-3" style="height: 200px; align-items: center; display: flex; ">
+            <div class="card-body p-3" style=" align-items: center;">
                 <div class="facility-grid" id="facilityContainer"></div>
             </div>
         </div>
