@@ -54,7 +54,6 @@ body {
 }
 
 .card-body {
-    min-height: 250px;
     background: white;
     border-radius: 8px;
     margin: 0px auto;
@@ -64,7 +63,7 @@ body {
 /* my-reservation table */
 .table.table-hover tbody tr {
     transition: all 0.3s ease;
-    height: 60px;  /* Add row height */
+    height: 60px;  
 }
 
 .table.table-hover tbody tr:hover {

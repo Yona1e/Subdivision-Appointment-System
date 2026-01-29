@@ -18,21 +18,21 @@ $password = '';
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
+} catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
 
 // Handle AJAX request for fetching bookings by facility
 if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
     header('Content-Type: application/json');
-    
+
     $facility = isset($_GET['facility']) ? trim($_GET['facility']) : null;
-    
+
     if (!$facility || empty($facility)) {
         echo json_encode(['status' => false, 'msg' => 'No facility selected', 'data' => []]);
         exit();
     }
-    
+
     try {
         // Fetch reservations from ALL users (both regular users and admins)
         $sql = "SELECT 
@@ -45,13 +45,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
                 WHERE r.facility_name = :facility
                 AND r.status IN ('confirmed', 'approved', 'pending', 'rejected')
                 ORDER BY r.event_start_date DESC, r.time_start DESC";
-        
+
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':facility', $facility, PDO::PARAM_STR);
         $stmt->execute();
-        
+
         $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $formattedBookings = [];
         foreach ($bookings as $booking) {
             // Handle different possible ID column names
@@ -63,7 +63,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
             } elseif (isset($booking['reservationID'])) {
                 $reservationId = $booking['reservationID'];
             }
-            
+
             $formattedBookings[] = [
                 'id' => $reservationId,
                 'title' => $booking['title'],
@@ -76,15 +76,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
                 'user_role' => isset($booking['user_role']) ? $booking['user_role'] : 'Unknown'
             ];
         }
-        
+
         echo json_encode([
             'status' => true,
             'data' => $formattedBookings,
             'count' => count($formattedBookings)
         ]);
         exit();
-        
-    } catch(PDOException $e) {
+
+    } catch (PDOException $e) {
         echo json_encode([
             'status' => false,
             'msg' => 'Error fetching bookings: ' . $e->getMessage(),
@@ -97,7 +97,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
 // Handle AJAX request for creating admin reservation (directly approved)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_reservation') {
     header('Content-Type: application/json');
-    
+
     // Get and validate input
     $facility = isset($_POST['facility']) ? trim($_POST['facility']) : '';
     $date = isset($_POST['date']) ? trim($_POST['date']) : '';
@@ -138,22 +138,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                      AND (
                          (time_start < :time_end AND time_end > :time_start)
                      )";
-        
+
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bindParam(':facility', $facility);
         $checkStmt->bindParam(':date', $date);
         $checkStmt->bindParam(':time_start', $timeStart);
         $checkStmt->bindParam(':time_end', $timeEnd);
         $checkStmt->execute();
-        
+
         $result = $checkStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($result['count'] > 0) {
             echo json_encode(['success' => false, 'message' => 'This time slot is already booked']);
             exit();
         }
-        
-    } catch(PDOException $e) {
+
+    } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Error checking availability']);
         exit();
     }
@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                       (user_id, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, status, created_at) 
                       VALUES 
                       (:user_id, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'approved', NOW())";
-        
+
         $insertStmt = $conn->prepare($insertSql);
         $insertStmt->bindParam(':user_id', $user_id);
         $insertStmt->bindParam(':facility', $facility);
@@ -177,17 +177,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $insertStmt->bindParam(':time_end', $timeEnd);
         $insertStmt->bindParam(':phone', $phone);
         $insertStmt->bindParam(':note', $note);
-        
+
         $insertStmt->execute();
-        
+
         echo json_encode([
-            'success' => true, 
+            'success' => true,
             'message' => 'Reservation created and approved successfully',
             'reservation_id' => $conn->lastInsertId()
         ]);
         exit();
-        
-    } catch(PDOException $e) {
+
+    } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Error creating reservation: ' . $e->getMessage()]);
         exit();
     }
@@ -204,13 +204,10 @@ if (!$user) {
     exit();
 }
 
-$profilePic = !empty($user['ProfilePictureURL'])
-    ? '../' . $user['ProfilePictureURL']
-    : '../asset/default-profile.png';
-
-if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
-    $profilePic = '../asset/default-profile.png';
-}
+// Profile picture fallback
+$profilePic = (!empty($user['ProfilePictureURL']) && file_exists('../../' . $user['ProfilePictureURL']))
+    ? '../../' . $user['ProfilePictureURL']
+    : '../../asset/default-profile.png';
 
 $userName = htmlspecialchars(trim($user['FirstName'] . ' ' . $user['LastName']));
 $loggedInUserName = $userName;
@@ -218,279 +215,285 @@ $loggedInUserProfilePic = $profilePic;
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Reservation - Admin Dashboard</title>
-    
+
     <link rel="stylesheet" href="../../resident-side/make-reservation1.css">
     <link rel="stylesheet" href="../../resident-side/style/side-navigation1.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Google Material Symbols -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
     <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- jQuery (MUST be loaded first) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
     <!-- Moment.js -->
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    
+
     <!-- FullCalendar v3 CSS and JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-    
+
     <style>
-    /* Responsive Calendar Styles */
-    .container.py-5 {
-        padding-top: 30px !important;
-        padding-bottom: 30px !important;
-        max-width: 100%;
-    }
-
-    /* ===== Make container a bit smaller (scoped) ===== */
-.reservation-card > .container {
-    max-width: 1000px;   /* adjust: 900px / 950px / 1000px */
-    padding-left: 12px;
-    padding-right: 12px;
-}
-
-@media (max-width: 992px) {
-    .reservation-card > .container {
-        max-width: 100%;
-        padding-left: 10px;
-        padding-right: 10px;|
-    }
-}
-
-    .calendar-wrapper {
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        width: 100%;
-        overflow: hidden;
-    }
-
-    #calendar {
-        max-width: 100%;
-        font-size: 14px;
-    }
-
-    .fc-toolbar {
-        margin-bottom: 20px;
-    }
-
-    .fc-toolbar h2 {
-        font-size: 1.5rem;
-        font-weight: 600;
-    }
-
-    .fc-day {
-        min-height: 100px;
-    }
-
-    /* Tablets (1024px and below) */
-    @media (max-width: 1024px) {
-        .calendar-wrapper {
-            padding: 15px;
-        }
-        
-        .fc-toolbar h2 {
-            font-size: 1.3rem;
-        }
-        
-        .fc-day {
-            min-height: 85px;
-        }
-    }
-
-    /* Tablets (768px and below) */
-    @media (max-width: 768px) {
-        .main-content {
-            padding: 15px;
-        }
-        
-        .reservation-card {
-            padding: 20px 15px;
-        }
-        
-        .page-header {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-        }
-        
+        /* Responsive Calendar Styles */
         .container.py-5 {
-            padding-top: 20px !important;
-            padding-bottom: 20px !important;
-        }
-        
-        .calendar-wrapper {
-            padding: 12px;
-        }
-        
-        .fc-toolbar {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .fc-toolbar .fc-left,
-        .fc-toolbar .fc-center,
-        .fc-toolbar .fc-right {
-            width: 100%;
-            text-align: center;
-        }
-        
-        .fc-toolbar h2 {
-            font-size: 1.2rem;
-        }
-        
-        .fc-day {
-            min-height: 70px;
-        }
-        
-        .fc-day-header {
-            font-size: 0.85rem;
-            padding: 8px 3px;
-        }
-        
-        .fc-event {
-            font-size: 0.75rem;
-        }
-        
-        .fc-button {
-            padding: 5px 10px;
-            font-size: 0.85rem;
-        }
-        
-        #facility_select {
+            padding-top: 30px !important;
+            padding-bottom: 30px !important;
             max-width: 100%;
         }
-    }
 
-    /* Mobile (576px and below) */
-    @media (max-width: 576px) {
-        .main-content {
-            padding: 10px;
+        /* ===== Make container a bit smaller (scoped) ===== */
+        .reservation-card>.container {
+            max-width: 1000px;
+            /* adjust: 900px / 950px / 1000px */
+            padding-left: 12px;
+            padding-right: 12px;
         }
-        
-        .reservation-card {
-            padding: 15px 10px;
-        }
-        
-        .page-header {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-        }
-        
-        .container.py-5 {
-            padding-top: 15px !important;
-            padding-bottom: 15px !important;
-        }
-        
-        .calendar-wrapper {
-            padding: 10px;
-        }
-        
-        .fc-toolbar h2 {
-            font-size: 1.1rem;
-        }
-        
-        .fc-day {
-            min-height: 60px;
-        }
-        
-        .fc-day-header {
-            font-size: 0.75rem;
-            padding: 6px 2px;
-        }
-        
-        .fc-day-number {
-            font-size: 0.8rem;
-            padding: 4px;
-        }
-        
-        .fc-event {
-            font-size: 0.7rem;
-            padding: 1px 3px;
-        }
-        
-        .fc-button {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-        }
-        
-        .fc-agendaWeek-button,
-        .fc-agendaDay-button {
-            display: none !important;
-        }
-        
-        #facility_select {
-            font-size: 0.9rem;
-            padding: 8px 12px;
-        }
-        
-        .modal-dialog {
-            margin: 10px;
-            max-width: calc(100% - 20px);
-        }
-        
-        .modal-body {
-            padding: 12px;
-        }
-        
-        .slots-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 6px;
-        }
-        
-        .slot-btn {
-            font-size: 0.8rem;
-            padding: 8px 6px;
-        }
-    }
 
-    /* Very Small Mobile (400px and below) */
-    @media (max-width: 400px) {
-        .page-header {
-            font-size: 1.1rem;
+        @media (max-width: 992px) {
+            .reservation-card>.container {
+                max-width: 100%;
+                padding-left: 10px;
+                padding-right: 10px;
+                |
+            }
         }
-        
+
         .calendar-wrapper {
-            padding: 8px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            overflow: hidden;
         }
-        
+
+        #calendar {
+            max-width: 100%;
+            font-size: 14px;
+        }
+
+        .fc-toolbar {
+            margin-bottom: 20px;
+        }
+
         .fc-toolbar h2 {
-            font-size: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
         }
-        
+
         .fc-day {
-            min-height: 50px;
+            min-height: 100px;
         }
-        
-        .fc-day-header {
-            font-size: 0.7rem;
-            padding: 5px 1px;
+
+        /* Tablets (1024px and below) */
+        @media (max-width: 1024px) {
+            .calendar-wrapper {
+                padding: 15px;
+            }
+
+            .fc-toolbar h2 {
+                font-size: 1.3rem;
+            }
+
+            .fc-day {
+                min-height: 85px;
+            }
         }
-        
-        .fc-day-number {
-            font-size: 0.75rem;
-            padding: 3px;
+
+        /* Tablets (768px and below) */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+
+            .reservation-card {
+                padding: 20px 15px;
+            }
+
+            .page-header {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+
+            .container.py-5 {
+                padding-top: 20px !important;
+                padding-bottom: 20px !important;
+            }
+
+            .calendar-wrapper {
+                padding: 12px;
+            }
+
+            .fc-toolbar {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .fc-toolbar .fc-left,
+            .fc-toolbar .fc-center,
+            .fc-toolbar .fc-right {
+                width: 100%;
+                text-align: center;
+            }
+
+            .fc-toolbar h2 {
+                font-size: 1.2rem;
+            }
+
+            .fc-day {
+                min-height: 70px;
+            }
+
+            .fc-day-header {
+                font-size: 0.85rem;
+                padding: 8px 3px;
+            }
+
+            .fc-event {
+                font-size: 0.75rem;
+            }
+
+            .fc-button {
+                padding: 5px 10px;
+                font-size: 0.85rem;
+            }
+
+            #facility_select {
+                max-width: 100%;
+            }
         }
-        
-        .fc-event {
-            font-size: 0.65rem;
+
+        /* Mobile (576px and below) */
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 10px;
+            }
+
+            .reservation-card {
+                padding: 15px 10px;
+            }
+
+            .page-header {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+            }
+
+            .container.py-5 {
+                padding-top: 15px !important;
+                padding-bottom: 15px !important;
+            }
+
+            .calendar-wrapper {
+                padding: 10px;
+            }
+
+            .fc-toolbar h2 {
+                font-size: 1.1rem;
+            }
+
+            .fc-day {
+                min-height: 60px;
+            }
+
+            .fc-day-header {
+                font-size: 0.75rem;
+                padding: 6px 2px;
+            }
+
+            .fc-day-number {
+                font-size: 0.8rem;
+                padding: 4px;
+            }
+
+            .fc-event {
+                font-size: 0.7rem;
+                padding: 1px 3px;
+            }
+
+            .fc-button {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+
+            .fc-agendaWeek-button,
+            .fc-agendaDay-button {
+                display: none !important;
+            }
+
+            #facility_select {
+                font-size: 0.9rem;
+                padding: 8px 12px;
+            }
+
+            .modal-dialog {
+                margin: 10px;
+                max-width: calc(100% - 20px);
+            }
+
+            .modal-body {
+                padding: 12px;
+            }
+
+            .slots-container {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .slot-btn {
+                font-size: 0.8rem;
+                padding: 8px 6px;
+            }
         }
-    }
+
+        /* Very Small Mobile (400px and below) */
+        @media (max-width: 400px) {
+            .page-header {
+                font-size: 1.1rem;
+            }
+
+            .calendar-wrapper {
+                padding: 8px;
+            }
+
+            .fc-toolbar h2 {
+                font-size: 1rem;
+            }
+
+            .fc-day {
+                min-height: 50px;
+            }
+
+            .fc-day-header {
+                font-size: 0.7rem;
+                padding: 5px 1px;
+            }
+
+            .fc-day-number {
+                font-size: 0.75rem;
+                padding: 3px;
+            }
+
+            .fc-event {
+                font-size: 0.65rem;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="app-layout">
         <!-- SIDEBAR -->
@@ -498,7 +501,7 @@ $loggedInUserProfilePic = $profilePic;
             <header class="sidebar-header">
                 <div class="profile-section">
                     <img src="<?= htmlspecialchars($loggedInUserProfilePic) ?>" alt="Profile" class="profile-photo"
-                        onerror="this.src='../asset/profile.jpg'">
+                        onerror="this.src='../../asset/profile.jpg'">
                     <div class="profile-info">
                         <p class="profile-name"><?= htmlspecialchars($loggedInUserName) ?></p>
                         <p class="profile-role">Admin</p>
@@ -537,6 +540,12 @@ $loggedInUserProfilePic = $profilePic;
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a href="../manageaccounts.php" class="menu-link">
+                            <img src="../../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">  
+                            <span class="menu-label">Manage Accounts</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a href="../create-account.php" class="menu-link">
                             <img src="../../asset/profile.png" alt="Create Account Icon" class="menu-icon">
                             <span class="menu-label">Create Account</span>
@@ -559,7 +568,7 @@ $loggedInUserProfilePic = $profilePic;
                 <div class="page-header">
                     Quick Reservation
                 </div>
-                
+
                 <!-- FACILITY SELECTION -->
                 <div class="container">
                     <!-- Facility Dropdown -->
@@ -573,7 +582,7 @@ $loggedInUserProfilePic = $profilePic;
                             <option value="Tennis Court">Tennis Court</option>
                         </select>
                     </div>
-                    
+
                     <!-- CALENDAR SECTION -->
                     <div class="container py-5" style="display: block;padding-top: 30px !important;">
                         <div class="row g-4">
@@ -596,8 +605,7 @@ $loggedInUserProfilePic = $profilePic;
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalLabel">Book a Facility</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Hidden Date Fields -->
@@ -614,8 +622,7 @@ $loggedInUserProfilePic = $profilePic;
 
                     <!-- Facility Name (Read-only display) -->
                     <div class="form-group mb-3">
-                        <label for="facility_name">Facility Name: <span
-                                class="text-danger">*</span></label>
+                        <label for="facility_name">Facility Name: <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="facility_name" readonly
                             style="background-color: #e9ecef; cursor: not-allowed;">
                         <small class="form-text text-muted">
@@ -626,14 +633,8 @@ $loggedInUserProfilePic = $profilePic;
                     <!-- Phone Number -->
                     <div class="form-group mb-3">
                         <label for="phone">Phone Number: <span class="text-danger">*</span></label>
-                        <input type="text" 
-                            class="form-control" 
-                            id="phone" 
-                            name="phone"
-                            placeholder="09123456789"
-                            maxlength="11"
-                            pattern="^09\d{9}$"
-                            required>
+                        <input type="text" class="form-control" id="phone" name="phone" placeholder="09123456789"
+                            maxlength="11" pattern="^09\d{9}$" required>
                         <div class="invalid-feedback" id="phoneFeedback">
                             Please enter a valid Philippine mobile number (e.g., 09123456789)
                         </div>
@@ -652,64 +653,49 @@ $loggedInUserProfilePic = $profilePic;
                                 </p>
 
                                 <div class="slots-container">
-                                    <button type="button" class="btn slot-btn" data-start="08:00"
-                                        data-end="09:00">
+                                    <button type="button" class="btn slot-btn" data-start="08:00" data-end="09:00">
                                         8:00 AM - 9:00 AM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="09:00"
-                                        data-end="10:00">
+                                    <button type="button" class="btn slot-btn" data-start="09:00" data-end="10:00">
                                         9:00 AM - 10:00 AM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="10:00"
-                                        data-end="11:00">
+                                    <button type="button" class="btn slot-btn" data-start="10:00" data-end="11:00">
                                         10:00 AM - 11:00 AM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="11:00"
-                                        data-end="12:00">
+                                    <button type="button" class="btn slot-btn" data-start="11:00" data-end="12:00">
                                         11:00 AM - 12:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="12:00"
-                                        data-end="13:00">
+                                    <button type="button" class="btn slot-btn" data-start="12:00" data-end="13:00">
                                         12:00 PM - 1:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="13:00"
-                                        data-end="14:00">
+                                    <button type="button" class="btn slot-btn" data-start="13:00" data-end="14:00">
                                         1:00 PM - 2:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="14:00"
-                                        data-end="15:00">
+                                    <button type="button" class="btn slot-btn" data-start="14:00" data-end="15:00">
                                         2:00 PM - 3:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="15:00"
-                                        data-end="16:00">
+                                    <button type="button" class="btn slot-btn" data-start="15:00" data-end="16:00">
                                         3:00 PM - 4:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="16:00"
-                                        data-end="17:00">
+                                    <button type="button" class="btn slot-btn" data-start="16:00" data-end="17:00">
                                         4:00 PM - 5:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="17:00"
-                                        data-end="18:00">
+                                    <button type="button" class="btn slot-btn" data-start="17:00" data-end="18:00">
                                         5:00 PM - 6:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="18:00"
-                                        data-end="19:00">
+                                    <button type="button" class="btn slot-btn" data-start="18:00" data-end="19:00">
                                         6:00 PM - 7:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="19:00"
-                                        data-end="20:00">
+                                    <button type="button" class="btn slot-btn" data-start="19:00" data-end="20:00">
                                         7:00 PM - 8:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="20:00"
-                                        data-end="21:00">
+                                    <button type="button" class="btn slot-btn" data-start="20:00" data-end="21:00">
                                         8:00 PM - 9:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="21:00"
-                                        data-end="22:00">
+                                    <button type="button" class="btn slot-btn" data-start="21:00" data-end="22:00">
                                         9:00 PM - 10:00 PM
                                     </button>
-                                    <button type="button" class="btn slot-btn" data-start="22:00"
-                                        data-end="23:00">
+                                    <button type="button" class="btn slot-btn" data-start="22:00" data-end="23:00">
                                         10:00 PM - 11:00 PM
                                     </button>
                                 </div>
@@ -728,11 +714,9 @@ $loggedInUserProfilePic = $profilePic;
 
                 <!-- Button -->
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                        data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="saveReservationBtn">
-                        <span class="spinner-border spinner-border-sm d-none" role="status"
-                            aria-hidden="true"></span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                         Submit
                     </button>
                 </div>
@@ -743,9 +727,10 @@ $loggedInUserProfilePic = $profilePic;
     <!-- Bootstrap 5 JS (with Popper included) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <!-- Other JS -->
     <script src="../../resident-side/javascript/sidebar.js"></script>
     <script src="quick-reservation.js"></script>
 </body>
+
 </html>

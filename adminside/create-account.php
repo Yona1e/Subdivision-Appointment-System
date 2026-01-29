@@ -33,13 +33,12 @@ if (isset($_SESSION['user_id'])) {
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($result->num_rows > 0) {
         $userData = $result->fetch_assoc();
         $loggedInUserName = $userData['FirstName'] . ' ' . $userData['LastName'];
-        
-        // Use uploaded profile picture if available, otherwise use default
-        if (!empty($userData['ProfilePictureURL'])) {
+
+        if (!empty($userData['ProfilePictureURL']) && file_exists('../' . $userData['ProfilePictureURL'])) {
             $loggedInUserProfilePic = '../' . $userData['ProfilePictureURL'];
         }
     }
@@ -61,20 +60,20 @@ $password = '';
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
+} catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
+
     // Verify CSRF token
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         $_SESSION['error'] = "Invalid security token. Please try again.";
         header("Location: create-account.php");
         exit();
     }
-    
+
     // Get form data
     $firstName = trim($_POST['first_name']);
     $lastName = trim($_POST['last_name']);
@@ -85,29 +84,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $block = trim($_POST['block']);
     $lot = trim($_POST['lot']);
     $streetName = trim($_POST['street_name']);
-    
+
     // Validate required fields (birthday is optional)
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($password) || 
-        empty($role) || empty($block) || empty($lot) || empty($streetName)) {
+    if (
+        empty($firstName) || empty($lastName) || empty($email) || empty($password) ||
+        empty($role) || empty($block) || empty($lot) || empty($streetName)
+    ) {
         $_SESSION['error'] = "All fields except birthday are required!";
         header("Location: create-account.php");
         exit();
     }
-    
+
     // Validate email format
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['error'] = "Invalid email format!";
         header("Location: create-account.php");
         exit();
     }
-    
+
     // Validate password length
     if (strlen($password) < 6) {
         $_SESSION['error'] = "Password must be at least 6 characters long!";
         header("Location: create-account.php");
         exit();
     }
-    
+
     // Validate birthday if provided
     if ($birthday !== null) {
         $dateObj = DateTime::createFromFormat('Y-m-d', $birthday);
@@ -116,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: create-account.php");
             exit();
         }
-        
+
         // Check if birthday is not in the future
         if ($dateObj > new DateTime()) {
             $_SESSION['error'] = "Birthday cannot be in the future!";
@@ -124,52 +125,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
     }
-    
+
     // Check if email already exists
     $checkEmail = $pdo->prepare("SELECT user_id FROM users WHERE Email = ?");
     $checkEmail->execute([$email]);
-    
+
     if ($checkEmail->rowCount() > 0) {
         $_SESSION['error'] = "Email already exists!";
         header("Location: create-account.php");
         exit();
     }
-    
+
     // Handle profile picture upload
     $profilePictureURL = 'uploads/profile_pictures/default.png'; // Default picture path
     if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-        
+
         $maxFileSize = 5 * 1024 * 1024; // 5MB
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
         $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
-        
+
         $fileSize = $_FILES['profile_picture']['size'];
         $fileTmpName = $_FILES['profile_picture']['tmp_name'];
         $fileName = $_FILES['profile_picture']['name'];
         $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         $fileMimeType = mime_content_type($fileTmpName);
-        
+
         // Validate file size
         if ($fileSize > $maxFileSize) {
             $_SESSION['error'] = "Profile picture is too large. Maximum size is 5MB.";
             header("Location: create-account.php");
             exit();
         }
-        
+
         // Validate file extension
         if (!in_array($fileExtension, $allowedExtensions)) {
             $_SESSION['error'] = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
             header("Location: create-account.php");
             exit();
         }
-        
+
         // Validate MIME type
         if (!in_array($fileMimeType, $allowedMimeTypes)) {
             $_SESSION['error'] = "Invalid file format detected.";
             header("Location: create-account.php");
             exit();
         }
-        
+
         // Validate that it's actually an image
         $imageInfo = getimagesize($fileTmpName);
         if ($imageInfo === false) {
@@ -177,10 +178,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: create-account.php");
             exit();
         }
-        
+
         // FIXED: Use absolute path from document root
         $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/Subdivision-Appointment-System/uploads/profile_pictures/';
-        
+
         // Create directory if it doesn't exist
         if (!is_dir($uploadDir)) {
             if (!mkdir($uploadDir, 0755, true)) {
@@ -189,17 +190,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         }
-        
+
         // Create .htaccess to prevent PHP execution in upload directory
         $htaccessPath = $uploadDir . '.htaccess';
         if (!file_exists($htaccessPath)) {
             $htaccessContent = "php_flag engine off\nOptions -Indexes";
             file_put_contents($htaccessPath, $htaccessContent);
         }
-        
+
         $newFileName = 'profile_' . uniqid() . '_' . time() . '.' . $fileExtension;
         $uploadPath = $uploadDir . $newFileName;
-        
+
         if (move_uploaded_file($fileTmpName, $uploadPath)) {
             chmod($uploadPath, 0644);
             // FIXED: Store relative path from web root
@@ -210,18 +211,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
     }
-    
+
     // Hash the password for security
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    
+
     // Determine role value (capitalize first letter to match ENUM)
     $roleValue = ucfirst(strtolower($role));
-    
+
     try {
         // Insert user into database
         $sql = "INSERT INTO users (FirstName, LastName, Birthday, Email, Password, Role, Block, Lot, StreetName, ProfilePictureURL, Status) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')";
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $firstName,
@@ -235,12 +236,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $streetName,
             $profilePictureURL
         ]);
-        
+
         $_SESSION['success'] = "Account created successfully!";
         header("Location: create-account.php");
         exit();
-        
-    } catch(PDOException $e) {
+
+    } catch (PDOException $e) {
         // If database insert fails and file was uploaded, delete the file
         if ($profilePictureURL) {
             $deleteFile = $_SERVER['DOCUMENT_ROOT'] . '/Subdivision-Appointment-System/' . $profilePictureURL;
@@ -248,7 +249,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unlink($deleteFile);
             }
         }
-        
+
         $_SESSION['error'] = "Error creating account: " . $e->getMessage();
         header("Location: create-account.php");
         exit();
@@ -323,6 +324,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a href="manageaccounts.php" class="menu-link">
+                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">  
+                            <span class="menu-label">Manage Accounts</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a href="create-account.php" class="menu-link active">
                             <img src="../asset/profile.png" class="menu-icon">
                             <span class="menu-label">Create Account</span>
@@ -349,23 +356,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
 
                     <?php if (isset($_SESSION['success'])): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <?php 
-                        echo htmlspecialchars($_SESSION['success']); 
-                        unset($_SESSION['success']);
-                        ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <?php
+                            echo htmlspecialchars($_SESSION['success']);
+                            unset($_SESSION['success']);
+                            ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     <?php endif; ?>
 
                     <?php if (isset($_SESSION['error'])): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <?php 
-                        echo htmlspecialchars($_SESSION['error']); 
-                        unset($_SESSION['error']);
-                        ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <?php
+                            echo htmlspecialchars($_SESSION['error']);
+                            unset($_SESSION['error']);
+                            ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     <?php endif; ?>
 
                     <form method="POST" enctype="multipart/form-data" id="createAccountForm">
