@@ -400,9 +400,9 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                         ).join('');
 
                         $('#facilityContainer').append(`
-                        <div class="reservation-card facility-card p-3" style="min-width: 250px; text-align: center;">
+                        <div class="reservation-card facility-card p-3" style="min-width: 250px;">
                         <h5>${facility}</h5>
-                        <ul class="time-list" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 5px;">
+                        <ul class="time-list">
                         ${slots || '<li class="no-data">No bookings today</li>'}
                         </ul>
                         </div>

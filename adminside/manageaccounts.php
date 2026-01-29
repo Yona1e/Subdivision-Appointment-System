@@ -164,13 +164,11 @@ $statuses = array_unique(array_column($users, 'Status'));
                 </ul>
             </div>
             <div class="logout-section">
-                <a href="../adminside/log-out.php" method="post" class="logout-link menu-link">
-                </a>
-                <img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
-                <span class="menu-label">Log Out</span>
-            </div>
-
-
+<a href="../adminside/log-out.php" method="post" class="logout-link menu-link">
+</a>
+<img src="https://api.iconify.design/mdi/logout.svg" alt="Logout" class="menu-icon">
+<span class="menu-label">Log Out</span>
+</div>
         </aside>
 
         <!-- MAIN CONTENT -->
@@ -224,6 +222,7 @@ $statuses = array_unique(array_column($users, 'Status'));
                         <table class="table table-bordered table-hover" id="accountsTable">
                             <thead class="table-dark">
                                 <tr>
+                                    <th>ID</th>
                                     <th>User</th>
                                     <th>Email</th>
                                     <th>Role</th>
@@ -252,6 +251,9 @@ $statuses = array_unique(array_column($users, 'Status'));
                                         data-pic="<?= htmlspecialchars($userPic) ?>"
                                         data-birthday="<?= htmlspecialchars($user['Birthday'] ?? 'N/A') ?>"
                                         data-address="<?= htmlspecialchars(($user['Block'] ?? '') . ' ' . ($user['Lot'] ?? '') . ' ' . ($user['StreetName'] ?? '')) ?>">
+                                        <td>
+                                            <?= $user['user_id'] ?>
+                                        </td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <img src="<?= $userPic ?>" alt="Prof" class="profile-img-small">
