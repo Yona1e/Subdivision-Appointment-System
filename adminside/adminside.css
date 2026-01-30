@@ -46,6 +46,7 @@ body {
     padding-left: 0 !important;
 }
 
+
 /* Header */
 .page-header {
     background: linear-gradient(135deg, #5fd4d4 0%, #4fb8b8 100%);
@@ -96,12 +97,17 @@ body {
 .reservation-card .card-body {
     padding: 10px;
     overflow-x: auto;
+    /* Force minimum height for 10 rows + UI */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 /* ADDED: Table styling */
 .reservation-card .table {
-    width: 100%;
-    margin-bottom: 0;
+    width: calc(100% - 12px);
+    margin: 0 auto;
+    table-layout: fixed;
 }
 
 .reservation-card .table-dark th {
@@ -117,13 +123,16 @@ body {
     padding: 0.75rem;
     vertical-align: middle;
     border-color: #dee2e6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .reservation-card .table-striped tbody tr:nth-of-type(odd) {
     background-color: #f8f9fa;
 }
 
-/* ENHANCED: Fancy table hover effect from second CSS */
+/* ENHANCED: Table hover effect (copied from my-reservations) */
 .table.table-hover tbody tr {
     transition: all 0.3s ease;
     height: 60px;

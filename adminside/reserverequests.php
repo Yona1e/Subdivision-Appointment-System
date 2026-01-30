@@ -27,13 +27,9 @@ $user = $userResult->fetch_assoc();
 $userStmt->close();
 
 // Profile picture fallback
-$profilePic = !empty($user['ProfilePictureURL'])
+$profilePic = (!empty($user['ProfilePictureURL']) && file_exists('../' . $user['ProfilePictureURL']))
     ? '../' . $user['ProfilePictureURL']
     : '../asset/default-profile.png';
-
-if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
-    $profilePic = '../asset/default-profile.png';
-}
 
 $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
 
@@ -102,6 +98,13 @@ $reservations = $conn->query($res_sql);
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+    <style>
+        /* Hide ID column on this page */
+        table thead th:first-child,
+        table tbody td:first-child {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
@@ -152,6 +155,12 @@ $reservations = $conn->query($res_sql);
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a href="manageaccounts.php" class="menu-link">
+                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">  
+                            <span class="menu-label">Manage Accounts</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a href="create-account.php" class="menu-link">
                             <img src="../asset/profile.png" class="menu-icon">
                             <span class="menu-label">Create Account</span>
@@ -176,17 +185,17 @@ $reservations = $conn->query($res_sql);
                 <div class="card-body">
 
                     <?php if ($message): ?>
-                    <div class="alert alert-success alert-dismissible fade show">
-                        <?= $message ?>
-                        <button class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <?= $message ?>
+                            <button class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     <?php endif; ?>
 
                     <div class="table-responsive mt-3">
-                        <table class="table table-bordered table-hover align-middle">
+                        <table class="table table-hover align-middle">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>ID</th>
+                                    <th class="id-column">ID</th>
                                     <th>Facility</th>
                                     <th>Phone</th>
                                     <th>Event Date</th>
@@ -199,56 +208,63 @@ $reservations = $conn->query($res_sql);
                             <tbody>
 
                                 <?php while ($row = $reservations->fetch_assoc()): ?>
-                                <tr class="reservation-row"
-                                    data-facility="<?= htmlspecialchars($row['facility_name']) ?>"
-                                    data-user="<?= htmlspecialchars($row['FirstName'].' '.$row['LastName']) ?>"
-                                    data-phone="<?= htmlspecialchars($row['phone']) ?>"
-                                    data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?>"
-                                    data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
-                                    data-status="<?= ucfirst($row['status']) ?>"
-                                    data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
-                                    data-created="<?= date('M d, Y g:i A', strtotime($row['created_at'])) ?>"
-                                    data-payment="<?= htmlspecialchars($row['payment_proof']) ?>">
-                                    <td>
-                                        <?= $row['id'] ?>
-                                    </td>
-                                    <td>
-                                        <?= htmlspecialchars($row['facility_name']) ?>
-                                    </td>
-                                    <td>
-                                        <?= htmlspecialchars($row['phone']) ?>
-                                    </td>
-                                    <td>
-                                        <?= date('M d, Y', strtotime($row['event_start_date'])) ?>
-                                    </td>
-                                    <td>
-                                        <?= date('g:i A', strtotime($row['time_start'])) ?> -
-                                        <?= date('g:i A', strtotime($row['time_end'])) ?>
-                                    </td>
-                                    <td>
-                                        <?= $row['FirstName'].' '.$row['LastName'] ?>
-                                    </td>
-                                    <td><span class="badge bg-warning text-white">Pending</span></td>
-                                    <td>
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="reservation_id" value="<?= $row['id'] ?>">
-                                            <button type="submit" name="approve_reservation"
-                                                class="btn btn-success btn-sm mb-1">
-                                                Approve
-                                            </button>
-                                        </form>
+                                    <tr class="reservation-row"
+                                        data-facility="<?= htmlspecialchars($row['facility_name']) ?>"
+                                        data-user="<?= htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']) ?>"
+                                        data-phone="<?= htmlspecialchars($row['phone']) ?>"
+                                        data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?>"
+                                        data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
+                                        data-status="<?= ucfirst($row['status']) ?>"
+                                        data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
+                                        data-created="<?= date('M d, Y g:i A', strtotime($row['created_at'])) ?>"
+                                        data-payment="<?= htmlspecialchars($row['payment_proof']) ?>">
+                                        <td class="id-column">
+                                            <?= $row['id'] ?>
+                                        </td>
+                                        <td>
+                                            <?= htmlspecialchars($row['facility_name']) ?>
+                                        </td>
+                                        <td>
+                                            <?= htmlspecialchars($row['phone']) ?>
+                                        </td>
+                                        <td>
+                                            <?= date('M d, Y', strtotime($row['event_start_date'])) ?>
+                                        </td>
+                                        <td>
+                                            <?= date('g:i A', strtotime($row['time_start'])) ?> -
+                                            <?= date('g:i A', strtotime($row['time_end'])) ?>
+                                        </td>
+                                        <td>
+                                            <?= $row['FirstName'] . ' ' . $row['LastName'] ?>
+                                        </td>
+                                        <td><span class="badge bg-warning text-white">Pending</span></td>
+                                        <td>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="reservation_id" value="<?= $row['id'] ?>">
+                                                <button type="submit" name="approve_reservation"
+                                                    class="btn btn-success btn-sm mb-1">
+                                                    Approve
+                                                </button>
+                                            </form>
 
-                                        <button type="button" class="btn btn-danger btn-sm mb-1 reject-btn"
-                                            data-id="<?= $row['id'] ?>">
-                                            Reject
-                                        </button>
-                                    </td>
-                                </tr>
+                                            <button type="button" class="btn btn-danger btn-sm mb-1 reject-btn"
+                                                data-id="<?= $row['id'] ?>">
+                                                Reject
+                                            </button>
+                                        </td>
+                                    </tr>
                                 <?php endwhile; ?>
 
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination Controls -->
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center" id="paginationControls">
+                            <!-- JS injected -->
+                        </ul>
+                    </nav>
 
                 </div>
             </div>
@@ -336,6 +352,87 @@ $reservations = $conn->query($res_sql);
                 new bootstrap.Modal(document.getElementById('rejectModal')).show();
             });
         });
+
+        /* ================= PAGINATION & SEARCH LOGIC ================= */
+        const rowsPerPage = 10;
+        let currentPage = 1;
+        let allRows = Array.from(document.querySelectorAll(".reservation-row"));
+        let filteredRows = [...allRows]; // Initially all rows are visible
+
+        function displayRows(page) {
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+
+            // Hide all rows first
+            allRows.forEach(row => row.style.display = 'none');
+
+            // Show only rows for the current page from the filtered set
+            filteredRows.slice(start, end).forEach(row => row.style.display = '');
+
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            const paginationContainer = document.getElementById('paginationControls');
+
+            let html = '';
+
+            // Prev
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Previous</a>
+                     </li>`;
+
+            // Numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (totalPages > 7) {
+                    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                                  </li>`;
+                    } else if (i === currentPage - 2 || i === currentPage + 2) {
+                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                } else {
+                    html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                             </li>`;
+                }
+            }
+
+            // Next
+            html += `<li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Next</a>
+                     </li>`;
+
+            paginationContainer.innerHTML = html;
+        }
+
+        window.changePage = function (page) {
+            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (page < 1 || (page > totalPages && totalPages > 0)) return;
+            currentPage = page;
+            displayRows(currentPage);
+        }
+
+        function applySearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredRows = allRows.filter(row => {
+                const facility = row.dataset.facility.toLowerCase();
+                const user = row.dataset.user.toLowerCase();
+                const phone = row.dataset.phone.toLowerCase();
+                return facility.includes(searchTerm) || user.includes(searchTerm) || phone.includes(searchTerm);
+            });
+
+            currentPage = 1;
+            displayRows(currentPage);
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', applySearch);
+
+        // Init
+        displayRows(1);
     </script>
 
     <script src="../resident-side/javascript/sidebar.js"></script>

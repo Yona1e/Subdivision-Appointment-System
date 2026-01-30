@@ -27,14 +27,9 @@ $user = $userResult->fetch_assoc();
 $userStmt->close();
 
 // Profile picture fallback
-$profilePic = !empty($user['ProfilePictureURL'])
+$profilePic = (!empty($user['ProfilePictureURL']) && file_exists('../' . $user['ProfilePictureURL']))
     ? '../' . $user['ProfilePictureURL']
     : '../asset/default-profile.png';
-
-// Verify the file exists, otherwise use default
-if (!empty($user['ProfilePictureURL']) && !file_exists('../' . $user['ProfilePictureURL'])) {
-    $profilePic = '../asset/default-profile.png';
-}
 
 // User's full name for sidebar
 $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
@@ -156,6 +151,12 @@ $completed_week_result = $conn->query($completed_week_sql);
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a href="manageaccounts.php" class="menu-link">
+                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">
+                            <span class="menu-label">Manage Accounts</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a href="create-account.php" class="menu-link">
                             <img src="../asset/profile.png" alt="Create Account Icon" class="menu-icon">
                             <span class="menu-label">Create Account</span>
@@ -203,80 +204,96 @@ $completed_week_result = $conn->query($completed_week_sql);
             </div>
 
             <!-- CHART SECTION -->
-    <div class="card-header">
-                </div>
-                <div class="card-body p-3">
-                    
-                    <div class="row g-4">
-                        <!-- Left Column: Chart -->
-                        <div class="col-lg-8">
-                            <div class="card shadow-sm border h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center"> 
-                    <h5 class="mb-0">Reservation Status Overview</h5>
-                                </div>
-                                <div class="card-body"><canvas id="myChart" style="max-height: 400px;"></canvas> </div>
-                               
-                                
-                            </div>
-                        </div>
+            <div class="card-header">
+            </div>
+            <div class="card-body p-3">
 
-                        <!-- Right Column: Quick Actions -->
-                        <div class="col-lg-4">
-    <div class="card shadow-sm border h-100 d-flex flex-column">
-        <div class="card-header d-flex justify-content-between align-items-center"> 
-                    <h5 class="mb-0">Pending Requests</h5>
-                                </div>
-        <div class="card-body p-3 flex-grow-1 d-flex flex-column">
-            <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
-                <div class="flex-grow-1" style="max-height: 320px; overflow-y: auto;">
-                    <?php while($req = $pending_requests_result->fetch_assoc()): ?>
-                        <div class="request-item mb-3 p-2 border-bottom">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <strong><?= htmlspecialchars($req['facility_name']) ?></strong>
-                                    <div class="text-muted small">
-                                        <?= htmlspecialchars($req['FirstName'] . ' ' . $req['LastName']) ?>
-                                    </div>
-                                </div>
-                                <span class="badge bg-warning text-white">Pending</span>
+                <div class="row g-4">
+                    <!-- Left Column: Chart -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm border h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Reservation Status Overview</h5>
                             </div>
-                            <div class="small text-muted">
-                                <?= date('M d, Y', strtotime($req['event_start_date'])) ?>
-                            </div>
+                            <div class="card-body"><canvas id="myChart" style="max-height: 400px;"></canvas> </div>
+
+
                         </div>
-                    <?php endwhile; ?>
-                </div>
-                <a href="reserverequests.php" class="btn btn-warning w-100 mt-3">View All</a>
-            <?php else: ?>
-                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
-                    <p class="text-muted mb-0">No Pending Requests</p>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
+                    </div>
+
+                    <!-- Right Column: Quick Actions -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm border h-100 d-flex flex-column">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Pending Requests</h5>
+                            </div>
+                            <div class="card-body p-3 flex-grow-1 d-flex flex-column">
+                                <?php if ($pending_requests_result && $pending_requests_result->num_rows > 0): ?>
+                                    <div class="flex-grow-1" style="max-height: 320px; overflow-y: auto;">
+                                        <?php while ($req = $pending_requests_result->fetch_assoc()): ?>
+                                            <div class="request-item mb-3 p-2 border-bottom">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <strong><?= htmlspecialchars($req['facility_name']) ?></strong>
+                                                        <div class="text-muted small">
+                                                            <?= htmlspecialchars($req['FirstName'] . ' ' . $req['LastName']) ?>
+                                                        </div>
+                                                    </div>
+                                                    <span class="badge bg-warning text-white">Pending</span>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <?= date('M d, Y', strtotime($req['event_start_date'])) ?>
+                                                </div>
+                                            </div>
+                                        <?php endwhile; ?>
+                                    </div>
+                                    <a href="reserverequests.php" class="btn btn-warning w-100 mt-3">View All</a>
+                                <?php else: ?>
+                                    <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                                        <p class="text-muted mb-0">No Pending Requests</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
             <!-- RECENT ACTIVITY LOG -->
             <?php if ($recent_audit_result && $recent_audit_result->num_rows > 0): ?>
-            <div class="card recent-activity-card mt-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Recent Activity</h5>
-                    <a href="#" class="btn btn-sm">View All</a>
-                </div>
-                <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;">
-                    <?php while($log = $recent_audit_result->fetch_assoc()): ?>
-                    <?php
+                <div class="card recent-activity-card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Activity</h5>
+                        <a href="#" class="btn btn-sm">View All</a>
+                    </div>
+                    <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;">
+                        <?php while ($log = $recent_audit_result->fetch_assoc()): ?>
+                            <?php
                             $bgClass = 'bg-success';
                             $iconSymbol = 'check_circle';
                             $actionText = '';
 
-                            switch($log['ActionType']) {
-                                case 'Approved': $bgClass='bg-success'; $iconSymbol='check_circle'; $actionText='approved'; break;
-                                case 'Rejected': $bgClass='bg-danger'; $iconSymbol='cancel'; $actionText='rejected'; break;
-                                case 'Event_Created': $bgClass='bg-primary'; $iconSymbol='add_circle'; $actionText='created'; break;
-                                case 'Updated': $bgClass='bg-warning'; $iconSymbol='edit'; $actionText='updated'; break;
+                            switch ($log['ActionType']) {
+                                case 'Approved':
+                                    $bgClass = 'bg-success';
+                                    $iconSymbol = 'check_circle';
+                                    $actionText = 'approved';
+                                    break;
+                                case 'Rejected':
+                                    $bgClass = 'bg-danger';
+                                    $iconSymbol = 'cancel';
+                                    $actionText = 'rejected';
+                                    break;
+                                case 'Event_Created':
+                                    $bgClass = 'bg-primary';
+                                    $iconSymbol = 'add_circle';
+                                    $actionText = 'created';
+                                    break;
+                                case 'Updated':
+                                    $bgClass = 'bg-warning';
+                                    $iconSymbol = 'edit';
+                                    $actionText = 'updated';
+                                    break;
                             }
 
                             $adminName = $log['AdminName'] ?? 'System';
@@ -285,51 +302,53 @@ $completed_week_result = $conn->query($completed_week_sql);
                             $eventDate = $log['EventStartDate'] ? date('F d, Y', strtotime($log['EventStartDate'])) : 'N/A';
                             $timeRange = ($log['TimeStart'] && $log['TimeEnd']) ? date('g:i A', strtotime($log['TimeStart'])) . ' - ' . date('g:i A', strtotime($log['TimeEnd'])) : '';
                             $timestamp = date('F d, Y \a\t g:i A', strtotime($log['Timestamp']));
-                        ?>
-                    <div class="d-flex align-items-start audit-entry <?= $bgClass ?> bg-opacity-10 border border-<?= str_replace('bg-', '', $bgClass); ?>">
-                        <div class="me-2 mt-1">
-                            <span class="material-symbols-outlined text-white bg-<?= str_replace('bg-', '', $bgClass); ?> rounded-circle d-flex align-items-center justify-content-center">
-                                <?= $iconSymbol ?>
-                            </span>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-bold">
-                                <?= htmlspecialchars($adminName); ?>
-                                <?= $actionText; ?> a reservation request
+                            ?>
+                            <div
+                                class="d-flex align-items-start audit-entry <?= $bgClass ?> bg-opacity-10 border border-<?= str_replace('bg-', '', $bgClass); ?>">
+                                <div class="me-2 mt-1">
+                                    <span
+                                        class="material-symbols-outlined text-white bg-<?= str_replace('bg-', '', $bgClass); ?> rounded-circle d-flex align-items-center justify-content-center">
+                                        <?= $iconSymbol ?>
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">
+                                        <?= htmlspecialchars($adminName); ?>
+                                        <?= $actionText; ?> a reservation request
+                                    </div>
+                                    <div class="text-muted small">
+                                        <?= htmlspecialchars($timestamp); ?>
+                                    </div>
+                                    <div class="small">
+                                        <span><strong>Resident:</strong>
+                                            <?= htmlspecialchars($residentName); ?>
+                                        </span><br>
+                                        <span><strong>Facility:</strong>
+                                            <?= htmlspecialchars($facilityName); ?>
+                                        </span><br>
+                                        <span><strong>Date:</strong>
+                                            <?= htmlspecialchars($eventDate); ?>
+                                        </span>
+                                        <?php if ($timeRange): ?>
+                                            <br><span><strong>Time:</strong>
+                                                <?= htmlspecialchars($timeRange); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-muted small">
-                                <?= htmlspecialchars($timestamp); ?>
-                            </div>
-                            <div class="small">
-                                <span><strong>Resident:</strong>
-                                    <?= htmlspecialchars($residentName); ?>
-                                </span><br>
-                                <span><strong>Facility:</strong>
-                                    <?= htmlspecialchars($facilityName); ?>
-                                </span><br>
-                                <span><strong>Date:</strong>
-                                    <?= htmlspecialchars($eventDate); ?>
-                                </span>
-                                <?php if ($timeRange): ?>
-                                <br><span><strong>Time:</strong>
-                                    <?= htmlspecialchars($timeRange); ?>
-                                </span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <?php endwhile; ?>
                     </div>
-                    <?php endwhile; ?>
                 </div>
-            </div>
             <?php else: ?>
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent Activity</h5>
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-0">No recent activity found.</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-0">No recent activity found.</div>
-                </div>
-            </div>
             <?php endif; ?>
 
         </div> <!-- END MAIN CONTENT -->

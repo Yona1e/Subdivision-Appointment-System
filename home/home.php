@@ -154,13 +154,14 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         /* === HORIZONTAL SCROLL FOR FACILITY CARDS === */
+        /* === FACILITY CARDS GRID === */
         .facility-grid {
-            display: flex !important;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 20px;
-            overflow-x: auto;
-            overflow-y: hidden;
             padding-bottom: 15px;
-            scroll-behavior: smooth;
+            width: 100%;
         }
 
         /* Custom scrollbar styling */
@@ -185,6 +186,9 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
         .facility-card {
             min-width: 280px !important;
             flex-shrink: 0;
+            border: 2px solid rgba(0, 0, 0, .125);
+            border-radius: 0.25rem;
+            box-shadow: none !important;
         }
 
         @media (max-width: 768px) {
@@ -275,47 +279,48 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-                        <!-- NOTIFICATIONS -->
+            <!-- NOTIFICATIONS -->
             <div class="card recent-activity-card mt-4">
                 <div class="card-header">
                     <h4 class="section-title mb-0">Your Notifications For Today</h4>
                 </div>
 
                 <?php if ($todayNotifications): ?>
-                <div class="card-body p-3" style="max-height:500px;overflow-y:auto;">
-                    <div class="d-flex flex-column gap-3 mt-2">
+                    <div class="card-body p-3" style="max-height:500px;overflow-y:auto;">
+                        <div class="d-flex flex-column gap-3 mt-2">
 
-                        <?php foreach ($todayNotifications as $n): ?>
-                        <div class="notify-card <?= $n['status']==='approved'?'notify-approved':'notify-rejected' ?>">
-                            <svg class="wave" viewBox="0 0 1440 320">
-                                <path d="M0,256L1440,64L1440,320L0,320Z" />
-                            </svg>
-                            <div class="icon-container">
-                                <?= $n['status']==='approved'?'✔':'✖' ?>
-                            </div>
-                            <div>
-                                <p class="message-text">
-                                    <?= ucfirst($n['status']) ?>
-                                </p>
-                                <p class="sub-text">
-                                    <?= htmlspecialchars($n['facility_name']) ?><br>
-                                    <?= date('g:i A', strtotime($n['time_start'])) ?> –
-                                    <?= date('g:i A', strtotime($n['time_end'])) ?>
-                                    <?php if ($n['status']==='rejected' && $n['reason']): ?>
-                                    <br>Reason:
-                                    <?= htmlspecialchars($n['reason']) ?>
-                                    <?php endif; ?>
-                                </p>
-                            </div>
+                            <?php foreach ($todayNotifications as $n): ?>
+                                <div
+                                    class="notify-card <?= $n['status'] === 'approved' ? 'notify-approved' : 'notify-rejected' ?>">
+                                    <svg class="wave" viewBox="0 0 1440 320">
+                                        <path d="M0,256L1440,64L1440,320L0,320Z" />
+                                    </svg>
+                                    <div class="icon-container">
+                                        <?= $n['status'] === 'approved' ? '✔' : '✖' ?>
+                                    </div>
+                                    <div>
+                                        <p class="message-text">
+                                            <?= ucfirst($n['status']) ?>
+                                        </p>
+                                        <p class="sub-text">
+                                            <?= htmlspecialchars($n['facility_name']) ?><br>
+                                            <?= date('g:i A', strtotime($n['time_start'])) ?> –
+                                            <?= date('g:i A', strtotime($n['time_end'])) ?>
+                                            <?php if ($n['status'] === 'rejected' && $n['reason']): ?>
+                                                <br>Reason:
+                                                <?= htmlspecialchars($n['reason']) ?>
+                                            <?php endif; ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+
                         </div>
-                        <?php endforeach; ?>
-
                     </div>
-                </div>
 
                 <?php else: ?>
-                <div class="card-body p-3">
-                    <div style="
+                    <div class="card-body p-3">
+                        <div style="
     height:180px;
     display:flex;
     flex-direction:column;
@@ -326,89 +331,90 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
     text-align:center;
 ">
 
-                        <span style="font-size:18px;max-width:260px;">
-                            There are no approval or rejection activities recorded for today.
-                            Check back later for updates.
-                        </span>
+                            <span style="font-size:18px;max-width:260px;">
+                                There are no approval or rejection activities recorded for today.
+                                Check back later for updates.
+                            </span>
+                        </div>
                     </div>
-                </div>
                 <?php endif; ?>
             </div>
 
             <!-- FACILITY SCHEDULE -->
-            <div class="card recent-activity-card mt-4" style="margin-bottom: 10px;">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="section-title" style="margin: 0;">Today's Facility Schedule (All Residents)</h4>
+            <div class="card recent-activity-card mt-4">
+                <div class="card-header">
+                    <h4 class="section-title mb-0">Today's Facility Schedule (All Residents)</h4>
                 </div>
-            <div class="card-body p-3" style=" align-items: center;">
-                <div class="facility-grid" id="facilityContainer"></div>
+                <div class="card-body p-3">
+                    <div class="facility-grid" id="facilityContainer"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script src="../resident-side/javascript/sidebar.js"></script>
+        <script src="../resident-side/javascript/sidebar.js"></script>
 
-    <script>
-        $(function () {
-            const today = new Date().toISOString().split('T')[0];
+        <script>
+            $(function () {
+                const today = new Date().toISOString().split('T')[0];
 
-            $.getJSON('display_event.php', res => {
-                if (!res.status) return;
+                $.getJSON('display_event.php', res => {
+                    if (!res.status) return;
 
-                const grouped = {};
-                res.data.forEach(e => {
-                    if (e.start.startsWith(today)) {
-                        grouped[e.title] ??= [];
-                        grouped[e.title].push(e);
+                    const grouped = {};
+                    res.data.forEach(e => {
+                        if (e.start.startsWith(today)) {
+                            grouped[e.title] ??= [];
+                            grouped[e.title].push(e);
+                        }
+                    });
+
+                    if (!res.hasTodayEvents) {
+                        $('#facilityContainer').removeClass('facility-grid').css('width', '100%').html(`
+                        <div style="
+                            height:180px;
+                            width:100%;
+                            display:flex;
+                            flex-direction:column;
+                            justify-content:center;
+                            align-items:center;
+                            gap:10px;
+                            color:#9aa0a6;
+                            text-align:center;
+                        ">
+                            <span style="font-size:18px;max-width:260px;">
+                                No facilities are scheduled for today.<br>
+                                Please check again later.
+                            </span>
+                        </div>
+                    `);
+                        return;
                     }
+
+                    // Restore class if data exists
+                    $('#facilityContainer').addClass('facility-grid').css('width', '').empty();
+
+                    // Remove the slice(0, 4) to show all facilities with scrolling
+                    Object.keys(grouped).forEach(facility => {
+                        let slots = grouped[facility].map(e =>
+                            `<li>${format(e.start)} – ${format(e.end)}</li>`
+                        ).join('');
+
+                        $('#facilityContainer').append(`
+                        <div class="reservation-card facility-card p-3" style="min-width: 250px;">
+                        <h5>${facility}</h5>
+                        <ul class="time-list">
+                        ${slots || '<li class="no-data">No bookings today</li>'}
+                        </ul>
+                        </div>
+                    `);
+                    });
                 });
 
-                if (!res.hasTodayEvents) {
-    $('#facilityContainer').html(`
-        <div style="
-            height:180px;
-            width:100%;
-            display:flex;
-            flex-direction:column;
-            justify-content:center;
-            align-items:center;
-            gap:10px;
-            color:#9aa0a6;
-            text-align:center;
-        ">
-                    
-            <span style="font-size:18px;max-width:260px;">
-                No facilities are scheduled for today.<br>
-                Please check again later.
-            </span>
-        </div>
-    `);
-    return;
-}
-
-
-                // Remove the slice(0, 4) to show all facilities with scrolling
-                Object.keys(grouped).forEach(facility => {
-                    let slots = grouped[facility].map(e =>
-                        `<li>${format(e.start)} – ${format(e.end)}</li>`
-                    ).join('');
-
-                    $('#facilityContainer').append(`
-<div class="reservation-card facility-card p-3" style="min-width: 250px;">
-<h5>${facility}</h5>
-<ul class="time-list">
-${slots || '<li class="no-data">No bookings today</li>'}
-</ul>
-</div>
-`);
-                });
+                function format(dt) {
+                    return new Date(dt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                }
             });
-
-            function format(dt) {
-                return new Date(dt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            }
-        });
-    </script>
+        </script>
     </div>
 </body>
 
