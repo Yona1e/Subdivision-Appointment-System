@@ -11,7 +11,7 @@ $password = '';
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
+} catch (PDOException $e) {
     echo json_encode(['status' => false, 'msg' => 'Database error', 'data' => []]);
     exit();
 }
@@ -34,8 +34,9 @@ try {
                 INNER JOIN users u ON r.user_id = u.user_id
                 WHERE r.facility_name = :facility
                 AND r.status IN ('confirmed', 'approved', 'pending')
+                AND r.overwriteable = 0
                 ORDER BY r.event_start_date ASC";
-        
+
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':facility', $facility, PDO::PARAM_STR);
     } else {
@@ -52,14 +53,15 @@ try {
                 FROM reservations r
                 INNER JOIN users u ON r.user_id = u.user_id
                 WHERE r.status IN ('confirmed', 'approved', 'pending')
+                AND r.overwriteable = 0
                 ORDER BY r.event_start_date ASC";
-        
+
         $stmt = $conn->prepare($sql);
     }
-    
+
     $stmt->execute();
     $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // Format events for FullCalendar
     $events = [];
     foreach ($reservations as $reservation) {
@@ -74,14 +76,14 @@ try {
             'borderColor' => getColorByStatus($reservation['status'])
         ];
     }
-    
+
     echo json_encode([
         'status' => true,
         'data' => $events,
         'count' => count($events)
     ]);
-    
-} catch(PDOException $e) {
+
+} catch (PDOException $e) {
     echo json_encode([
         'status' => false,
         'msg' => 'Error: ' . $e->getMessage(),
@@ -89,8 +91,9 @@ try {
     ]);
 }
 
-function getColorByStatus($status) {
-    switch(strtolower($status)) {
+function getColorByStatus($status)
+{
+    switch (strtolower($status)) {
         case 'confirmed':
         case 'approved':
             return '#6366f1'; // Primary color

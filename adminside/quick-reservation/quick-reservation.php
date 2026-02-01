@@ -44,6 +44,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fetch_bookings') {
                 INNER JOIN users u ON r.user_id = u.user_id
                 WHERE r.facility_name = :facility
                 AND r.status IN ('confirmed', 'approved', 'pending', 'rejected')
+                AND r.overwriteable = 0
                 ORDER BY r.event_start_date DESC, r.time_start DESC";
 
         $stmt = $conn->prepare($sql);
@@ -107,13 +108,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $note = isset($_POST['note']) ? trim($_POST['note']) : '';
 
     // Validation
-    if (empty($facility) || empty($date) || empty($timeStart) || empty($timeEnd) || empty($phone)) {
+    // Validation (phone removed from required check)
+    if (empty($facility) || empty($date) || empty($timeStart) || empty($timeEnd)) {
         echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
         exit();
     }
 
-    // Validate phone number format
-    if (!preg_match('/^09\d{9}$/', $phone)) {
+    // Validate phone number format (only if provided)
+    if (!empty($phone) && !preg_match('/^09\d{9}$/', $phone)) {
         echo json_encode(['success' => false, 'message' => 'Invalid phone number format']);
         exit();
     }
@@ -135,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                      WHERE facility_name = :facility 
                      AND event_start_date = :date 
                      AND status IN ('confirmed', 'approved', 'pending')
+                     AND overwriteable = 0
                      AND (
                          (time_start < :time_end AND time_end > :time_start)
                      )";
@@ -174,12 +177,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit();
     }
 
+    // Calculate cost if phone number is provided
+    $cost = 0;
+    if (!empty($phone)) {
+        $facilityPrices = [
+            'Chapel' => 500,
+            'Basketball Court' => 100,
+            'Multipurpose Hall' => 600,
+            'Tennis Court' => 400
+        ];
+
+        $costPerHour = isset($facilityPrices[$facility]) ? $facilityPrices[$facility] : 350;
+
+        // Parse time strings (format: HH:mm)
+        $startTime = new DateTime('2000-01-01 ' . $timeStart);
+        $endTime = new DateTime('2000-01-01 ' . $timeEnd);
+        $interval = $startTime->diff($endTime);
+        $hours = $interval->h + ($interval->i / 60);
+
+        $cost = $costPerHour * $hours;
+    }
+
+
     // ✅ FIXED: Insert reservation with user_role included
     try {
         $insertSql = "INSERT INTO reservations 
-                      (user_id, user_role, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, status, created_at) 
+                      (user_id, user_role, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, cost, status, created_at) 
                       VALUES 
-                      (:user_id, :user_role, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'approved', NOW())";
+                      (:user_id, :user_role, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, :cost, 'approved', NOW())";
 
         $insertStmt = $conn->prepare($insertSql);
         $insertStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
@@ -191,9 +216,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $insertStmt->bindParam(':time_end', $timeEnd, PDO::PARAM_STR);
         $insertStmt->bindParam(':phone', $phone, PDO::PARAM_STR);
         $insertStmt->bindParam(':note', $note, PDO::PARAM_STR);
+        $insertStmt->bindParam(':cost', $cost, PDO::PARAM_STR);
 
         $insertStmt->execute();
         $newReservationId = $conn->lastInsertId();
+
 
         // LOGGING: Admin occupied a slot
         try {
@@ -678,9 +705,9 @@ $loggedInUserProfilePic = $profilePic;
 
                     <!-- Phone Number -->
                     <div class="form-group mb-3">
-                        <label for="phone">Phone Number: <span class="text-danger">*</span></label>
+                        <label for="phone">Phone Number: <span class="text-muted">(Optional)</span></label>
                         <input type="text" class="form-control" id="phone" name="phone" placeholder="09123456789"
-                            maxlength="11" pattern="^09\d{9}$" required>
+                            maxlength="11" pattern="^09\d{9}$">
                         <div class="invalid-feedback" id="phoneFeedback">
                             Please enter a valid Philippine mobile number (e.g., 09123456789)
                         </div>

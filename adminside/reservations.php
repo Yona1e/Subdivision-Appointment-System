@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_reservation'])
 $res_sql = "
 SELECT
     r.id,
+    r.user_id,
     r.facility_name,
     r.phone,
     r.event_start_date,
@@ -54,12 +55,15 @@ SELECT
     r.note,
     r.updated_at,
     r.payment_proof,
+    r.cost,
     u.FirstName,
-    u.LastName
+    u.LastName,
+    u.Role
 FROM reservations r
 LEFT JOIN users u ON r.user_id = u.user_id
 WHERE r.status IN ('approved','rejected')
 AND r.admin_visible = 1
+AND r.overwriteable = 0
 ORDER BY r.updated_at DESC, r.id DESC";
 
 $reservations = $conn->query($res_sql);
@@ -92,6 +96,12 @@ while ($f = $facility_list->fetch_assoc()) {
             object-fit: contain;
             border-radius: 10px;
             border: 1px solid #ddd;
+        }
+
+        /* Hide ID column to match reserverequests format */
+        table thead th:first-child,
+        table tbody td:first-child {
+            display: none;
         }
     </style>
 </head>
@@ -227,11 +237,12 @@ while ($f = $facility_list->fetch_assoc()) {
                         <table class="table table-hover">
                             <thead class="table-dark">
                                 <tr>
+                                    <th class="id-column">ID</th>
                                     <th>Facility</th>
-                                    <th>Phone</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
                                     <th>User</th>
+                                    <th>Phone</th>
+                                    <th>Event Date</th>
+                                    <th>Time</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -245,13 +256,20 @@ while ($f = $facility_list->fetch_assoc()) {
                                         data-phone="<?= htmlspecialchars($row['phone']) ?>"
                                         data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?>"
                                         data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
+                                        data-cost="<?= number_format($row['cost'] ?? 0, 2) ?>"
                                         data-status="<?= ucfirst($row['status']) ?>"
                                         data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
                                         data-updated="<?= date('M d, Y g:i A', strtotime($row['updated_at'])) ?>"
                                         data-payment="<?= htmlspecialchars($row['payment_proof']) ?>">
 
+                                        <td class="id-column">
+                                            <?= $row['id'] ?>
+                                        </td>
                                         <td>
                                             <?= htmlspecialchars($row['facility_name']) ?>
+                                        </td>
+                                        <td>
+                                            <?= htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']) ?>
                                         </td>
                                         <td>
                                             <?= htmlspecialchars($row['phone']) ?>
@@ -259,12 +277,10 @@ while ($f = $facility_list->fetch_assoc()) {
                                         <td>
                                             <?= date('M d, Y', strtotime($row['event_start_date'])) ?>
                                         </td>
+
                                         <td>
                                             <?= date('g:i A', strtotime($row['time_start'])) ?> -
                                             <?= date('g:i A', strtotime($row['time_end'])) ?>
-                                        </td>
-                                        <td>
-                                            <?= htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']) ?>
                                         </td>
                                         <td>
                                             <span
@@ -273,10 +289,28 @@ while ($f = $facility_list->fetch_assoc()) {
                                             </span>
                                         </td>
                                         <td>
-                                            <form method="POST">
+                                            <?php if ($row['status'] !== 'rejected'): ?>
+                                                <?php
+                                                // Determine Invoice Link & Visibility
+                                                $isResident = !empty($row['user_id']) && isset($row['Role']) && $row['Role'] === 'Resident';
+
+                                                // Show PDF if it's a Resident OR if it's an Admin reservation with a phone number
+                                                $showPdf = $isResident || (!empty($row['phone']));
+
+                                                if ($showPdf):
+                                                    $invoiceLink = $isResident
+                                                        ? 'invoice-resident.php?id=' . $row['id']
+                                                        : 'invoice.php?id=' . $row['id'];
+                                                    ?>
+                                                    <a href="<?= $invoiceLink ?>" class="btn btn-sm btn-primary mb-1">
+                                                        <i class="bi bi-file-pdf"></i> PDF
+                                                    </a>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+
+                                            <form method="POST" class="d-inline">
                                                 <input type="hidden" name="reservation_id" value="<?= $row['id'] ?>">
-                                                <button name="delete_reservation"
-                                                    class="btn btn-sm btn-outline-danger delete-btn">
+                                                <button name="delete_reservation" class="btn btn-sm btn-danger delete-btn">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </button>
                                             </form>
@@ -307,7 +341,8 @@ while ($f = $facility_list->fetch_assoc()) {
                     <p><strong>Phone:</strong> <span id="mPhone"></span></p>
                     <p><strong>Date:</strong> <span id="mDate"></span></p>
                     <p><strong>Time:</strong> <span id="mTime"></span></p>
-                    <p><strong>Status:</strong> <span id="mStatus"></span></p>
+                    <p><strong>Cost:</strong> &#8369;<span id="mCost"></span></p>
+                    <p><strong>Status:</strong> <span class="badge" id="mStatusBadge"></span></p>
                     <p><strong>Updated:</strong> <span id="mUpdated"></span></p>
 
                     <hr>
@@ -327,14 +362,19 @@ while ($f = $facility_list->fetch_assoc()) {
     <script>
         document.querySelectorAll('.reservation-row').forEach(row => {
             row.addEventListener('click', e => {
-                if (e.target.closest('form')) return;
+                if (e.target.closest('form') || e.target.closest('a')) return;
 
                 mFacility.textContent = row.dataset.facility;
                 mUser.textContent = row.dataset.user;
                 mPhone.textContent = row.dataset.phone;
                 mDate.textContent = row.dataset.date;
                 mTime.textContent = row.dataset.time;
-                mStatus.textContent = row.dataset.status;
+                mCost.textContent = row.dataset.cost;
+
+                const statusBadge = document.getElementById('mStatusBadge');
+                statusBadge.textContent = row.dataset.status;
+                statusBadge.className = 'badge ' + (row.dataset.status === 'Approved' ? 'bg-success' : 'bg-danger');
+
                 mUpdated.textContent = row.dataset.updated;
                 mNote.textContent = row.dataset.note;
 

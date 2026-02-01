@@ -26,10 +26,10 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-} catch(PDOException $e) {
+} catch (PDOException $e) {
     echo json_encode([
         'status' => false,
-        'msg' => 'Database connection failed. Please try again later.' 
+        'msg' => 'Database connection failed. Please try again later.'
     ]);
     exit();
 }
@@ -158,7 +158,7 @@ $payment_proof_path = null;
 
 if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['payment_proof'];
-    
+
     $maxFileSize = 5 * 1024 * 1024;
     if ($file['size'] > $maxFileSize) {
         echo json_encode([
@@ -167,12 +167,12 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
         ]);
         exit();
     }
-    
+
     $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
-    
+
     if (!in_array($mimeType, $allowedTypes)) {
         echo json_encode([
             'status' => false,
@@ -180,16 +180,16 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
         ]);
         exit();
     }
-    
+
     $uploadDir = '../uploads/payment_proofs/';
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    
+
     $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $uniqueFileName = 'payment_' . $user_id . '_' . time() . '_' . uniqid() . '.' . $fileExtension;
     $targetPath = $uploadDir . $uniqueFileName;
-    
+
     if (move_uploaded_file($file['tmp_name'], $targetPath)) {
         $payment_proof_path = 'uploads/payment_proofs/' . $uniqueFileName;
     } else {
@@ -214,10 +214,11 @@ try {
                    WHERE facility_name = :facility_name 
                    AND event_start_date = :event_start_date 
                    AND status IN ('pending', 'approved')
+                   AND overwriteable = 0
                    AND (
                        (time_start < :time_end AND time_end > :time_start)
                    )";
-    
+
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->execute([
         ':facility_name' => $facility_name,
@@ -225,29 +226,29 @@ try {
         ':time_start' => $time_start,
         ':time_end' => $time_end
     ]);
-    
+
     $conflict = $checkStmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($conflict) {
         if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
             unlink('../' . $payment_proof_path);
         }
-        
+
         error_log("Booking conflict detected: " . print_r($conflict, true));
-        
+
         echo json_encode([
             'status' => false,
             'msg' => 'This time slot is already booked. Please select another time or date.'
         ]);
         exit();
     }
-    
+
     // Check if user_role column exists
     $checkColumnQuery = "SHOW COLUMNS FROM reservations LIKE 'user_role'";
     $columnStmt = $conn->prepare($checkColumnQuery);
     $columnStmt->execute();
     $columnExists = $columnStmt->fetch();
-    
+
     // Insert with or without user_role based on column existence
     if ($columnExists) {
         $sql = "INSERT INTO reservations 
@@ -256,7 +257,7 @@ try {
                 VALUES 
                 (:user_id, :user_role, :facility_name, :phone, :event_start_date, :event_end_date, 
                  :time_start, :time_end, :note, :cost, :payment_proof, 'pending', TRUE, TRUE, NOW())";
-        
+
         $stmt = $conn->prepare($sql);
         $result = $stmt->execute([
             ':user_id' => $user_id,
@@ -278,7 +279,7 @@ try {
                 VALUES 
                 (:user_id, :facility_name, :phone, :event_start_date, :event_end_date, 
                  :time_start, :time_end, :note, :cost, :payment_proof, 'pending', TRUE, TRUE, NOW())";
-        
+
         $stmt = $conn->prepare($sql);
         $result = $stmt->execute([
             ':user_id' => $user_id,
@@ -293,10 +294,10 @@ try {
             ':payment_proof' => $payment_proof_path
         ]);
     }
-    
+
     if ($result) {
         $reservation_id = $conn->lastInsertId();
-        
+
         echo json_encode([
             'status' => true,
             'msg' => 'Reservation saved successfully! Your booking is pending approval.',
@@ -307,20 +308,20 @@ try {
         if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
             unlink('../' . $payment_proof_path);
         }
-        
+
         echo json_encode([
             'status' => false,
             'msg' => 'Failed to save reservation. Please try again.'
         ]);
     }
-    
-} catch(PDOException $e) {
+
+} catch (PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
-    
+
     if ($payment_proof_path && file_exists('../' . $payment_proof_path)) {
         unlink('../' . $payment_proof_path);
     }
-    
+
     echo json_encode([
         'status' => false,
         'msg' => 'An error occurred while saving your reservation. Please try again.'

@@ -35,11 +35,11 @@ $profilePic = (!empty($user['ProfilePictureURL']) && file_exists('../' . $user['
 $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
 
 // FETCH DASHBOARD COUNTS
-$pending_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='pending' AND admin_visible = 1");
+$pending_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='pending' AND admin_visible = 1 AND overwriteable = 0");
 $pending_count = $pending_query->fetch_assoc()['total'];
 
 // Changed: Rejected requests count
-$rejected_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='rejected' AND admin_visible = 1");
+$rejected_query = $conn->query("SELECT COUNT(*) AS total FROM reservations WHERE status='rejected' AND admin_visible = 1 AND overwriteable = 0");
 $rejected_count = $rejected_query->fetch_assoc()['total'];
 
 $total_accounts_query = $conn->query("SELECT COUNT(*) AS total FROM users WHERE Status='Active'");
@@ -53,6 +53,7 @@ $completed_week_query = $conn->query("
     AND event_end_date < CURDATE() 
     AND YEARWEEK(event_end_date, 1) = YEARWEEK(CURDATE(), 1)
     AND admin_visible = 1
+    AND overwriteable = 0
 ");
 $completed_week_count = $completed_week_query->fetch_assoc()['total'];
 
@@ -64,6 +65,7 @@ $status_query = $conn->query("
         SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) AS pending
     FROM reservations 
     WHERE admin_visible = 1
+    AND overwriteable = 0
 ");
 $status_data = $status_query->fetch_assoc();
 
@@ -88,7 +90,7 @@ $recent_audit_result = $conn->query($recent_audit_sql);
 $pending_requests_sql = "SELECT r.*, u.FirstName, u.LastName 
                          FROM reservations r
                          JOIN users u ON r.user_id = u.user_id
-                         WHERE r.status='pending' AND r.admin_visible = 1
+                         WHERE r.status='pending' AND r.admin_visible = 1 AND r.overwriteable = 0
                          ORDER BY r.created_at DESC";
 $pending_requests_result = $conn->query($pending_requests_sql);
 
@@ -100,6 +102,7 @@ $completed_week_sql = "SELECT r.*, u.FirstName, u.LastName
                        AND r.event_end_date < CURDATE() 
                        AND YEARWEEK(r.event_end_date, 1) = YEARWEEK(CURDATE(), 1)
                        AND r.admin_visible = 1
+                       AND r.overwriteable = 0
                        ORDER BY r.event_end_date DESC";
 $completed_week_result = $conn->query($completed_week_sql);
 ?>

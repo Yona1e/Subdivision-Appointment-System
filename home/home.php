@@ -33,15 +33,18 @@ $profilePic = (!empty($user['ProfilePictureURL']) && file_exists('../' . $user['
 $userName = htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']);
 
 /* STATISTICS */
-$totalReservations = $conn->prepare("SELECT COUNT(*) FROM reservations WHERE user_id = ?");
-$totalReservations->execute([$user_id]);
+$totalReservations = $conn->prepare("SELECT COUNT(*) FROM reservations WHERE status = 'approved' AND event_start_date >= ? AND overwriteable = 0");
+$totalReservations->execute([$today]);
 $totalReservations = $totalReservations->fetchColumn();
 
+$now = date('H:i:s');
 $upcomingReservations = $conn->prepare(
     "SELECT COUNT(*) FROM reservations 
-     WHERE user_id = ? AND status='approved' AND event_start_date >= ?"
+     WHERE status='approved' 
+     AND overwriteable = 0
+     AND (event_start_date > ? OR (event_start_date = ? AND time_start > ?))"
 );
-$upcomingReservations->execute([$user_id, $today]);
+$upcomingReservations->execute([$today, $today, $now]);
 $upcomingReservations = $upcomingReservations->fetchColumn();
 
 $facilitiesToday = $conn->query(
@@ -224,13 +227,16 @@ $todayNotifications = $todayNotificationsStmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="sidebar-content">
                 <ul class="menu-list">
                     <li class="menu-item"><a href="../home/home.php" class="menu-link active"><img
-                                src="../asset/home.png" class="menu-icon">Home</a></li>
+                                src="../asset/home.png" class="menu-icon"><span class="menu-label">Home</span></a></li>
                     <li class="menu-item"><a href="../resident-side/make-reservation.php" class="menu-link"><img
-                                src="../asset/makeareservation.png" class="menu-icon">Make a Reservation</a></li>
+                                src="../asset/makeareservation.png" class="menu-icon"><span class="menu-label">Make a
+                                Reservation</span></a></li>
                     <li class="menu-item"><a href="../my-reservations/myreservations.php" class="menu-link"><img
-                                src="../asset/reservations.png" class="menu-icon">My Reservations</a></li>
+                                src="../asset/reservations.png" class="menu-icon"><span class="menu-label">My
+                                Reservations</span></a></li>
                     <li class="menu-item"><a href="../my-account/my-account.php" class="menu-link"><img
-                                src="../asset/profile.png" class="menu-icon">My Account</a></li>
+                                src="../asset/profile.png" class="menu-icon"><span class="menu-label">My
+                                Account</span></a></li>
                 </ul>
             </div>
 
