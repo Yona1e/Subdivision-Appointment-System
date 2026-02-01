@@ -38,24 +38,62 @@ $message = "";
 /* ========= POST HANDLING ========= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    // Helper function to fetch reservation details for logging
+    function getReservationDetails($conn, $id)
+    {
+        $stmt = $conn->prepare("SELECT * FROM reservations WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        return $res->fetch_assoc();
+    }
+
+    // Helper to log action
+    function logAction($conn, $adminId, $userId, $actionType, $entityId, $details, $remarks = '')
+    {
+        $detailJson = json_encode($details);
+        $stmt = $conn->prepare("INSERT INTO auditlogs (AdminID, UserID, ActionType, EntityType, EntityID, EntityDetails, Remarks, Timestamp) VALUES (?, ?, ?, 'Reservation', ?, ?, ?, NOW())");
+        $stmt->bind_param("iisiss", $adminId, $userId, $actionType, $entityId, $detailJson, $remarks);
+        $stmt->execute();
+    }
+
     if (isset($_POST['approve_reservation'])) {
         $reservation_id = intval($_POST['reservation_id']);
-        $stmt = $conn->prepare("UPDATE reservations SET status = 'approved', reason = NULL WHERE id = ?");
-        $stmt->bind_param("i", $reservation_id);
-        $stmt->execute();
-        $stmt->close();
-        $message = "Reservation #$reservation_id has been approved.";
+
+        // Fetch details BEFORE update for the log
+        $reservationDetails = getReservationDetails($conn, $reservation_id);
+
+        if ($reservationDetails) {
+            $stmt = $conn->prepare("UPDATE reservations SET status = 'approved', reason = NULL WHERE id = ?");
+            $stmt->bind_param("i", $reservation_id);
+
+            if ($stmt->execute()) {
+                // Log the approval
+                logAction($conn, $_SESSION['user_id'], $reservationDetails['user_id'], 'Approved', $reservation_id, $reservationDetails, 'Reservation approved by admin');
+                $message = "Reservation #$reservation_id has been approved.";
+            }
+            $stmt->close();
+        }
     }
 
     if (isset($_POST['confirm_reject'])) {
         $reservation_id = intval($_POST['reservation_id']);
         $reason = trim($_POST['reason']);
 
-        $stmt = $conn->prepare("UPDATE reservations SET status = 'rejected', reason = ? WHERE id = ?");
-        $stmt->bind_param("si", $reason, $reservation_id);
-        $stmt->execute();
-        $stmt->close();
-        $message = "Reservation #$reservation_id has been rejected.";
+        // Fetch details BEFORE update
+        $reservationDetails = getReservationDetails($conn, $reservation_id);
+
+        if ($reservationDetails) {
+            $stmt = $conn->prepare("UPDATE reservations SET status = 'rejected', reason = ? WHERE id = ?");
+            $stmt->bind_param("si", $reason, $reservation_id);
+
+            if ($stmt->execute()) {
+                // Log the rejection
+                logAction($conn, $_SESSION['user_id'], $reservationDetails['user_id'], 'Rejected', $reservation_id, $reservationDetails, "Reason: $reason");
+                $message = "Reservation #$reservation_id has been rejected.";
+            }
+            $stmt->close();
+        }
     }
 }
 
@@ -103,6 +141,15 @@ $reservations = $conn->query($res_sql);
         table thead th:first-child,
         table tbody td:first-child {
             display: none;
+        }
+
+        /* Fix for payment proof image in modal */
+        .payment-proof-img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 1px solid #ddd;
         }
     </style>
 </head>
@@ -156,7 +203,7 @@ $reservations = $conn->query($res_sql);
                     </li>
                     <li class="menu-item">
                         <a href="manageaccounts.php" class="menu-link">
-                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">  
+                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">
                             <span class="menu-label">Manage Accounts</span>
                         </a>
                     </li>

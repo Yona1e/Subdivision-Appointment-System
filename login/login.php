@@ -19,6 +19,8 @@
       <h1>Facility Reservation System</h1>
       <h3></h3>
 
+      <div id="errorMessage" class="alert alert-danger" style="display: none; margin-top: 10px;" role="alert"></div>
+
       <!-- Email Input -->
       <div class="input-box">
         <div class="mb-3 position-relative">
@@ -61,8 +63,10 @@
             const urlParams = new URLSearchParams(window.location.search);
             const error = urlParams.get('error');
 
+            const errorMessage = document.getElementById('errorMessage');
+
             if (error === 'invalid') {
-                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = 'Invalid email or password.';
                 errorMessage.style.display = 'flex';
 
                 // Auto-hide after 5 seconds
@@ -73,6 +77,20 @@
                         errorMessage.style.opacity = '1';
                     }, 300);
                 }, 5000);
+            } else if (error === 'archived') {
+                errorMessage.textContent = 'Your account has been archived. Please contact your administrator to reactivate it.';
+                errorMessage.classList.remove('alert-danger');
+                errorMessage.classList.add('alert-warning');
+                errorMessage.style.display = 'flex';
+
+                // Keep archived message visible longer (12s)
+                setTimeout(function () {
+                    errorMessage.style.opacity = '0';
+                    setTimeout(function () {
+                        errorMessage.style.display = 'none';
+                        errorMessage.style.opacity = '1';
+                    }, 300);
+                }, 12000);
             }
         });
 

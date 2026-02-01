@@ -43,7 +43,6 @@ body {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-    padding-left: 0 !important;
 }
 
 
@@ -107,7 +106,7 @@ body {
 .reservation-card .table {
     width: calc(100% - 12px);
     margin: 0 auto;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .reservation-card .table-dark th {
@@ -132,6 +131,13 @@ body {
     background-color: #f8f9fa;
 }
 
+/* HIDE ID COLUMN (site-wide, reversible)
+   To undo: remove this block or the comment marker */
+.reservation-card .table thead th:first-child,
+.reservation-card .table tbody td:first-child {
+    display: none;
+}
+
 /* ENHANCED: Table hover effect (copied from my-reservations) */
 .table.table-hover tbody tr {
     transition: all 0.3s ease;
@@ -139,10 +145,10 @@ body {
 }
 
 .table.table-hover tbody tr:hover {
-    background: rgba(255,255,255,0.15);
+    background: #f1f5f9;
     backdrop-filter: blur(10px);
     transform: scale(1.01);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 /* ADDED: Badge styling */

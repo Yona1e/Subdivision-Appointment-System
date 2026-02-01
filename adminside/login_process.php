@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    $sql = "SELECT user_id, Email, Password, Role, FirstName, LastName 
+    $sql = "SELECT user_id, Email, Password, Role, FirstName, LastName, Status 
             FROM users 
             WHERE Email = ?";
 
@@ -33,6 +33,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Check password
         if (password_verify($password, $user['Password'])) {
+
+            // If account is archived, notify user
+            if (isset($user['Status']) && strtolower($user['Status']) === 'archived') {
+                header("Location: ../login/login.php?error=archived");
+                exit();
+            }
 
             // Set session variables
             $_SESSION['user_id'] = $user['user_id'];

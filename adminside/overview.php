@@ -67,8 +67,21 @@ $status_query = $conn->query("
 ");
 $status_data = $status_query->fetch_assoc();
 
-// Recent activity log
-$recent_audit_sql = "SELECT * FROM v_audit_logs_detailed ORDER BY Timestamp DESC LIMIT 10";
+// Recent activity log (UPDATED to use JOINs instead of View)
+$recent_audit_sql = "
+    SELECT 
+        a.LogID, 
+        a.ActionType, 
+        a.Timestamp, 
+        a.EntityDetails,
+        u1.FirstName as AdminFirst, u1.LastName as AdminLast, 
+        u2.FirstName as ResidentFirst, u2.LastName as ResidentLast
+    FROM auditlogs a
+    LEFT JOIN users u1 ON a.AdminID = u1.user_id
+    LEFT JOIN users u2 ON a.UserID = u2.user_id
+    ORDER BY a.Timestamp DESC 
+    LIMIT 10
+";
 $recent_audit_result = $conn->query($recent_audit_sql);
 
 // Pending requests (for Quick Actions in chart section)
@@ -184,21 +197,26 @@ $completed_week_result = $conn->query($completed_week_sql);
                 <div class="col-md-4">
                     <div class="card p-3 shadow-sm" style="background:rgba(40, 167, 69, 0.8);">
                         <h6 class="text-white">Completed Reservations This Week</h6>
-                        <h2 class="text-white"><?php echo $completed_week_count; ?></h2>
+                        <h2 class="text-white"><?php echo $completed_week_count; ?>
+                        </h2>
                     </div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="card p-3 shadow-sm" style="background:rgba(220, 53, 69, 0.8);">
                         <h6 class="text-white">Rejected Requests</h6>
-                        <h2 class="text-white"><?php echo $rejected_count; ?></h2>
+                        <h2 class="text-white">
+                            <?php echo $rejected_count; ?>
+                        </h2>
                     </div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="card p-3 shadow-sm" style="background: #0b5ed7;">
                         <h6 class="text-white">Active Accounts</h6>
-                        <h2 class="text-white"><?php echo $total_accounts; ?></h2>
+                        <h2 class="text-white">
+                            <?php echo $total_accounts; ?>
+                        </h2>
                     </div>
                 </div>
             </div>
@@ -234,7 +252,9 @@ $completed_week_result = $conn->query($completed_week_sql);
                                             <div class="request-item mb-3 p-2 border-bottom">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <div>
-                                                        <strong><?= htmlspecialchars($req['facility_name']) ?></strong>
+                                                        <strong>
+                                                            <?= htmlspecialchars($req['facility_name']) ?>
+                                                        </strong>
                                                         <div class="text-muted small">
                                                             <?= htmlspecialchars($req['FirstName'] . ' ' . $req['LastName']) ?>
                                                         </div>
@@ -264,44 +284,58 @@ $completed_week_result = $conn->query($completed_week_sql);
                 <div class="card recent-activity-card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Recent Activity</h5>
-                        <a href="#" class="btn btn-sm">View All</a>
+                        <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal"
+                            data-bs-target="#auditModal">
+                            View All
+                        </button>
                     </div>
                     <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;">
                         <?php while ($log = $recent_audit_result->fetch_assoc()): ?>
                             <?php
-                            $bgClass = 'bg-success';
-                            $iconSymbol = 'check_circle';
-                            $actionText = '';
+                            $actionMessage = '';
+                            $details = json_decode($log['EntityDetails'], true) ?? [];
 
                             switch ($log['ActionType']) {
                                 case 'Approved':
                                     $bgClass = 'bg-success';
                                     $iconSymbol = 'check_circle';
-                                    $actionText = 'approved';
+                                    $actionMessage = 'approved a reservation request';
                                     break;
                                 case 'Rejected':
                                     $bgClass = 'bg-danger';
                                     $iconSymbol = 'cancel';
-                                    $actionText = 'rejected';
+                                    $actionMessage = 'rejected a reservation request';
                                     break;
-                                case 'Event_Created':
-                                    $bgClass = 'bg-primary';
-                                    $iconSymbol = 'add_circle';
-                                    $actionText = 'created';
+                                case 'Event_Created': // Admin created reservation
+                                    $bgClass = 'bg-success';
+                                    $iconSymbol = 'check_circle';
+                                    $actionMessage = 'occupied a reservation slot';
                                     break;
                                 case 'Updated':
                                     $bgClass = 'bg-warning';
                                     $iconSymbol = 'edit';
-                                    $actionText = 'updated';
+                                    $actionMessage = 'updated a reservation request';
                                     break;
+                                default: // Legacy or trigger created
+                                    $bgClass = 'bg-secondary';
+                                    $iconSymbol = 'info';
+                                    $actionMessage = 'performed an action';
                             }
 
-                            $adminName = $log['AdminName'] ?? 'System';
-                            $residentName = $log['ResidentName'] ?? 'Unknown';
-                            $facilityName = $log['FacilityName'] ?? 'Unknown Facility';
-                            $eventDate = $log['EventStartDate'] ? date('F d, Y', strtotime($log['EventStartDate'])) : 'N/A';
-                            $timeRange = ($log['TimeStart'] && $log['TimeEnd']) ? date('g:i A', strtotime($log['TimeStart'])) . ' - ' . date('g:i A', strtotime($log['TimeEnd'])) : '';
+                            // Admin Name
+                            $adminName = trim(($log['AdminFirst'] ?? '') . ' ' . ($log['AdminLast'] ?? '')) ?: 'System';
                             $timestamp = date('F d, Y \a\t g:i A', strtotime($log['Timestamp']));
+
+                            // JSON Parsing for Details
+                            $details = json_decode($log['EntityDetails'], true) ?? [];
+                            $residentName = trim(($log['ResidentFirst'] ?? '') . ' ' . ($log['ResidentLast'] ?? '')) ?: 'Unknown';
+                            $facilityName = $details['facility_name'] ?? 'Unknown Facility';
+                            $eventDate = isset($details['event_start_date']) ? date('F d, Y', strtotime($details['event_start_date'])) : 'N/A';
+
+                            $timeRange = '';
+                            if (!empty($details['time_start']) && !empty($details['time_end'])) {
+                                $timeRange = date('g:i A', strtotime($details['time_start'])) . ' - ' . date('g:i A', strtotime($details['time_end']));
+                            }
                             ?>
                             <div
                                 class="d-flex align-items-start audit-entry <?= $bgClass ?> bg-opacity-10 border border-<?= str_replace('bg-', '', $bgClass); ?>">
@@ -314,15 +348,17 @@ $completed_week_result = $conn->query($completed_week_sql);
                                 <div class="flex-grow-1">
                                     <div class="fw-bold">
                                         <?= htmlspecialchars($adminName); ?>
-                                        <?= $actionText; ?> a reservation request
+                                        <?= $actionMessage; ?>
                                     </div>
                                     <div class="text-muted small">
                                         <?= htmlspecialchars($timestamp); ?>
                                     </div>
                                     <div class="small">
-                                        <span><strong>Resident:</strong>
-                                            <?= htmlspecialchars($residentName); ?>
-                                        </span><br>
+                                        <?php if ($log['ActionType'] !== 'Event_Created'): ?>
+                                            <span><strong>Resident:</strong>
+                                                <?= htmlspecialchars($residentName); ?>
+                                            </span><br>
+                                        <?php endif; ?>
                                         <span><strong>Facility:</strong>
                                             <?= htmlspecialchars($facilityName); ?>
                                         </span><br>
@@ -342,8 +378,12 @@ $completed_week_result = $conn->query($completed_week_sql);
                 </div>
             <?php else: ?>
                 <div class="card mt-4">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Recent Activity</h5>
+                        <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal"
+                            data-bs-target="#auditModal">
+                            View All
+                        </button>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info mb-0">No recent activity found.</div>
@@ -354,6 +394,57 @@ $completed_week_result = $conn->query($completed_week_sql);
         </div> <!-- END MAIN CONTENT -->
 
     </div> <!-- END APP-LAYOUT -->
+
+    <!-- AUDIT LOG MODAL -->
+    <div class="modal fade" id="auditModal" tabindex="-1" aria-labelledby="auditModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="auditModalLabel">All Activity Logs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Search & Filter -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <input type="text" id="auditSearch" class="form-control" placeholder="Search logs...">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center flex-wrap gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input audit-filter" type="checkbox" value="Approved"
+                                    id="filterApproved">
+                                <label class="form-check-label" for="filterApproved">Approved</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input audit-filter" type="checkbox" value="Rejected"
+                                    id="filterRejected">
+                                <label class="form-check-label" for="filterRejected">Rejected</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input audit-filter" type="checkbox" value="Event_Created"
+                                    id="filterAdmin">
+                                <label class="form-check-label" for="filterAdmin">Admin Occupied</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Container -->
+                    <div id="auditLogContainer" class="d-flex flex-column gap-2">
+                        <!-- Ajax Content Here -->
+                        <div class="text-center py-4 text-muted">Loading logs...</div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div class="text-muted small" id="auditPaginationInfo">Showing 0-0 of 0</div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="auditPagination">
+                            <!-- JS Pagination -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Pass PHP data to JavaScript
@@ -367,6 +458,145 @@ $completed_week_result = $conn->query($completed_week_sql);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
     <script src="../resident-side/javascript/chart.js"></script>
     <script src="../resident-side/javascript/sidebar.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let currentPage = 1;
+
+            const modal = document.getElementById('auditModal');
+            const container = document.getElementById('auditLogContainer');
+            const searchInput = document.getElementById('auditSearch');
+            const filters = document.querySelectorAll('.audit-filter');
+            const pagination = document.getElementById('auditPagination');
+            const pageInfo = document.getElementById('auditPaginationInfo');
+
+            let debounceTimer;
+
+            // Fetch Logs Function
+            function fetchLogs(page = 1) {
+                const search = searchInput.value;
+                const checkedFilters = Array.from(filters)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                // Build Query Params
+                const params = new URLSearchParams();
+                params.append('page', page);
+                params.append('search', search);
+                checkedFilters.forEach((f, i) => params.append(`filters[${i}]`, f));
+
+                // Show Loading
+                container.innerHTML = '<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>';
+
+                fetch('fetch_audit_logs.php?' + params.toString())
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status) {
+                            renderLogs(data.data);
+                            renderPagination(data.pagination);
+                        } else {
+                            container.innerHTML = '<div class="alert alert-danger">Error loading logs</div>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        container.innerHTML = '<div class="alert alert-danger">Connection error</div>';
+                    });
+            }
+
+            // Render Logs HTML
+            function renderLogs(logs) {
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info text-center">No logs found matching criteria.</div>';
+                    return;
+                }
+
+                let html = '';
+                logs.forEach(log => {
+                    const bgClass = log.bg_class;
+                    const borderClass = bgClass.replace('bg-', 'border-');
+                    const textClass = bgClass.replace('bg-', '');
+
+                    html += `
+                <div class="d-flex align-items-start audit-entry ${bgClass} bg-opacity-10 border ${borderClass}">
+                    <div class="me-2 mt-1">
+                        <span class="material-symbols-outlined text-white ${textClass === 'secondary' ? 'bg-secondary' : 'bg-' + textClass} rounded-circle d-flex align-items-center justify-content-center" style="width:30px; height:30px; font-size:18px;">
+                            ${log.icon}
+                        </span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-dark">
+                            ${log.admin} ${log.action_message}
+                        </div>
+                        <div class="text-muted small mb-1">
+                            ${log.timestamp}
+                        </div>
+                        <div class="small text-secondary">
+                            ${log.resident ? `<span><strong>Resident:</strong> ${log.resident}</span><br>` : ''}
+                            <span><strong>Facility:</strong> ${log.facility}</span><br>
+                            <span><strong>Date:</strong> ${log.date}</span>
+                            ${log.time ? `<br><span><strong>Time:</strong> ${log.time}</span>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+                });
+                container.innerHTML = html;
+            }
+
+            // Render Pagination Logic
+            function renderPagination(data) {
+                currentPage = data.current_page;
+                const total = data.total_pages;
+
+                pageInfo.textContent = `Showing page ${currentPage} of ${total} (${data.total_records} total)`;
+
+                let html = '';
+
+                // Previous
+                html += `<li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Prev</a>
+                     </li>`;
+
+                // Page Numbers (Simple range for now)
+                for (let i = 1; i <= total; i++) {
+                    if (i == 1 || i == total || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                             </li>`;
+                    } else if (i == currentPage - 2 || i == currentPage + 2) {
+                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                }
+
+                // Next
+                html += `<li class="page-item ${currentPage >= total ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>
+                     </li>`;
+
+                pagination.innerHTML = html;
+            }
+
+            // Global function for onclick pagination
+            window.changePage = function (page) {
+                if (page < 1) return;
+                fetchLogs(page);
+            };
+
+            // Event Listeners
+            modal.addEventListener('shown.bs.modal', () => {
+                fetchLogs(1); // Load first page when opened
+            });
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => fetchLogs(1), 500);
+            });
+
+            filters.forEach(f => {
+                f.addEventListener('change', () => fetchLogs(1));
+            });
+        });
+    </script>
 
 </body>
 

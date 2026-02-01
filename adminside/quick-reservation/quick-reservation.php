@@ -161,29 +161,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // Get admin user_id from session
     $user_id = $_SESSION['user_id'];
 
-    // Insert reservation with 'approved' status (admin bypass - no payment required)
+    // ✅ FIXED: Fetch the user's actual role from the database
+    try {
+        $roleQuery = "SELECT Role FROM users WHERE user_id = :user_id";
+        $roleStmt = $conn->prepare($roleQuery);
+        $roleStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $roleStmt->execute();
+        $roleResult = $roleStmt->fetch(PDO::FETCH_ASSOC);
+        $user_role = $roleResult ? $roleResult['Role'] : 'Resident';
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error fetching user role']);
+        exit();
+    }
+
+    // ✅ FIXED: Insert reservation with user_role included
     try {
         $insertSql = "INSERT INTO reservations 
-                      (user_id, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, status, created_at) 
+                      (user_id, user_role, facility_name, event_start_date, event_end_date, time_start, time_end, phone, note, status, created_at) 
                       VALUES 
-                      (:user_id, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'approved', NOW())";
+                      (:user_id, :user_role, :facility, :start_date, :end_date, :time_start, :time_end, :phone, :note, 'approved', NOW())";
 
         $insertStmt = $conn->prepare($insertSql);
-        $insertStmt->bindParam(':user_id', $user_id);
-        $insertStmt->bindParam(':facility', $facility);
-        $insertStmt->bindParam(':start_date', $date);
-        $insertStmt->bindParam(':end_date', $date);
-        $insertStmt->bindParam(':time_start', $timeStart);
-        $insertStmt->bindParam(':time_end', $timeEnd);
-        $insertStmt->bindParam(':phone', $phone);
-        $insertStmt->bindParam(':note', $note);
+        $insertStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $insertStmt->bindParam(':user_role', $user_role, PDO::PARAM_STR);
+        $insertStmt->bindParam(':facility', $facility, PDO::PARAM_STR);
+        $insertStmt->bindParam(':start_date', $date, PDO::PARAM_STR);
+        $insertStmt->bindParam(':end_date', $date, PDO::PARAM_STR);
+        $insertStmt->bindParam(':time_start', $timeStart, PDO::PARAM_STR);
+        $insertStmt->bindParam(':time_end', $timeEnd, PDO::PARAM_STR);
+        $insertStmt->bindParam(':phone', $phone, PDO::PARAM_STR);
+        $insertStmt->bindParam(':note', $note, PDO::PARAM_STR);
 
         $insertStmt->execute();
+        $newReservationId = $conn->lastInsertId();
+
+        // LOGGING: Admin occupied a slot
+        try {
+            // Build details array for JSON
+            $details = [
+                'facility_name' => $facility,
+                'event_start_date' => $date,
+                'event_end_date' => $date,
+                'time_start' => $timeStart,
+                'time_end' => $timeEnd,
+                'phone' => $phone,
+                'note' => $note
+            ];
+            $detailsJson = json_encode($details);
+
+            $logSql = "INSERT INTO auditlogs (AdminID, UserID, ActionType, EntityType, EntityID, EntityDetails, Remarks, Timestamp) 
+                       VALUES (:admin_id, :user_id, 'Event_Created', 'Reservation', :entity_id, :details, 'Admin occupied slot', NOW())";
+
+            $logStmt = $conn->prepare($logSql);
+            $logStmt->bindParam(':admin_id', $user_id, PDO::PARAM_INT);
+            $logStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT); // Admin is also the user here
+            $logStmt->bindParam(':entity_id', $newReservationId, PDO::PARAM_INT);
+            $logStmt->bindParam(':details', $detailsJson, PDO::PARAM_STR);
+            $logStmt->execute();
+
+        } catch (Exception $logEx) {
+            // Silently fail logging to not disrupt reservation
+        }
 
         echo json_encode([
             'success' => true,
             'message' => 'Reservation created and approved successfully',
-            'reservation_id' => $conn->lastInsertId()
+            'reservation_id' => $newReservationId,
+            'user_role' => $user_role
         ]);
         exit();
 
@@ -541,7 +585,7 @@ $loggedInUserProfilePic = $profilePic;
                     </li>
                     <li class="menu-item">
                         <a href="../manageaccounts.php" class="menu-link">
-                            <img src="../../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">  
+                            <img src="../../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">
                             <span class="menu-label">Manage Accounts</span>
                         </a>
                     </li>

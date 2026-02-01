@@ -93,7 +93,6 @@ while ($f = $facility_list->fetch_assoc()) {
             border-radius: 10px;
             border: 1px solid #ddd;
         }
-
     </style>
 </head>
 
@@ -250,9 +249,7 @@ while ($f = $facility_list->fetch_assoc()) {
                                         data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
                                         data-updated="<?= date('M d, Y g:i A', strtotime($row['updated_at'])) ?>"
                                         data-payment="<?= htmlspecialchars($row['payment_proof']) ?>">
-                                        <td class="id-column">
-                                            <?= $row['id'] ?>
-                                        </td>
+
                                         <td>
                                             <?= htmlspecialchars($row['facility_name']) ?>
                                         </td>
