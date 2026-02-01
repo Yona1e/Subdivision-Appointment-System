@@ -58,16 +58,30 @@ $(document).ready(function () {
     // Form validation
     function validateForm() {
         const phone = $('#phone').val();
-        const phoneValid = /^09\d{9}$/.test(phone);
+        // Only valid check if phone is NOT empty. If empty, it's valid (optional).
+        const startsWith09 = /^09/.test(phone);
+        const isNumeric = /^\d+$/.test(phone);
+        const isLength11 = phone.length === 11;
+
+        let isPhoneValid = true;
+
+        // If phone has value, check validity
+        if (phone.length > 0) {
+            if (!startsWith09 || !isNumeric || !isLength11) {
+                isPhoneValid = false;
+            }
+        }
+
         const timeSlotSelected = selectedTimeSlot !== null;
 
-        if (!phoneValid && phone.length > 0) {
+        if (!isPhoneValid && phone.length > 0) {
             $('#phone').addClass('is-invalid');
         } else {
             $('#phone').removeClass('is-invalid');
         }
 
-        $('#saveReservationBtn').prop('disabled', !(phoneValid && timeSlotSelected));
+        // Enable if time slot is selected AND (phone is empty OR phone is valid)
+        $('#saveReservationBtn').prop('disabled', !(timeSlotSelected && isPhoneValid));
     }
 
     // Submit reservation
@@ -87,7 +101,7 @@ $(document).ready(function () {
             return;
         }
 
-        if (!/^09\d{9}$/.test(phone)) {
+        if (phone.length > 0 && !/^09\d{9}$/.test(phone)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Invalid Phone Number',
@@ -131,7 +145,7 @@ function initializeCalendar() {
     if (window.innerWidth < 576) {
         rightButtons = 'month';
     }
-    
+
     // Determine aspect ratio based on screen size
     let aspectRatio = 1.8;
     if (window.innerWidth < 576) {
@@ -141,7 +155,7 @@ function initializeCalendar() {
     } else if (window.innerWidth < 1024) {
         aspectRatio = 1.5;
     }
-    
+
     $('#calendar').fullCalendar({
         header: {
             left: 'prev,next today',
@@ -155,12 +169,12 @@ function initializeCalendar() {
         contentHeight: 'auto',
         aspectRatio: aspectRatio,
         // validRange removed to show past dates
-        
+
         // Handle window resize for responsive behavior
-        windowResize: function(view) {
+        windowResize: function (view) {
             let newAspectRatio = 1.8;
             let newButtons = 'month,agendaWeek,agendaDay';
-            
+
             if (window.innerWidth < 576) {
                 newAspectRatio = 1.0;
                 newButtons = 'month';
@@ -169,7 +183,7 @@ function initializeCalendar() {
             } else if (window.innerWidth < 1024) {
                 newAspectRatio = 1.5;
             }
-            
+
             $('#calendar').fullCalendar('option', 'aspectRatio', newAspectRatio);
             $('#calendar').fullCalendar('option', 'header', {
                 left: 'prev,next today',
@@ -177,7 +191,7 @@ function initializeCalendar() {
                 right: newButtons
             });
         },
-        
+
         dayClick: function (date) {
             // CRITICAL: Prevent modal opening if no facility selected
             if (!selectedFacility) {
@@ -204,7 +218,7 @@ function initializeCalendar() {
 
             openBookingModal(date);
         },
-        
+
         eventClick: function (event) {
             const statusColors = {
                 'approved': '#10b981',
@@ -230,7 +244,7 @@ function initializeCalendar() {
                 confirmButtonColor: '#3b82f6'
             });
         },
-        
+
         eventRender: function (event, element) {
             element.css('cursor', 'pointer');
         }
@@ -378,11 +392,11 @@ function checkAvailableSlots(date) {
             $(this).css({ 'background-color': '#e9ecef', 'cursor': 'not-allowed', 'opacity': '0.6' }); // Visual feedback
             console.log("Disabling slot (past):", slotStart, "-", slotEnd);
         } else {
-             // Ensure re-enabled if previously disabled (e.g. switching dates)
-             if (!$(this).hasClass('booked')) { // Do not re-enable if it has class booked from somewhere else, although here we rebuild from scratch basically
-                 $(this).removeClass('disabled').prop('disabled', false);
-                 $(this).css({ 'background-color': '', 'cursor': '', 'opacity': '' });
-             }
+            // Ensure re-enabled if previously disabled (e.g. switching dates)
+            if (!$(this).hasClass('booked')) { // Do not re-enable if it has class booked from somewhere else, although here we rebuild from scratch basically
+                $(this).removeClass('disabled').prop('disabled', false);
+                $(this).css({ 'background-color': '', 'cursor': '', 'opacity': '' });
+            }
         }
     });
 }

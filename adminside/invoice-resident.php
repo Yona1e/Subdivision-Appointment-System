@@ -1,9 +1,9 @@
 <?php
 session_start();
-require_once('tcpdf/tcpdf.php'); // Adjust path to your TCPDF library
+require_once('../my-reservations/tcpdf/tcpdf.php'); // Path relative to adminside
 
-// Check if user is logged in
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
+// Check if user is logged in as Admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     header("Location: ../login/login.php");
     exit();
 }
@@ -22,20 +22,20 @@ try {
 }
 
 $reservation_id = $_GET['id'] ?? null;
-$user_id = $_SESSION['user_id'];
 
 if (!$reservation_id) {
     die("Invalid reservation ID");
 }
 
 // Fetch reservation details with user information
+// NOTE: Removed "AND r.user_id = :user_id" so Admin can view ANY resident reservation
 $stmt = $conn->prepare("
     SELECT r.*, u.FirstName, u.LastName, u.Block, u.Lot, u.StreetName, u.Email
     FROM reservations r
     JOIN users u ON r.user_id = u.user_id
-    WHERE r.id = :id AND r.user_id = :user_id
+    WHERE r.id = :id
 ");
-$stmt->execute([':id' => $reservation_id, ':user_id' => $user_id]);
+$stmt->execute([':id' => $reservation_id]);
 $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$reservation) {

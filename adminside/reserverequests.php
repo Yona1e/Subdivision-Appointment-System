@@ -115,12 +115,14 @@ $res_sql = "SELECT
                 r.note,
                 r.created_at,
                 r.payment_proof,
+                r.cost,
                 " . ($notes_column_exists ? "r.notes," : "") . "
                 u.FirstName,
                 u.LastName
             FROM reservations r
             LEFT JOIN users u ON r.user_id = u.user_id
             WHERE LOWER(r.status) = 'pending'
+            AND r.overwriteable = 0
             ORDER BY r.id DESC";
 
 $reservations = $conn->query($res_sql);
@@ -230,6 +232,9 @@ $reservations = $conn->query($res_sql);
                 <div class="page-header">Pending Reservations</div>
 
                 <div class="card-body">
+                    <div class="alert alert-info">
+                        All pending reservations are displayed here. Click a row to view full details.
+                    </div>
 
                     <?php if ($message): ?>
                         <div class="alert alert-success alert-dismissible fade show">
@@ -244,10 +249,10 @@ $reservations = $conn->query($res_sql);
                                 <tr>
                                     <th class="id-column">ID</th>
                                     <th>Facility</th>
+                                    <th>User</th>
                                     <th>Phone</th>
                                     <th>Event Date</th>
                                     <th>Time</th>
-                                    <th>User</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -261,6 +266,7 @@ $reservations = $conn->query($res_sql);
                                         data-phone="<?= htmlspecialchars($row['phone']) ?>"
                                         data-date="<?= date('M d, Y', strtotime($row['event_start_date'])) ?>"
                                         data-time="<?= date('g:i A', strtotime($row['time_start'])) ?> - <?= date('g:i A', strtotime($row['time_end'])) ?>"
+                                        data-cost="<?= number_format($row['cost'] ?? 0, 2) ?>"
                                         data-status="<?= ucfirst($row['status']) ?>"
                                         data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
                                         data-created="<?= date('M d, Y g:i A', strtotime($row['created_at'])) ?>"
@@ -272,17 +278,18 @@ $reservations = $conn->query($res_sql);
                                             <?= htmlspecialchars($row['facility_name']) ?>
                                         </td>
                                         <td>
-                                            <?= htmlspecialchars($row['phone']) ?>
+                                            <?= $row['FirstName'] . ' ' . $row['LastName'] ?>
+                                        </td>
+                                        <td>
+                                                       <?= htmlspecialchars($row['phone']) ?>
+     
                                         </td>
                                         <td>
                                             <?= date('M d, Y', strtotime($row['event_start_date'])) ?>
-                                        </td>
-                                        <td>
-                                            <?= date('g:i A', strtotime($row['time_start'])) ?> -
+                                            </td>
+                                            <td>
+                                                <?= date('g:i A', strtotime($row['time_start'])) ?> -
                                             <?= date('g:i A', strtotime($row['time_end'])) ?>
-                                        </td>
-                                        <td>
-                                            <?= $row['FirstName'] . ' ' . $row['LastName'] ?>
                                         </td>
                                         <td><span class="badge bg-warning text-white">Pending</span></td>
                                         <td>
@@ -332,7 +339,9 @@ $reservations = $conn->query($res_sql);
                     <p><strong>Phone:</strong> <span id="mPhone"></span></p>
                     <p><strong>Date:</strong> <span id="mDate"></span></p>
                     <p><strong>Time:</strong> <span id="mTime"></span></p>
-                    <p><strong>Status:</strong> <span id="mStatus"></span></p>
+                    <p><strong>Cost:</strong> &#8369;<span id="mCost"></span></p>
+                    <p><strong>Status:</strong> <span class="badge bg-warning text-white"
+                            id="mStatusBadge">Pending</span></p>
                     <p><strong>Created:</strong> <span id="mCreated"></span></p>
                     <hr>
                     <p><strong>Resident Note:</strong></p>
@@ -378,7 +387,8 @@ $reservations = $conn->query($res_sql);
                 mPhone.textContent = row.dataset.phone;
                 mDate.textContent = row.dataset.date;
                 mTime.textContent = row.dataset.time;
-                mStatus.textContent = row.dataset.status;
+                mCost.textContent = row.dataset.cost;
+                document.getElementById('mStatusBadge').textContent = row.dataset.status;
                 mCreated.textContent = row.dataset.created;
                 mNote.textContent = row.dataset.note;
 

@@ -28,7 +28,7 @@ try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-} catch(PDOException $e) {
+} catch (PDOException $e) {
     echo json_encode([
         'status' => false,
         'msg' => 'Database connection failed',
@@ -43,7 +43,7 @@ try {
     $columnStmt = $conn->prepare($checkColumnQuery);
     $columnStmt->execute();
     $columnExists = $columnStmt->fetch();
-    
+
     // Build query based on whether user_role column exists
     if ($columnExists) {
         $sql = "SELECT 
@@ -59,9 +59,10 @@ try {
                     user_id,
                     user_role
                 FROM reservations 
-                WHERE status IN ('pending', 'approved', 'completed')
+                WHERE (status IN ('pending', 'approved', 'completed')
                    OR status IS NULL
-                   OR status = ''
+                   OR status = '')
+                   AND (overwriteable = 0)
                 ORDER BY event_start_date ASC, time_start ASC";
     } else {
         // If column doesn't exist, use NULL as default
@@ -78,28 +79,29 @@ try {
                     user_id,
                     NULL as user_role
                 FROM reservations 
-                WHERE status IN ('pending', 'approved', 'completed')
+                WHERE (status IN ('pending', 'approved', 'completed')
                    OR status IS NULL
-                   OR status = ''
+                   OR status = '')
+                   AND (overwriteable = 0)
                 ORDER BY event_start_date ASC, time_start ASC";
     }
-    
+
     $stmt = $conn->prepare($sql);
     $stmt->execute();
-    
+
     $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // Format data for FullCalendar
     $events = [];
-    
+
     foreach ($reservations as $reservation) {
         // Combine date and time for start and end
         $start = $reservation['event_start_date'] . ' ' . $reservation['time_start'];
         $end = $reservation['event_start_date'] . ' ' . $reservation['time_end'];
-        
+
         // Determine color based on status
         $color = '#007bff'; // Default blue
-        switch($reservation['status']) {
+        switch ($reservation['status']) {
             case 'pending':
                 $color = '#ffc107'; // Yellow/Orange
                 break;
@@ -113,10 +115,10 @@ try {
                 $color = '#6c757d'; // Gray
                 break;
         }
-        
+
         // Get user_role, default to 'Resident' if NULL or empty
         $userRole = !empty($reservation['user_role']) ? $reservation['user_role'] : 'Resident';
-        
+
         // Build event object
         $event = [
             'id' => $reservation['event_id'],
@@ -131,19 +133,19 @@ try {
             'user_role' => $userRole,  // NOW INCLUDED
             'allDay' => false
         ];
-        
+
         $events[] = $event;
     }
-    
+
     echo json_encode([
         'status' => true,
         'msg' => 'Events loaded successfully',
         'data' => $events
     ]);
-    
-} catch(PDOException $e) {
+
+} catch (PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
-    
+
     echo json_encode([
         'status' => false,
         'msg' => 'Error fetching events',

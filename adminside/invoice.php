@@ -1,9 +1,9 @@
 <?php
 session_start();
-require_once('tcpdf/tcpdf.php'); // Adjust path to your TCPDF library
+require_once('../my-reservations/tcpdf/tcpdf.php'); // Path to TCPDF in my-reservations folder
 
-// Check if user is logged in
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Resident') {
+// Check if user is logged in as Admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     header("Location: ../login/login.php");
     exit();
 }
@@ -22,20 +22,20 @@ try {
 }
 
 $reservation_id = $_GET['id'] ?? null;
-$user_id = $_SESSION['user_id'];
 
 if (!$reservation_id) {
     die("Invalid reservation ID");
 }
 
 // Fetch reservation details with user information
+// NOTE: Removed "AND r.user_id = :user_id" so Admin can view ANY reservation
 $stmt = $conn->prepare("
     SELECT r.*, u.FirstName, u.LastName, u.Block, u.Lot, u.StreetName, u.Email
     FROM reservations r
     JOIN users u ON r.user_id = u.user_id
-    WHERE r.id = :id AND r.user_id = :user_id
+    WHERE r.id = :id
 ");
-$stmt->execute([':id' => $reservation_id, ':user_id' => $user_id]);
+$stmt->execute([':id' => $reservation_id]);
 $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$reservation) {
@@ -74,29 +74,29 @@ $pdf->SetFont('helvetica', '', 10);
 
 // Left side - Issued to
 $pdf->Cell(100, 6, 'Issued to:', 0, 0, 'L');
+
 $pdf->SetFont('helvetica', '', 10);
-$pdf->Cell(0, 6, 'Invoice No:', 0, 1, 'L');
+$pdf->Cell(0, 6, 'Invoice No:', 0, 1, 'R');
 
 $pdf->SetFont('helvetica', 'B', 10);
-$fullName = htmlspecialchars($reservation['FirstName'] . ' ' . $reservation['LastName']);
-$pdf->Cell(100, 6, $fullName, 0, 0, 'L');
-$pdf->SetFont('helvetica', '', 10);
+// Blank name
+$pdf->Cell(100, 6, '', 0, 0, 'L');
+
 $invoiceNo = 'INV-' . str_pad($reservation['id'], 6, '0', STR_PAD_LEFT);
-$pdf->Cell(0, 6, $invoiceNo, 0, 1, 'L');
+$pdf->Cell(0, 6, $invoiceNo, 0, 1, 'R');
+
+$pdf->SetFont('helvetica', '', 10);
+// Blank address line 1
+$pdf->Cell(100, 6, '', 0, 0, 'L');
+
+$pdf->Cell(0, 6, 'Date Issued:', 0, 1, 'R');
 
 $pdf->SetFont('helvetica', 'B', 10);
-// Format address line
-$address = 'Block ' . htmlspecialchars($reservation['Block']) . ', Lot ' . htmlspecialchars($reservation['Lot']) . ',';
-$pdf->Cell(100, 6, $address, 0, 0, 'L');
-$pdf->SetFont('helvetica', '', 10);
-$pdf->Cell(0, 6, 'Date Issued:', 0, 1, 'L');
+// Blank address line 2
+$pdf->Cell(100, 6, '', 0, 0, 'L');
 
-$pdf->SetFont('helvetica', 'B', 10);
-$streetName = htmlspecialchars($reservation['StreetName']);
-$pdf->Cell(100, 6, $streetName, 0, 0, 'L');
-$pdf->SetFont('helvetica', '', 10);
 $dateIssued = date('M d, Y', strtotime($reservation['created_at']));
-$pdf->Cell(0, 6, $dateIssued, 0, 1, 'L');
+$pdf->Cell(0, 6, $dateIssued, 0, 1, 'R');
 
 $pdf->Ln(8);
 

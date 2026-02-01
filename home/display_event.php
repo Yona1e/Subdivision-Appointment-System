@@ -35,6 +35,7 @@ $stmt = $conn->prepare("
     FROM reservations
     WHERE status = 'approved'
       AND event_start_date = ?
+      AND overwriteable = 0
 ");
 $stmt->execute([$today]);
 
@@ -43,9 +44,9 @@ $facilities = [];
 
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $events[] = [
-        'title'  => $row['facility_name'], // REQUIRED by your JS
-        'start'  => $row['event_start_date'] . ' ' . $row['time_start'],
-        'end'    => $row['event_start_date'] . ' ' . $row['time_end'],
+        'title' => $row['facility_name'], // REQUIRED by your JS
+        'start' => $row['event_start_date'] . ' ' . $row['time_start'],
+        'end' => $row['event_start_date'] . ' ' . $row['time_end'],
         'status' => 'approved'
     ];
 
