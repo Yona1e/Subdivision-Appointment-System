@@ -50,6 +50,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Remember Me
             if (isset($_POST['remember'])) {
                 setcookie('email', $email, time() + (86400 * 30), "/");
+            } else {
+                if (isset($_COOKIE['email'])) {
+                    setcookie('email', '', time() - 3600, "/");
+                }
             }
 
             // Redirect based on role

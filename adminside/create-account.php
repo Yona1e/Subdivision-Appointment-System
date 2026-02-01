@@ -85,19 +85,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lot = trim($_POST['lot']);
     $streetName = trim($_POST['street_name']);
 
-    // Validate required fields (birthday is optional)
+    // Validate required fields
     if (
         empty($firstName) || empty($lastName) || empty($email) || empty($password) ||
-        empty($role) || empty($block) || empty($lot) || empty($streetName)
+        empty($role) || empty($block) || empty($lot) || empty($streetName) || empty($birthday)
     ) {
-        $_SESSION['error'] = "All fields except birthday are required!";
+        $_SESSION['error'] = "All fields are required!";
         header("Location: create-account.php");
         exit();
     }
 
-    // Validate email format
+    // Validate Names (Letters and spaces only)
+    if (!preg_match("/^[a-zA-Z\s]+$/", $firstName) || !preg_match("/^[a-zA-Z\s]+$/", $lastName)) {
+        $_SESSION['error'] = "Names must contain letters only!";
+        header("Location: create-account.php");
+        exit();
+    }
+    // Auto-capitalize names
+    $firstName = ucwords(strtolower($firstName));
+    $lastName = ucwords(strtolower($lastName));
+
+    // Validate Block and Lot (Numbers only, max 2 chars)
+    if (!ctype_digit($block) || strlen($block) > 2) {
+        $_SESSION['error'] = "Block must be a number with max 2 digits!";
+        header("Location: create-account.php");
+        exit();
+    }
+    if (!ctype_digit($lot) || strlen($lot) > 2) {
+        $_SESSION['error'] = "Lot must be a number with max 2 digits!";
+        header("Location: create-account.php");
+        exit();
+    }
+
+    // Validate email format (Standard + Strict TLD check)
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['error'] = "Invalid email format!";
+        header("Location: create-account.php");
+        exit();
+    }
+    // Strict TLD check: Must contain only letters (no numbers like .com1)
+    if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $email)) {
+        $_SESSION['error'] = "Invalid email domain! TLD must contain letters only.";
         header("Location: create-account.php");
         exit();
     }
@@ -109,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Validate birthday if provided
+    // Validate birthday and age (Must be 18+)
     if ($birthday !== null) {
         $dateObj = DateTime::createFromFormat('Y-m-d', $birthday);
         if (!$dateObj || $dateObj->format('Y-m-d') !== $birthday) {
@@ -119,8 +147,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Check if birthday is not in the future
-        if ($dateObj > new DateTime()) {
+        $today = new DateTime();
+        if ($dateObj > $today) {
             $_SESSION['error'] = "Birthday cannot be in the future!";
+            header("Location: create-account.php");
+            exit();
+        }
+
+        // Check age >= 18
+        $age = $getAge = $dateObj->diff($today)->y;
+        if ($age < 18) {
+            $_SESSION['error'] = "Account creation failed. User must be at least 18 years old.";
             header("Location: create-account.php");
             exit();
         }
@@ -325,7 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </li>
                     <li class="menu-item">
                         <a href="manageaccounts.php" class="menu-link">
-                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">  
+                            <img src="../asset/manage2.png" alt="Manage Accounts Icon" class="menu-icon">
                             <span class="menu-label">Manage Accounts</span>
                         </a>
                     </li>
@@ -399,11 +436,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label">Birthday <span
-                                            class="text-muted">(Optional)</span></label>
-                                    <input type="date" class="form-control" name="birthday" max="<?= date('Y-m-d') ?>"
-                                        id="birthdayInput">
-                                    <small class="text-muted">Leave blank if unknown</small>
+                                    <label class="form-label">Birthday <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="birthday"
+                                        max="<?= date('Y-m-d', strtotime('-18 years')) ?>" id="birthdayInput" required>
                                 </div>
                             </div>
 
@@ -449,13 +484,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="col-md-4">
                                     <label class="form-label">Block <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="block" placeholder="e.g., 5" required
-                                        maxlength="64">
+                                        maxlength="2" id="blockInput">
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label">Lot <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="lot" placeholder="e.g., 12" required
-                                        maxlength="64">
+                                        maxlength="2" id="lotInput">
                                 </div>
 
                                 <div class="col-md-4">
@@ -514,8 +549,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const selectedDate = new Date(e.target.value);
             const today = new Date();
 
+            // Calculate age
+            let age = today.getFullYear() - selectedDate.getFullYear();
+            const m = today.getMonth() - selectedDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < selectedDate.getDate())) {
+                age--;
+            }
+
             if (selectedDate > today) {
                 alert('Birthday cannot be in the future.');
+                e.target.value = '';
+            } else if (age < 18) {
+                alert('User must be at least 18 years old.');
                 e.target.value = '';
             }
         });
@@ -529,6 +574,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 alert('Password must be at least 6 characters long.');
                 return false;
             }
+
+            // Email Validation (Strict TLD)
+            const email = document.querySelector('input[name="email"]').value;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Invalid email format. Domain must contain letters only (e.g., .com, .ph).');
+                return false;
+            }
+
+            const birthday = document.querySelector('input[name="birthday"]').value;
+            if (!birthday) {
+                e.preventDefault();
+                alert('Birthday is required.');
+                return false;
+            }
+        });
+
+        // Name Validation: Letters only, Auto-Capitalize
+        function validateNameInput(input) {
+            // Remove non-letters/spaces
+            input.value = input.value.replace(/[^a-zA-Z\s]/g, '');
+
+            // Auto-capitalize first letter of each word
+            const words = input.value.split(' ');
+            for (let i = 0; i < words.length; i++) {
+                if (words[i].length > 0) {
+                    words[i] = words[i][0].toUpperCase() + words[i].substr(1);
+                }
+            }
+            input.value = words.join(' ');
+        }
+
+        const nameInputs = document.querySelectorAll('input[name="first_name"], input[name="last_name"]');
+        nameInputs.forEach(input => {
+            input.addEventListener('input', function () {
+                validateNameInput(this);
+            });
+        });
+
+        // Block & Lot Validation: Numbers only, max 2 digits
+        const numberInputs = document.querySelectorAll('input[name="block"], input[name="lot"]');
+        numberInputs.forEach(input => {
+            input.addEventListener('input', function () {
+                // Remove non-numbers
+                this.value = this.value.replace(/[^0-9]/g, '');
+
+                // Enforce max length 2
+                if (this.value.length > 2) {
+                    this.value = this.value.slice(0, 2);
+                }
+            });
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"

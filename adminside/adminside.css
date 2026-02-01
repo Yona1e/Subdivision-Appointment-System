@@ -147,7 +147,7 @@ body {
 .table.table-hover tbody tr:hover {
     background: #f1f5f9;
     backdrop-filter: blur(10px);
-    transform: scale(1.01);
+    /* transform: scale(1.01); Removed to prevent horizontal scrollbar */
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 

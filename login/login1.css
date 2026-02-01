@@ -34,7 +34,7 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding: 50px 40px;
+  padding: 30px 40px 45px 40px;
   border-radius: 24px;
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.3),
@@ -71,6 +71,20 @@ body {
   background-clip: text;
 
   animation: fadeInDown 0.8s ease-out 0.2s backwards;
+}
+
+/* Logo Styling */
+.login-logo {
+  width: 135px;
+  height: 125px;
+  object-fit: contain;
+  /* Prevents distortion */
+  display: block;
+  margin: 0 auto;
+  /* border-radius: 50%; Removed to ensure all details are visible */
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  /* Better shadow for irregular shapes */
+  animation: fadeInDown 0.8s ease-out 0.3s backwards;
 }
 
 /* Input Icons */

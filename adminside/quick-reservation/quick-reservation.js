@@ -2,6 +2,7 @@ let selectedFacility = null;
 let selectedTimeSlot = null;
 let currentBookings = [];
 let currentUserRole = 'Resident'; // Default to Resident, will be set from PHP session
+let rangeStartSlot = null; // Track start of range selection
 
 $(document).ready(function () {
     // Get user role from the page (should be set by PHP in a data attribute or hidden input)
@@ -25,22 +26,89 @@ $(document).ready(function () {
         fetchBookings(selectedFacility);
     });
 
-    // Time slot selection
+    // Time slot selection (Range Selection)
     $(document).on('click', '.slot-btn:not(.disabled):not(:disabled)', function () {
-        $('.slot-btn').removeClass('selected');
-        $(this).addClass('selected');
+        let $clickedSlot = $(this);
+        let clickedStart = $clickedSlot.data('start');
+        let clickedEnd = $clickedSlot.data('end');
 
-        selectedTimeSlot = {
-            start: $(this).data('start'),
-            end: $(this).data('end')
-        };
+        if (rangeStartSlot === null) {
+            // Start of a new range
+            rangeStartSlot = $clickedSlot;
+            $('.slot-btn').removeClass('selected');
+            $clickedSlot.addClass('selected');
+            updateSelection(clickedStart, clickedEnd);
+        } else {
+            let startDisplay = rangeStartSlot.data('start');
 
-        // Update hidden fields
-        $('#selected_time_start').val(selectedTimeSlot.start);
-        $('#selected_time_end').val(selectedTimeSlot.end);
+            if (clickedStart < startDisplay) {
+                // Clicked earlier -> New Start
+                rangeStartSlot = $clickedSlot;
+                $('.slot-btn').removeClass('selected');
+                $clickedSlot.addClass('selected');
+                updateSelection(clickedStart, clickedEnd);
+            } else if (clickedStart === startDisplay) {
+                // Clicked Same -> Keep single
+                updateSelection(clickedStart, clickedEnd);
+            } else {
+                // Range End
+                let $allSlots = $('.slot-btn:not(.disabled):not(:disabled)'); // Only check enabled
+                // Note: Indexing must be based on ALL slots to slice correctly?
+                // Actually slice works on the jQuery collection.
+                // But we need to check ALL slots (even disabled ones) between start and end.
 
-        validateForm();
+                let $absoluteAllSlots = $('.slot-btn');
+                let startIdx = $absoluteAllSlots.index(rangeStartSlot);
+                let endIdx = $absoluteAllSlots.index($clickedSlot);
+
+                let isValidRange = true;
+                let $rangeSlots = $absoluteAllSlots.slice(startIdx, endIdx + 1);
+
+                $rangeSlots.each(function () {
+                    if ($(this).hasClass('disabled') || $(this).prop('disabled') || $(this).hasClass('booked')) {
+                        isValidRange = false;
+                        return false;
+                    }
+                });
+
+                if (!isValidRange) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Selection',
+                        text: 'Selected range contains booked or unavailable slots.'
+                    });
+                    // Reset to this new slot
+                    rangeStartSlot = $clickedSlot;
+                    $('.slot-btn').removeClass('selected');
+                    $clickedSlot.addClass('selected');
+                    updateSelection(clickedStart, clickedEnd);
+                } else {
+                    // Valid Range
+                    $('.slot-btn').removeClass('selected');
+                    $rangeSlots.addClass('selected');
+
+                    let finalStartTime = rangeStartSlot.data('start');
+                    let finalEndTime = clickedEnd;
+
+                    updateSelection(finalStartTime, finalEndTime);
+
+                    // Reset
+                    rangeStartSlot = null;
+                }
+            }
+        }
     });
+
+    function updateSelection(start, end) {
+        selectedTimeSlot = {
+            start: start,
+            end: end
+        };
+        // Update hidden fields
+        $('#selected_time_start').val(start);
+        $('#selected_time_end').val(end);
+        validateForm();
+    }
 
     // Phone input validation - numeric only
     $('#phone').on('input', function () {
@@ -333,6 +401,7 @@ function openBookingModal(date) {
     $('#event_note').val('');
     $('.slot-btn').removeClass('selected disabled').prop('disabled', false);
     selectedTimeSlot = null;
+    rangeStartSlot = null; // Reset range selection logic
     $('#selected_time_start').val('');
     $('#selected_time_end').val('');
     $('#saveReservationBtn').prop('disabled', true);

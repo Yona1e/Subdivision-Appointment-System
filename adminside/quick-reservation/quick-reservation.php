@@ -803,7 +803,7 @@ $loggedInUserProfilePic = $profilePic;
 
     <!-- Other JS -->
     <script src="../../resident-side/javascript/sidebar.js"></script>
-    <script src="quick-reservation.js"></script>
+    <script src="quick-reservation.js?v=<?= time(); ?>"></script>
 </body>
 
 </html>

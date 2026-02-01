@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -46,6 +45,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $newEmail = trim($_POST['email']);
     $newPassword = trim($_POST['password'] ?? '');
 
+    // Validations
+    if (!empty($newPassword) && strlen($newPassword) < 6) {
+        $_SESSION['error'] = "Password must be at least 6 characters long.";
+        header("Location: manageaccounts.php");
+        exit();
+    }
+
     // Update status and email
     $updateStmt = $conn->prepare("UPDATE users SET Status = ?, Email = ? WHERE user_id = ?");
     $updateStmt->execute([$newStatus, $newEmail, $userIdToUpdate]);
@@ -57,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $passStmt->execute([$hashedPassword, $userIdToUpdate]);
     }
 
+    $_SESSION['success'] = "Account updated successfully.";
     header("Location: manageaccounts.php");
     exit();
 }
@@ -187,9 +194,21 @@ $statuses = array_unique(array_column($users, 'Status'));
                 </div>
                 <div class="card-body">
 
-                    <div class="alert alert-info">
-                        View and manage user accounts. Click on a row to update status.
-                    </div>
+                    <?php if (isset($_SESSION['success'])): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <?= htmlspecialchars($_SESSION['success']);
+                            unset($_SESSION['success']); ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['error'])): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <?= htmlspecialchars($_SESSION['error']);
+                            unset($_SESSION['error']); ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- SEARCH + FILTER ROW -->
                     <div class="search-filter-row">
@@ -303,12 +322,13 @@ $statuses = array_unique(array_column($users, 'Status'));
     <div class="modal fade" id="userModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <form method="POST">
+                <form method="POST" onsubmit="return validateForm()">
                     <div class="modal-header">
                         <h5 class="modal-title">User Details</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
+                        <!-- ... (Rest of modal body remains unchanged, this is just to attach the listener to the form tag) ... -->
                         <div class="row">
                             <!-- Left Column: Profile Picture & Basic Info -->
                             <div class="col-md-4 text-center border-end">
@@ -388,6 +408,15 @@ $statuses = array_unique(array_column($users, 'Status'));
     <script src="../resident-side/javascript/sidebar.js"></script>
 
     <script>
+        function validateForm() {
+            const password = document.getElementById('passwordInput').value;
+            if (password && password.length < 6) {
+                alert('New password must be at least 6 characters long.');
+                return false;
+            }
+            return true;
+        }
+
         // Modal Logic
         const userModal = new bootstrap.Modal(document.getElementById('userModal'));
 

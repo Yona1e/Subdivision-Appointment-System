@@ -139,19 +139,78 @@ $reservations = $conn->query($res_sql);
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
     <style>
+        /* Modal Styling (Synced with myreservations.php) */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 20px;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            width: 140px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #222;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .payment-proof-img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: #f8f9fa;
+        }
+
         /* Hide ID column on this page */
         table thead th:first-child,
         table tbody td:first-child {
             display: none;
-        }
-
-        /* Fix for payment proof image in modal */
-        .payment-proof-img {
-            width: 100%;
-            max-height: 350px;
-            object-fit: contain;
-            border-radius: 10px;
-            border: 1px solid #ddd;
         }
     </style>
 </head>
@@ -281,14 +340,14 @@ $reservations = $conn->query($res_sql);
                                             <?= $row['FirstName'] . ' ' . $row['LastName'] ?>
                                         </td>
                                         <td>
-                                                       <?= htmlspecialchars($row['phone']) ?>
-     
+                                            <?= htmlspecialchars($row['phone']) ?>
+
                                         </td>
                                         <td>
                                             <?= date('M d, Y', strtotime($row['event_start_date'])) ?>
-                                            </td>
-                                            <td>
-                                                <?= date('g:i A', strtotime($row['time_start'])) ?> -
+                                        </td>
+                                        <td>
+                                            <?= date('g:i A', strtotime($row['time_start'])) ?> -
                                             <?= date('g:i A', strtotime($row['time_end'])) ?>
                                         </td>
                                         <td><span class="badge bg-warning text-white">Pending</span></td>
@@ -334,21 +393,7 @@ $reservations = $conn->query($res_sql);
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Facility:</strong> <span id="mFacility"></span></p>
-                    <p><strong>User:</strong> <span id="mUser"></span></p>
-                    <p><strong>Phone:</strong> <span id="mPhone"></span></p>
-                    <p><strong>Date:</strong> <span id="mDate"></span></p>
-                    <p><strong>Time:</strong> <span id="mTime"></span></p>
-                    <p><strong>Cost:</strong> &#8369;<span id="mCost"></span></p>
-                    <p><strong>Status:</strong> <span class="badge bg-warning text-white"
-                            id="mStatusBadge">Pending</span></p>
-                    <p><strong>Created:</strong> <span id="mCreated"></span></p>
-                    <hr>
-                    <p><strong>Resident Note:</strong></p>
-                    <p id="mNote" class="text-muted"></p>
-                    <hr>
-                    <p><strong>Payment Proof:</strong></p>
-                    <div id="paymentContainer" class="text-center text-muted">No payment proof uploaded</div>
+                    <!-- Content injected via JS -->
                 </div>
             </div>
         </div>
@@ -382,21 +427,72 @@ $reservations = $conn->query($res_sql);
             row.addEventListener('click', e => {
                 if (e.target.closest('form') || e.target.classList.contains('reject-btn')) return;
 
-                mFacility.textContent = row.dataset.facility;
-                mUser.textContent = row.dataset.user;
-                mPhone.textContent = row.dataset.phone;
-                mDate.textContent = row.dataset.date;
-                mTime.textContent = row.dataset.time;
-                mCost.textContent = row.dataset.cost;
-                document.getElementById('mStatusBadge').textContent = row.dataset.status;
-                mCreated.textContent = row.dataset.created;
-                mNote.textContent = row.dataset.note;
-
+                const facility = row.dataset.facility;
+                const user = row.dataset.user;
+                const phone = row.dataset.phone;
+                const date = row.dataset.date;
+                const time = row.dataset.time;
+                const cost = row.dataset.cost;
+                const status = row.dataset.status;
+                const created = row.dataset.created;
+                const note = row.dataset.note;
                 const payment = row.dataset.payment;
-                const container = document.getElementById('paymentContainer');
-                container.innerHTML = payment
-                    ? `<img src="../${payment}" class="payment-proof-img">`
-                    : "No payment proof uploaded";
+
+                let statusColor = 'warning';
+                if (status.toLowerCase() === 'approved') statusColor = 'success';
+                else if (status.toLowerCase() === 'rejected') statusColor = 'danger';
+
+                const modalBody = document.querySelector('#reservationModal .modal-body');
+                modalBody.innerHTML = `
+                    <div class="section-title">Reservation Info</div>
+                    <div class="detail-row">
+                        <div class="detail-label">Facility</div>
+                        <div class="detail-value">${facility}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">User</div>
+                        <div class="detail-value">${user}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Phone</div>
+                        <div class="detail-value">${phone}</div>
+                    </div>
+                     <div class="detail-row">
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value">${date}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Time</div>
+                        <div class="detail-value">${time}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Cost</div>
+                        <div class="detail-value">&#8369;${cost}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="badge bg-${statusColor} text-${statusColor === 'warning' ? 'white' : 'white'}">${status}</span>
+                        </div>
+                    </div>
+                     <div class="detail-row">
+                        <div class="detail-label">Created On</div>
+                        <div class="detail-value">${created}</div>
+                    </div>
+
+                    <div class="section-title">Additional Info</div>
+                    <div class="detail-row">
+                        <div class="detail-label">Resident Note</div>
+                        <div class="detail-value">${note}</div>
+                    </div>
+
+                    <div class="section-title">Payment Proof</div>
+                    <div class="text-center mt-2">
+                        ${payment
+                        ? `<img src="../${payment}" class="payment-proof-img">`
+                        : '<div class="text-muted fst-italic py-3">No payment proof uploaded</div>'}
+                    </div>
+                `;
 
                 new bootstrap.Modal(document.getElementById('reservationModal')).show();
             });

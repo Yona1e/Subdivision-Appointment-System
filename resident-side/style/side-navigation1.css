@@ -56,9 +56,9 @@ body {
     justify-content: center;
 }
 
-.profile-link{
+.profile-link {
     text-decoration: none;
-     color: inherit;
+    color: inherit;
 }
 
 .profile-section {
@@ -66,6 +66,7 @@ body {
     align-items: center;
     gap: 12px;
     flex: 1;
+    min-width: 0;
     transition: opacity 0.3s ease;
 }
 
@@ -83,6 +84,7 @@ body {
     flex-direction: column;
     gap: 2px;
     overflow: hidden;
+    min-width: 0;
 }
 
 .profile-name {
@@ -91,6 +93,8 @@ body {
     font-weight: 600;
     margin: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .profile-role {
@@ -98,11 +102,12 @@ body {
     font-size: 13px;
     margin: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar.collapsed .profile-section {
-    opacity: 0;
-    pointer-events: none;
+    display: none;
 }
 
 .sidebar-header .header-logo {
@@ -114,16 +119,21 @@ body {
 }
 
 .sidebar.collapsed .sidebar-header .header-logo {
-    opacity: 0;
-    pointer-events: none;
+    display: none;
 }
 
+/* .sidebar-toggle { ... } modified to remove absolute positioning */
 .sidebar-header .sidebar-toggle {
     width: 40px;
     height: 40px;
     border: none;
-    position: absolute;
-    right: 18px;
+    /* Removed absolute positioning */
+    /* position: absolute; */
+    /* right: 18px; */
+    margin-left: 10px;
+    /* Add space between profile and toggle */
+    flex-shrink: 0;
+    /* Prevent button from shrinking */
     cursor: pointer;
     border-radius: 8px;
     display: flex;
@@ -136,6 +146,8 @@ body {
 .sidebar.collapsed .sidebar-header .sidebar-toggle {
     height: 48px;
     width: 50px;
+    margin-left: 0;
+    /* Remove margin when collapsed */
 }
 
 .sidebar-header .sidebar-toggle:hover {
@@ -146,6 +158,16 @@ body {
     display: inline-block;
     font-size: 1.75rem;
     transition: transform 0.4s ease;
+}
+
+/* Ensure profile-link behaves correctly in flex container */
+.profile-link {
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+    display: flex;
+    min-width: 0;
+    /* Allow text truncation */
 }
 
 .sidebar.collapsed .sidebar-toggle span {
@@ -187,6 +209,19 @@ body {
     transition: 0.3s ease;
 }
 
+/* Enforce Icon Size */
+.menu-link img {
+    width: 33px;
+    height: 33px;
+    object-fit: contain;
+}
+
+.logout-link img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
 /* turn the image white except profile photo */
 .sidebar img:not(.profile-photo) {
     filter: brightness(0) invert(1);
@@ -222,6 +257,8 @@ body {
 
 .logout-link {
     text-decoration: none;
+    display: flex;
+    /* Added to fix alignment */
     align-items: center;
     gap: 12px;
     white-space: nowrap;

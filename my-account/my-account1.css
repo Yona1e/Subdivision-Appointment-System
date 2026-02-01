@@ -27,7 +27,7 @@ body {
     flex: 1;
     display: flex;
     align-items: flex-start;
-    padding:30px;
+    padding: 30px;
 }
 
 /* Card container */
@@ -38,7 +38,7 @@ body {
     max-width: 1800px;
     width: 100%;
     align-items: center;
-    
+
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
     padding: 0px;
 }
@@ -65,22 +65,25 @@ body {
 /* my-reservation table */
 .table.table-hover tbody tr {
     transition: all 0.3s ease;
-    height: 60px;  /* Add row height */
+    height: 60px;
+    /* Add row height */
 }
 
 .table.table-hover tbody tr:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     transform: scale(1.01);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .table-responsive {
     width: 100%;
     margin: 0 auto;
     overflow-x: auto;
-    max-height: 600px;  /* Add max height */
-    overflow-y: auto;  /* Enable vertical scroll */
+    max-height: 600px;
+    /* Add max height */
+    overflow-y: auto;
+    /* Enable vertical scroll */
 }
 
 /* Make the table stretch wider */
@@ -94,5 +97,3 @@ body {
     padding: 15px 20px;
     vertical-align: middle;
 }
-
-

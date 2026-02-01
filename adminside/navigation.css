@@ -136,6 +136,13 @@ body {
     transition: 0.3s ease;
 }
 
+/* Enforce Icon Size */
+.menu-list .menu-link img {
+    width: 33px;
+    height: 33px;
+    object-fit: contain;
+}
+
 .menu-list .menu-link:is(:hover, .active) {
     color: white;
     background-color: black;

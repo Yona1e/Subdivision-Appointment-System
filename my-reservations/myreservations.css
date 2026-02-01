@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -22,11 +23,13 @@ body {
     background: var(--color-bg-primary);
 }
 
+/* Main Content - Match Admin */
 .main-content {
     flex: 1;
-    display: flex;
-    align-items: flex-start;
-    padding:30px;
+    width: 100%;
+    padding: 30px;
+    display: block;
+    /* Removed flex to match admin layout behavior */
 }
 
 /* Card container */
@@ -34,12 +37,10 @@ body {
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    max-width: 1800px;
     width: 100%;
-    align-items: center;
-    
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-    padding: 0px;
+    padding: 0;
+    margin-bottom: 2rem;
 }
 
 /* Header */
@@ -50,54 +51,103 @@ body {
     padding: 15px;
     font-size: 20px;
     font-weight: 600;
-    margin-bottom: 20px;
 }
 
+/* Card Body */
 .card-body {
     background: white;
-    border-radius: 8px;
-    margin: 0px auto;
-    padding:  0 30px !important;
+    padding: 20px 30px !important;
 }
 
-/* my-reservation table */
+/* Table Styling */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.table th,
+.table td {
+    padding: 1rem;
+    /* Increased padding */
+    vertical-align: middle;
+    border-color: #dee2e6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .table.table-hover tbody tr {
     transition: all 0.3s ease;
-    height: 60px;  
+    height: 60px;
 }
 
 .table.table-hover tbody tr:hover {
-    background: rgba(255,255,255,0.15);
+    background: #f1f5f9;
     backdrop-filter: blur(10px);
-    transform: scale(1.01);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-
-.table-responsive {
-    width: 100%;
-    margin: 0 auto;
-    overflow-x: auto;
-    max-height: 600px;  /* Add max height */
-    overflow-y: auto;  /* Enable vertical scroll */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .reservation-card .table-dark th {
     background-color: #2c3e50;
     color: white;
     font-weight: 500;
-    padding: 0.75rem;
-    text-align: left;
+    padding: 1rem;
+    /* Match increased padding */
     border: none;
 }
 
-/* Make the table stretch wider */
-.table {
-    width: 100%;
+/* Badge Styling - Match Admin */
+.badge {
+    padding: 0.35rem 0.65rem;
+    /* Match admin exactly */
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 4px;
 }
 
-/* Add cell padding for better height */
-.table th,
-.table td {
-    padding: 15px 20px;
-    vertical-align: middle;
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+/* Button Styling - Match Admin */
+.btn {
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-sm {
+    font-size: 0.875rem;
+    /* Ensure text isn't too small */
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Actions Column specific */
+.btn-group-actions .btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+/* Alert Styling */
+.alert {
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 1rem;
 }

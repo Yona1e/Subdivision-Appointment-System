@@ -69,7 +69,7 @@ ORDER BY r.updated_at DESC, r.id DESC";
 $reservations = $conn->query($res_sql);
 
 /* Facilities */
-$facility_sql = "SELECT DISTINCT facility_name FROM reservations ORDER BY facility_name ASC";
+$facility_sql = "SELECT DISTINCT facility_name FROM reservations WHERE admin_visible = 1 AND status IN ('approved', 'rejected') AND overwriteable = 0 ORDER BY facility_name ASC";
 $facility_list = $conn->query($facility_sql);
 $facilities_array = [];
 while ($f = $facility_list->fetch_assoc()) {
@@ -90,15 +90,75 @@ while ($f = $facility_list->fetch_assoc()) {
     <link rel="stylesheet" href="../resident-side/style/side-navigation1.css">
     <link rel="stylesheet" href="reservations-filter.css">
     <style>
-        .payment-proof-img {
-            width: 100%;
-            max-height: 350px;
-            object-fit: contain;
-            border-radius: 10px;
-            border: 1px solid #ddd;
+        /* Modal Styling (Synced with myreservations.php) */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 20px;
         }
 
-        /* Hide ID column to match reserverequests format */
+        .modal-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 12px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            width: 140px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #222;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .payment-proof-img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: #f8f9fa;
+        }
+
+        /* Hide ID column matches reserverequests */
         table thead th:first-child,
         table tbody td:first-child {
             display: none;
@@ -260,7 +320,14 @@ while ($f = $facility_list->fetch_assoc()) {
                                         data-status="<?= ucfirst($row['status']) ?>"
                                         data-note="<?= htmlspecialchars($row['note'] ?: 'No notes provided') ?>"
                                         data-updated="<?= date('M d, Y g:i A', strtotime($row['updated_at'])) ?>"
-                                        data-payment="<?= htmlspecialchars($row['payment_proof']) ?>">
+                                        data-payment="<?= htmlspecialchars($row['payment_proof']) ?>" <?php
+                                          // Determine Invoice Link & Visibility
+                                          $isResident = !empty($row['user_id']) && isset($row['Role']) && $row['Role'] === 'Resident';
+                                          $showPdf = $isResident || (!empty($row['phone']));
+                                          if ($showPdf && $row['status'] !== 'rejected'):
+                                              $invoiceLink = $isResident ? 'invoice-resident.php?id=' . $row['id'] : 'invoice.php?id=' . $row['id'];
+                                              ?>
+                                            data-invoice-url="<?= $invoiceLink ?>" <?php endif; ?>>
 
                                         <td class="id-column">
                                             <?= $row['id'] ?>
@@ -289,25 +356,6 @@ while ($f = $facility_list->fetch_assoc()) {
                                             </span>
                                         </td>
                                         <td>
-                                            <?php if ($row['status'] !== 'rejected'): ?>
-                                                <?php
-                                                // Determine Invoice Link & Visibility
-                                                $isResident = !empty($row['user_id']) && isset($row['Role']) && $row['Role'] === 'Resident';
-
-                                                // Show PDF if it's a Resident OR if it's an Admin reservation with a phone number
-                                                $showPdf = $isResident || (!empty($row['phone']));
-
-                                                if ($showPdf):
-                                                    $invoiceLink = $isResident
-                                                        ? 'invoice-resident.php?id=' . $row['id']
-                                                        : 'invoice.php?id=' . $row['id'];
-                                                    ?>
-                                                    <a href="<?= $invoiceLink ?>" class="btn btn-sm btn-primary mb-1">
-                                                        <i class="bi bi-file-pdf"></i> PDF
-                                                    </a>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
-
                                             <form method="POST" class="d-inline">
                                                 <input type="hidden" name="reservation_id" value="<?= $row['id'] ?>">
                                                 <button name="delete_reservation" class="btn btn-sm btn-danger delete-btn">
@@ -336,22 +384,7 @@ while ($f = $facility_list->fetch_assoc()) {
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Facility:</strong> <span id="mFacility"></span></p>
-                    <p><strong>User:</strong> <span id="mUser"></span></p>
-                    <p><strong>Phone:</strong> <span id="mPhone"></span></p>
-                    <p><strong>Date:</strong> <span id="mDate"></span></p>
-                    <p><strong>Time:</strong> <span id="mTime"></span></p>
-                    <p><strong>Cost:</strong> &#8369;<span id="mCost"></span></p>
-                    <p><strong>Status:</strong> <span class="badge" id="mStatusBadge"></span></p>
-                    <p><strong>Updated:</strong> <span id="mUpdated"></span></p>
-
-                    <hr>
-                    <p><strong>Resident Note:</strong></p>
-                    <p id="mNote" class="text-muted"></p>
-
-                    <hr>
-                    <p><strong>Payment Proof:</strong></p>
-                    <div id="paymentContainer" class="text-center text-muted">No payment proof uploaded</div>
+                    <!-- Content injected via JS -->
                 </div>
             </div>
         </div>
@@ -364,28 +397,84 @@ while ($f = $facility_list->fetch_assoc()) {
             row.addEventListener('click', e => {
                 if (e.target.closest('form') || e.target.closest('a')) return;
 
-                mFacility.textContent = row.dataset.facility;
-                mUser.textContent = row.dataset.user;
-                mPhone.textContent = row.dataset.phone;
-                mDate.textContent = row.dataset.date;
-                mTime.textContent = row.dataset.time;
-                mCost.textContent = row.dataset.cost;
-
-                const statusBadge = document.getElementById('mStatusBadge');
-                statusBadge.textContent = row.dataset.status;
-                statusBadge.className = 'badge ' + (row.dataset.status === 'Approved' ? 'bg-success' : 'bg-danger');
-
-                mUpdated.textContent = row.dataset.updated;
-                mNote.textContent = row.dataset.note;
-
+                const facility = row.dataset.facility;
+                const user = row.dataset.user;
+                const phone = row.dataset.phone;
+                const date = row.dataset.date;
+                const time = row.dataset.time;
+                const cost = row.dataset.cost;
+                const status = row.dataset.status;
+                const updated = row.dataset.updated;
+                const note = row.dataset.note;
                 const payment = row.dataset.payment;
-                const container = document.getElementById('paymentContainer');
+                const invoiceUrl = row.dataset.invoiceUrl;
 
-                if (payment) {
-                    container.innerHTML = `<img src="../${payment}" class="payment-proof-img">`;
-                } else {
-                    container.textContent = "No payment proof uploaded";
+                let statusColor = status === 'Approved' ? 'success' : 'danger';
+
+                const modalBody = document.querySelector('#reservationModal .modal-body');
+
+                let htmlContent = `
+                    <div class="section-title">Reservation Info</div>
+                    <div class="detail-row">
+                        <div class="detail-label">Facility</div>
+                        <div class="detail-value">${facility}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">User</div>
+                        <div class="detail-value">${user}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Phone</div>
+                        <div class="detail-value">${phone}</div>
+                    </div>
+                     <div class="detail-row">
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value">${date}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Time</div>
+                        <div class="detail-value">${time}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Cost</div>
+                        <div class="detail-value">&#8369;${cost}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="badge bg-${statusColor}">${status}</span>
+                        </div>
+                    </div>
+                     <div class="detail-row">
+                        <div class="detail-label">Last Updated</div>
+                        <div class="detail-value">${updated}</div>
+                    </div>
+
+                    <div class="section-title">Additional Info</div>
+                    <div class="detail-row">
+                        <div class="detail-label">Resident Note</div>
+                        <div class="detail-value">${note}</div>
+                    </div>
+
+                    <div class="section-title">Payment Proof</div>
+                    <div class="text-center mt-2">
+                        ${payment
+                        ? `<img src="../${payment}" class="payment-proof-img">`
+                        : '<div class="text-muted fst-italic py-3">No payment proof uploaded</div>'}
+                    </div>
+                `;
+
+                if (invoiceUrl) {
+                    htmlContent += `
+                        <div class="mt-4 pt-3 border-top text-end">
+                            <a href="${invoiceUrl}" class="btn btn-primary" target="_blank">
+                                <i class="bi bi-file-pdf"></i> Download Invoice
+                            </a>
+                        </div>
+                    `;
                 }
+
+                modalBody.innerHTML = htmlContent;
 
                 new bootstrap.Modal(document.getElementById('reservationModal')).show();
             });
@@ -399,8 +488,18 @@ while ($f = $facility_list->fetch_assoc()) {
                 let facility = row.dataset.facility.toLowerCase();
                 let user = row.dataset.user.toLowerCase();
                 let phone = row.dataset.phone.toLowerCase();
+                let date = row.dataset.date.toLowerCase();
+                let time = row.dataset.time.toLowerCase();
+                let status = row.dataset.status.toLowerCase();
 
-                row.style.display = (facility.includes(search) || user.includes(search) || phone.includes(search)) ? '' : 'none';
+                row.style.display = (
+                    facility.includes(search) ||
+                    user.includes(search) ||
+                    phone.includes(search) ||
+                    date.includes(search) ||
+                    time.includes(search) ||
+                    status.includes(search)
+                ) ? '' : 'none';
             });
         });
 

@@ -119,7 +119,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <style>
         /* Modal Styling */
         .reservation-details-modal .modal-dialog {
-            max-width: 600px;
+            /* max-width removed to allow modal-lg to take effect */
         }
 
         .reservation-details-modal .modal-header {
@@ -142,7 +142,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #dee2e6;
         }
 
         .detail-row:last-of-type {
@@ -274,153 +274,146 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="page-header">My Reservations</div>
 
                 <div class="card-body">
-                    <div class="card-body">
-                        <div class="alert alert-info mb-4">
-                            Showing <strong>pending</strong>, <strong>approved</strong>, and <strong>rejected</strong>
-                            reservations. Click a row to view full details.
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Facility</th>
-                                        <th>Date</th>
-                                        <th>Time Slot</th>
-                                        <th>Status</th>
-                                        <th>Booked On</th>
-                                        <th>Actions</th>
+                    <div class="alert alert-info mb-4">
+                        Showing <strong>pending</strong>, <strong>approved</strong>, and <strong>rejected</strong>
+                        reservations. Click a row to view full details.
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Facility</th>
+                                    <th>Date</th>
+                                    <th>Time Slot</th>
+                                    <th>Status</th>
+                                    <th>Booked On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                <?php foreach ($reservations as $reservation): ?>
+                                    <tr class="reservation-row" data-reservation-id="<?= $reservation['id'] ?>"
+                                        data-facility="<?= htmlspecialchars($reservation['facility_name']) ?>"
+                                        data-date="<?= date('F d, Y', strtotime($reservation['event_start_date'])) ?>"
+                                        data-time="<?= date('g:i A', strtotime($reservation['time_start'])) ?> - <?= date('g:i A', strtotime($reservation['time_end'])) ?>"
+                                        data-cost="<?= number_format($reservation['cost'] ?? 0, 2) ?>"
+                                        data-status="<?= ucfirst($reservation['status']) ?>"
+                                        data-created="<?= date('M d, Y g:i A', strtotime($reservation['created_at'])) ?>"
+                                        data-reason="<?= htmlspecialchars($reservation['reason'] ?? 'No reason provided.') ?>"
+                                        data-note="<?= htmlspecialchars($reservation['note'] ?? 'No notes provided') ?>"
+                                        data-payment="<?= htmlspecialchars($reservation['payment_proof'] ?? '') ?>"
+                                        <?php if ($reservation['status'] === 'approved'): ?>
+                                            data-invoice-url="invoice.php?id=<?= $reservation['id'] ?>"
+                                        <?php endif; ?>
+                                        >
+                                        <td>
+                                            <?= htmlspecialchars($reservation['facility_name']) ?>
+                                        </td>
+                                        <td>
+                                            <?= date('F d, Y', strtotime($reservation['event_start_date'])) ?>
+                                        </td>
+                                        <td>
+                                            <?= date('g:i A', strtotime($reservation['time_start'])) ?> -
+                                            <?= date('g:i A', strtotime($reservation['time_end'])) ?>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            $statusClass = match ($reservation['status']) {
+                                                'approved' => 'bg-success',
+                                                'rejected' => 'bg-danger',
+                                                'pending' => 'bg-warning text-white',
+                                                default => 'bg-secondary'
+                                            };
+                                            ?>
+                                            <span class="badge <?= $statusClass ?>">
+                                                <?= ucfirst($reservation['status']) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <?= date('M d, Y g:i A', strtotime($reservation['created_at'])) ?>
+                                        </td>
+
+                                        <td>
+                                            <div class="btn-group-actions">
+                                                <?php if ($reservation['status'] === 'pending'): ?>
+                                                    <!-- Pending status - Cancel Button -->
+                                                    <button class="btn btn-sm btn-outline-danger cancel-request-btn"
+                                                        data-id="<?= $reservation['id'] ?>"
+                                                        title="Cancel this reservation request">
+                                                        <i class="bi bi-x-circle"></i> Cancel
+                                                    </button>
+                                                <?php else: ?>
+                                                    <!-- Approved/Rejected status - Show buttons -->
+                                                    <button class="btn btn-sm btn-danger delete-btn action-btn"
+                                                        title="Remove from view">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
+                                <?php endforeach; ?>
 
-                                    <?php foreach ($reservations as $reservation): ?>
-                                        <tr class="reservation-row" data-reservation-id="<?= $reservation['id'] ?>"
-                                            data-facility="<?= htmlspecialchars($reservation['facility_name']) ?>"
-                                            data-date="<?= date('F d, Y', strtotime($reservation['event_start_date'])) ?>"
-                                            data-time="<?= date('g:i A', strtotime($reservation['time_start'])) ?> - <?= date('g:i A', strtotime($reservation['time_end'])) ?>"
-                                            data-cost="<?= number_format($reservation['cost'] ?? 0, 2) ?>"
-                                            data-status="<?= ucfirst($reservation['status']) ?>"
-                                            data-created="<?= date('M d, Y g:i A', strtotime($reservation['created_at'])) ?>"
-                                            data-reason="<?= htmlspecialchars($reservation['reason'] ?? 'No reason provided.') ?>"
-                                            data-note="<?= htmlspecialchars($reservation['note'] ?? 'No notes provided') ?>"
-                                            data-payment="<?= htmlspecialchars($reservation['payment_proof'] ?? '') ?>">
-                                            <td>
-                                                <?= htmlspecialchars($reservation['facility_name']) ?>
-                                            </td>
-                                            <td>
-                                                <?= date('F d, Y', strtotime($reservation['event_start_date'])) ?>
-                                            </td>
-                                            <td>
-                                                <?= date('g:i A', strtotime($reservation['time_start'])) ?> -
-                                                <?= date('g:i A', strtotime($reservation['time_end'])) ?>
-                                            </td>
-                                            <td>
-                                                <?php
-                                                $statusClass = match ($reservation['status']) {
-                                                    'approved' => 'bg-success',
-                                                    'rejected' => 'bg-danger',
-                                                    'pending' => 'bg-warning text-white',
-                                                    default => 'bg-secondary'
-                                                };
-                                                ?>
-                                                <span class="badge <?= $statusClass ?>">
-                                                    <?= ucfirst($reservation['status']) ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <?= date('M d, Y g:i A', strtotime($reservation['created_at'])) ?>
-                                            </td>
-
-                                            <td>
-                                                <div class="btn-group-actions">
-                                                    <?php if ($reservation['status'] === 'pending'): ?>
-                                                        <!-- Pending status - Cancel Button -->
-                                                        <button class="btn btn-sm btn-outline-danger cancel-request-btn"
-                                                            data-id="<?= $reservation['id'] ?>"
-                                                            title="Cancel this reservation request">
-                                                            <i class="bi bi-x-circle"></i> Cancel
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <!-- Approved/Rejected status - Show buttons -->
-                                                        <?php if ($reservation['status'] !== 'rejected'): ?>
-                                                            <a href="invoice.php?id=<?= $reservation['id'] ?>"
-                                                                class="btn btn-sm btn-primary action-btn"
-                                                                title="Download PDF Invoice">
-                                                                <i class="bi bi-file-pdf"></i> PDF
-                                                            </a>
-                                                        <?php endif; ?>
-                                                        <button class="btn btn-sm btn-danger delete-btn action-btn"
-                                                            title="Remove from view">
-                                                            <i class="bi bi-trash"></i> Delete
-                                                        </button>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-
-                                </tbody>
-                            </table>
-                        </div>
+                            </tbody>
+                        </table>
                     </div>
+                </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW DETAILS MODAL STRUCTURE -->
+    <div class="modal fade reservation-details-modal" id="reservationDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reservation Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="reservationDetailsBody">
+                    <!-- Content will be injected via JS -->
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- NEW DETAILS MODAL STRUCTURE -->
-        <div class="modal fade reservation-details-modal" id="reservationDetailsModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Reservation Details</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body" id="reservationDetailsBody">
-                        <!-- Content will be injected via JS -->
-                    </div>
-                    <div class="modal-footer" id="reservationDetailsFooter">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../resident-side/javascript/sidebar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="../resident-side/javascript/sidebar.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let currentReservationId = null;
 
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                let currentReservationId = null;
+            // Row click handler
+            document.querySelectorAll('.reservation-row').forEach(row => {
+                row.addEventListener('click', e => {
+                    // Prevent opening modal if clicking an action button/link
+                    if (e.target.closest('.action-btn') || e.target.closest('a') || e.target.closest('button')) {
+                        return;
+                    }
 
-                // Row click handler
-                document.querySelectorAll('.reservation-row').forEach(row => {
-                    row.addEventListener('click', e => {
-                        // Prevent opening modal if clicking an action button/link
-                        if (e.target.closest('.action-btn') || e.target.closest('a') || e.target.closest('button')) {
-                            return;
-                        }
+                    // Get Data Attributes
+                    currentReservationId = row.dataset.reservationId;
+                    const facility = row.dataset.facility;
+                    const date = row.dataset.date;
+                    const time = row.dataset.time;
+                    const cost = row.dataset.cost;
+                    const status = row.dataset.status;
+                    const created = row.dataset.created;
+                    const reason = row.dataset.reason;
+                    const note = row.dataset.note;
+                    const payment = row.dataset.payment;
 
-                        // Get Data Attributes
-                        currentReservationId = row.dataset.reservationId;
-                        const facility = row.dataset.facility;
-                        const date = row.dataset.date;
-                        const time = row.dataset.time;
-                        const cost = row.dataset.cost;
-                        const status = row.dataset.status;
-                        const created = row.dataset.created;
-                        const reason = row.dataset.reason;
-                        const note = row.dataset.note;
-                        const payment = row.dataset.payment;
+                    // Build Modal HTML Content
+                    let statusColor = 'secondary';
+                    if (status.toLowerCase() === 'approved') statusColor = 'success';
+                    else if (status.toLowerCase() === 'rejected') statusColor = 'danger';
+                    else if (status.toLowerCase() === 'pending') statusColor = 'warning';
 
-                        // Build Modal HTML Content
-                        let statusColor = 'secondary';
-                        if (status.toLowerCase() === 'approved') statusColor = 'success';
-                        else if (status.toLowerCase() === 'rejected') statusColor = 'danger';
-                        else if (status.toLowerCase() === 'pending') statusColor = 'warning';
-
-                        let htmlContent = `
+                    let htmlContent = `
                             <div class="section-title">Reservation Info</div>
                             
                             <div class="detail-row">
@@ -453,19 +446,19 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         `;
 
-                        // Rejection Reason (if rejected)
-                        if (status.toLowerCase() === 'rejected') {
-                            htmlContent += `
+                    // Rejection Reason (if rejected)
+                    if (status.toLowerCase() === 'rejected') {
+                        htmlContent += `
                                 <div class="section-title text-danger">Rejection Details</div>
                                 <div class="detail-row">
                                     <div class="detail-label text-danger">Reason</div>
                                     <div class="detail-value text-danger fw-bold">${reason}</div>
                                 </div>
                             `;
-                        }
+                    }
 
-                        // Notes
-                        htmlContent += `
+                    // Notes
+                    htmlContent += `
                             <div class="section-title">Additional Info</div>
                             <div class="detail-row">
                                 <div class="detail-label">My Note</div>
@@ -473,90 +466,102 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         `;
 
-                        // Payment Proof
-                        htmlContent += `<div class="section-title">Payment Proof</div>`;
-                        if (payment) {
-                            htmlContent += `
+                    // Payment Proof
+                    htmlContent += `<div class="section-title">Payment Proof</div>`;
+                    if (payment) {
+                        htmlContent += `
                                 <div class="payment-proof-container">
                                     <img src="../${payment}" class="payment-proof-img" alt="Payment Proof">
                                 </div>
                             `;
-                        } else {
-                            htmlContent += `<div class="no-payment-proof">No payment proof uploaded for this reservation.</div>`;
-                        }
+                    } else {
+                        htmlContent += `<div class="no-payment-proof">No payment proof uploaded for this reservation.</div>`;
+                    }
 
-                        // Update Modal Body
-                        document.getElementById('reservationDetailsBody').innerHTML = htmlContent;
+                    // Invoice Button (New)
+                    const invoiceUrl = row.dataset.invoiceUrl;
+                    if (invoiceUrl) {
+                        htmlContent += `
+                                <div class="mt-4 pt-3 border-top text-end">
+                                    <a href="${invoiceUrl}" class="btn btn-primary" target="_blank">
+                                        <i class="bi bi-file-pdf"></i> Download Invoice
+                                    </a>
+                                </div>
+                            `;
+                    }
 
-                        // Show Modal
-                        new bootstrap.Modal(document.getElementById('reservationDetailsModal')).show();
-                    });
+                    // Update Modal Body
+                    document.getElementById('reservationDetailsBody').innerHTML = htmlContent;
+
+                    // Show Modal
+                    new bootstrap.Modal(document.getElementById('reservationDetailsModal')).show();
                 });
-
-                // Cancel Request Button Handler (New for Action Column)
-                document.querySelectorAll('.cancel-request-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Stop row click
-                        const reservationId = btn.getAttribute('data-id');
-
-                        Swal.fire({
-                            title: "Cancel this request?",
-                            text: "This will free up the timeslot and mark it as overwriteable.",
-                            icon: "warning",
-                            showCancelButton: true,
-                            confirmButtonText: "Yes, Cancel Request",
-                            cancelButtonText: "No, Keep it",
-                            confirmButtonColor: "#d33",
-                            cancelButtonColor: "#6c757d"
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                fetch('myreservations.php', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                    body: `action=cancel_request&reservation_id=${reservationId}`
-                                })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            Swal.fire("Cancelled!", "Your request has been cancelled.", "success")
-                                                .then(() => location.reload());
-                                        } else {
-                                            Swal.fire("Error", "Could not cancel request.", "error");
-                                        }
-                                    });
-                            }
-                        });
-                    });
-                });
-
-                // Delete button handler
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Stop row click
-                        const row = btn.closest('tr');
-                        const id = row.dataset.reservationId;
-
-                        Swal.fire({
-                            title: "Remove this reservation?",
-                            text: "This will clean up your list but keep the record in our system.",
-                            icon: "warning",
-                            showDenyButton: true,
-                            confirmButtonText: "Remove",
-                            denyButtonText: "Keep"
-                        }).then(result => {
-                            if (result.isConfirmed) {
-                                fetch('myreservations.php', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                    body: `action=hide_reservation&reservation_id=${id}`
-                                }).then(() => row.remove());
-                            }
-                        });
-                    });
-                });
-
             });
-        </script>
+
+            // Cancel Request Button Handler (New for Action Column)
+            document.querySelectorAll('.cancel-request-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Stop row click
+                    const reservationId = btn.getAttribute('data-id');
+
+                    Swal.fire({
+                        title: "Cancel this request?",
+                        text: "This will free up the timeslot and mark it as overwriteable.",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, Cancel Request",
+                        cancelButtonText: "No, Keep it",
+                        confirmButtonColor: "#d33",
+                        cancelButtonColor: "#6c757d"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch('myreservations.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: `action=cancel_request&reservation_id=${reservationId}`
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        Swal.fire("Cancelled!", "Your request has been cancelled.", "success")
+                                            .then(() => location.reload());
+                                    } else {
+                                        Swal.fire("Error", "Could not cancel request.", "error");
+                                    }
+                                });
+                        }
+                    });
+                });
+            });
+
+            // Delete button handler
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Stop row click
+                    const row = btn.closest('tr');
+                    const id = row.dataset.reservationId;
+
+                    Swal.fire({
+                        title: "Remove this reservation?",
+                        text: "This will clean up your list but keep the record in our system.",
+                        icon: "warning",
+                        showDenyButton: true,
+                        confirmButtonText: "Remove",
+                        denyButtonText: "Keep"
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            fetch('myreservations.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: `action=hide_reservation&reservation_id=${id}`
+                            }).then(() => row.remove());
+                        }
+                    });
+                });
+            });
+
+        });
+    </script>
 
 </body>
 

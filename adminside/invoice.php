@@ -73,32 +73,38 @@ $pdf->Ln(10);
 $pdf->SetFont('helvetica', '', 10);
 
 // Left side - Issued to
-$pdf->Cell(100, 6, 'Issued to:', 0, 0, 'L');
+// Left side - Issued to
+$pdf->Cell(100, 5, 'Issued to:', 0, 0, 'L');
 
 $pdf->SetFont('helvetica', '', 10);
-$pdf->Cell(0, 6, 'Invoice No:', 0, 1, 'R');
+$pdf->Cell(0, 5, 'Invoice No:', 0, 1, 'R');
 
 $pdf->SetFont('helvetica', 'B', 10);
 // Blank name
-$pdf->Cell(100, 6, '', 0, 0, 'L');
+$pdf->Cell(100, 5, '', 0, 0, 'L');
 
 $invoiceNo = 'INV-' . str_pad($reservation['id'], 6, '0', STR_PAD_LEFT);
-$pdf->Cell(0, 6, $invoiceNo, 0, 1, 'R');
+$pdf->Cell(0, 5, $invoiceNo, 0, 1, 'R');
 
 $pdf->SetFont('helvetica', '', 10);
 // Blank address line 1
-$pdf->Cell(100, 6, '', 0, 0, 'L');
+$pdf->Cell(100, 5, '', 0, 0, 'L');
 
-$pdf->Cell(0, 6, 'Date Issued:', 0, 1, 'R');
+$pdf->Cell(0, 5, 'Date Issued:', 0, 1, 'R');
 
 $pdf->SetFont('helvetica', 'B', 10);
 // Blank address line 2
-$pdf->Cell(100, 6, '', 0, 0, 'L');
+$pdf->Cell(100, 5, '', 0, 0, 'L');
 
 $dateIssued = date('M d, Y', strtotime($reservation['created_at']));
-$pdf->Cell(0, 6, $dateIssued, 0, 1, 'R');
+$pdf->Cell(0, 5, $dateIssued, 0, 1, 'R');
 
-$pdf->Ln(8);
+// Add Contact Number (Dynamic even for "blank" invoice invoice)
+$pdf->SetFont('helvetica', 'B', 10);
+$contactNo = !empty($reservation['phone']) ? htmlspecialchars($reservation['phone']) : 'N/A';
+$pdf->Cell(100, 5, 'Contact No: ' . $contactNo, 0, 1, 'L');
+
+$pdf->Ln(5);
 
 // Table
 $pdf->SetFont('helvetica', 'B', 10);
@@ -121,16 +127,16 @@ $timeStart = date('g:i A', strtotime($reservation['time_start']));
 $timeEnd = date('g:i A', strtotime($reservation['time_end']));
 $totalCost = 'P' . number_format($cost, 2);
 
-$pdf->Cell(70, 15, $facilityName, 1, 0, 'L');
-$pdf->Cell(40, 15, $timeStart, 1, 0, 'C');
-$pdf->Cell(40, 15, $timeEnd, 1, 0, 'C');
-$pdf->Cell(30, 15, $totalCost, 1, 1, 'C');
+$pdf->Cell(70, 10, $facilityName, 1, 0, 'L');
+$pdf->Cell(40, 10, $timeStart, 1, 0, 'C');
+$pdf->Cell(40, 10, $timeEnd, 1, 0, 'C');
+$pdf->Cell(30, 10, $totalCost, 1, 1, 'C');
 
 $pdf->Ln(5);
 
 // Payment info and total (STATIC VALUES)
 $pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(100, 6, 'PAYMENT INFO', 0, 0, 'L');
+$pdf->Cell(100, 6, 'PAYMENT TO BE SUBMITTED TO', 0, 0, 'L');
 $pdf->SetFont('helvetica', 'B', 12);
 $totalDisplay = 'TOTAL: P' . number_format($cost, 2);
 $pdf->Cell(0, 6, $totalDisplay, 0, 1, 'R');
@@ -140,7 +146,7 @@ $pdf->SetFont('helvetica', '', 10);
 $pdf->Cell(100, 6, '09123456789', 0, 1, 'L');
 $pdf->Cell(100, 6, 'Kurt Tan', 0, 1, 'L');
 
-$pdf->Ln(10);
+$pdf->Ln(8);
 
 // Footer note
 $pdf->SetFont('helvetica', '', 9);

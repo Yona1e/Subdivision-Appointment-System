@@ -16,7 +16,11 @@
 <body>
   <div class="wrapper">
     <form id="loginForm" method="POST" action="../adminside/login_process.php">
+      <div class="text-center mb-4">
+        <img src="../asset/logo.png" alt="Logo" class="login-logo" style="width: 135px; height: 125px;">
+      </div>
       <h1>Facility Reservation System</h1>
+      
       <h3></h3>
 
       <div id="errorMessage" class="alert alert-danger" style="display: none; margin-top: 10px;" role="alert"></div>
@@ -25,7 +29,10 @@
       <div class="input-box">
         <div class="mb-3 position-relative">
           <i class='bx bx-envelope input-icon'></i>
-          <input type="text" class="form-control ps-5" id="email" name="email" placeholder="Enter your email" required>
+          <input type="text" class="form-control ps-5" id="email" name="email" placeholder="Enter your email" required
+            value="<?php if (isset($_COOKIE['email'])) {
+              echo htmlspecialchars($_COOKIE['email']);
+            } ?>">
         </div>
       </div>
       <!-- Password -->
@@ -41,7 +48,9 @@
 
       <!-- Remember Me -->
       <div class="mb-3 form-check">
-        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+        <input type="checkbox" class="form-check-input" id="remember" name="remember" <?php if (isset($_COOKIE['email'])) {
+          echo 'checked';
+        } ?>>
         <label class="form-check-label" for="remember">Remember Me</label>
       </div>
 
@@ -57,65 +66,65 @@
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        // Check for error parameter in URL
-        window.addEventListener('DOMContentLoaded', function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            const error = urlParams.get('error');
+  <script>
+    // Check for error parameter in URL
+    window.addEventListener('DOMContentLoaded', function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
 
-            const errorMessage = document.getElementById('errorMessage');
+      const errorMessage = document.getElementById('errorMessage');
 
-            if (error === 'invalid') {
-                errorMessage.textContent = 'Invalid email or password.';
-                errorMessage.style.display = 'flex';
+      if (error === 'invalid') {
+        errorMessage.textContent = 'Invalid email or password.';
+        errorMessage.style.display = 'flex';
 
-                // Auto-hide after 5 seconds
-                setTimeout(function () {
-                    errorMessage.style.opacity = '0';
-                    setTimeout(function () {
-                        errorMessage.style.display = 'none';
-                        errorMessage.style.opacity = '1';
-                    }, 300);
-                }, 5000);
-            } else if (error === 'archived') {
-                errorMessage.textContent = 'Your account has been archived. Please contact your administrator to reactivate it.';
-                errorMessage.classList.remove('alert-danger');
-                errorMessage.classList.add('alert-warning');
-                errorMessage.style.display = 'flex';
+        // Auto-hide after 5 seconds
+        setTimeout(function () {
+          errorMessage.style.opacity = '0';
+          setTimeout(function () {
+            errorMessage.style.display = 'none';
+            errorMessage.style.opacity = '1';
+          }, 300);
+        }, 5000);
+      } else if (error === 'archived') {
+        errorMessage.textContent = 'Your account has been archived. Please contact your administrator to reactivate it.';
+        errorMessage.classList.remove('alert-danger');
+        errorMessage.classList.add('alert-warning');
+        errorMessage.style.display = 'flex';
 
-                // Keep archived message visible longer (12s)
-                setTimeout(function () {
-                    errorMessage.style.opacity = '0';
-                    setTimeout(function () {
-                        errorMessage.style.display = 'none';
-                        errorMessage.style.opacity = '1';
-                    }, 300);
-                }, 12000);
-            }
-        });
+        // Keep archived message visible longer (12s)
+        setTimeout(function () {
+          errorMessage.style.opacity = '0';
+          setTimeout(function () {
+            errorMessage.style.display = 'none';
+            errorMessage.style.opacity = '1';
+          }, 300);
+        }, 12000);
+      }
+    });
 
-        // Toggle password visibility
-        const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
+    // Toggle password visibility
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
 
-        togglePassword.addEventListener('click', function () {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
+    togglePassword.addEventListener('click', function () {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
 
-            // Toggle icon
-            this.classList.toggle('bx-hide');
-            this.classList.toggle('bx-show');
-        });
+      // Toggle icon
+      this.classList.toggle('bx-hide');
+      this.classList.toggle('bx-show');
+    });
 
-        // Add loading state to button on submit
-        const loginForm = document.getElementById('loginForm');
-        const submitBtn = loginForm.querySelector('.btn-primary');
+    // Add loading state to button on submit
+    const loginForm = document.getElementById('loginForm');
+    const submitBtn = loginForm.querySelector('.btn-primary');
 
-        loginForm.addEventListener('submit', function () {
-            submitBtn.classList.add('loading');
-            submitBtn.querySelector('.btn-text').textContent = 'Signing In...';
-        });
-    </script>
+    loginForm.addEventListener('submit', function () {
+      submitBtn.classList.add('loading');
+      submitBtn.querySelector('.btn-text').textContent = 'Signing In...';
+    });
+  </script>
 
 
 </body>
